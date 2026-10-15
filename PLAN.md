@@ -72,3 +72,8 @@ procedure) and a status of `verified here`, `needs your camera`, or `not met`.
 
 ## Phase 1 status
 Done: state machine, 13 responsive screens, a11y tokens + tests, `?dev=1` simulator, screenshot comparison (`npm run compare`), old generated assets/tools deleted. See docs/DONE.md.
+
+## Phase 2 status
+Done (see docs/PHASE2.md and docs/DONE.md): camera, MediaPipe tracker (needs `npm run models`), rule-based gestures with hysteresis, One-Euro pointer, command zones, dwell engine with adaptive time, controller wired to the machine, live HoldRing / command-zone highlight / hand chip / setup checks, dev-only Vision debug panel, `npm run e2e` and `npm run layout`.
+Not verified: real-hand accuracy and real-time speed. They need a webcam (see "Check on your own machine").
+Not started: Phase 3 (speech, context sensing), Phase 4 (letters), Phase 5 (cards), Phase 6 (sentence server), Phase 7 (study logger, axe, perf).

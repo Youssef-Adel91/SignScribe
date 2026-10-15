@@ -6,19 +6,8 @@ import { CameraError, openCamera, type OpenCamera } from './camera';
 import { GestureController } from './controller';
 import { createHandTracker, ModelMissingError, type HandTracker } from './hands';
 import { getTargets, setHot } from './targets';
-import { visionStore } from './store';
+import { VISION_MODE as MODE, visionStore } from './store';
 import type { HandFrame } from './types';
-
-const params = new URLSearchParams(window.location.search);
-const DEV = params.get('dev') === '1';
-/** ?dev=1&vision=off: no camera (screenshots, layout work). ?dev=1&vision=mock: frames come from a test hook. */
-const MODE: 'camera' | 'off' | 'mock' = !DEV
-  ? 'camera'
-  : params.get('vision') === 'off'
-    ? 'off'
-    : params.get('vision') === 'mock'
-      ? 'mock'
-      : 'camera';
 
 /**
  * Owns the whole camera -> gestures -> machine pipeline. Renders nothing.
@@ -29,10 +18,7 @@ export function VisionProvider() {
   const actor = Machine.useActorRef();
 
   useEffect(() => {
-    if (MODE === 'off') {
-      visionStore.set({ status: 'off', source: 'none' });
-      return;
-    }
+    if (MODE === 'off') return;
     let disposed = false;
     const controller = new GestureController(getTargets);
     const fps = new FpsMeter();
@@ -163,15 +149,14 @@ export function VisionProvider() {
     };
   }, [actor]);
 
-  // the rest of the app styles itself differently once real input is flowing
-  useEffect(
-    () =>
-      visionStore.subscribe(() => {
-        const live = visionStore.state.status === 'running';
-        if (live) document.documentElement.dataset.live = '1';
-        else delete document.documentElement.dataset.live;
-      }),
-    [],
-  );
+  // the rest of the app styles itself differently once vision is on (design placeholders go away)
+  useEffect(() => {
+    const apply = () => {
+      if (visionStore.state.status !== 'off') document.documentElement.dataset.live = '1';
+      else delete document.documentElement.dataset.live;
+    };
+    apply();
+    return visionStore.subscribe(apply);
+  }, []);
   return null;
 }

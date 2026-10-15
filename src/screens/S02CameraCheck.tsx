@@ -9,7 +9,7 @@ import styles from './S02CameraCheck.module.css';
 import { HandChip } from '../vision/bits';
 import { Demo, useLive } from '../vision/bits';
 import { useVision } from '../vision/store';
-import type { Checks } from '../vision/checks';
+import { evaluateChecks, type Checks } from '../vision/checks';
 
 type Tone = 'ok' | 'warn';
 /** Shown until the camera is live (design values). Live, the three rows come from the real checks. */
@@ -37,8 +37,9 @@ function tipFor(c: Checks): string {
 export default function S02CameraCheck() {
   const live = useLive();
   const liveChecks = useVision((st) => st.checks);
-  const CHECKS = live && liveChecks ? toRows(liveChecks) : DESIGN_CHECKS;
-  const TIP = live && liveChecks ? tipFor(liveChecks) : DESIGN_TIP;
+  const checks = liveChecks ?? evaluateChecks(null, null);
+  const CHECKS = live ? toRows(checks) : DESIGN_CHECKS;
+  const TIP = live ? tipFor(checks) : DESIGN_TIP;
   useAnnounceOnChange(`Spoken tip: ${TIP}`);
   return (
     <Screen
@@ -50,7 +51,12 @@ export default function S02CameraCheck() {
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }
-      hints={<Hint gesture="open" label="Hold still while we check" suggested />}
+      hints={
+        <>
+          <Hint gesture="open" label="Hold still while we check" suggested />
+          <Hint gesture="down" label="Back" />
+        </>
+      }
     >
       <div className={styles.body}>
         <CameraView

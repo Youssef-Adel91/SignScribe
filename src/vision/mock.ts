@@ -1,4 +1,5 @@
 import { makeFrame, makeHand, type Pose } from './testing/fixtures';
+import { LM } from './landmarks';
 import type { HandFrame } from './types';
 
 export interface MockHand {
@@ -13,6 +14,8 @@ export interface MockHand {
 export interface MockApi {
   /** Feed synthetic hands for `ms` of VIRTUAL time (33 ms per frame, no real waiting). */
   play(hands: MockHand[], ms: number): Promise<void>;
+  /** a pointing hand whose fingertip lands on viewport pixel (sx, sy) */
+  pointAt(sx: number, sy: number): MockHand;
   setLuma(v: number): void;
   now(): number;
 }
@@ -47,6 +50,16 @@ export function installMock(
         );
         await sleep(); // let React render the screen the last frame may have changed
       }
+    },
+    pointAt(sx, sy) {
+      const tip = makeHand('point', { size: 0.2 }).landmarks[LM.INDEX_TIP];
+      const m = 0.12; // same margin as cameraToScreen
+      const span = 1 - 2 * m;
+      const want = {
+        x: 1 - m - (span * sx) / window.innerWidth,
+        y: m + (span * sy) / window.innerHeight,
+      };
+      return { pose: 'point', cx: want.x - (tip.x - 0.5), cy: want.y - (tip.y - 0.5) };
     },
     setLuma,
     now: () => t,

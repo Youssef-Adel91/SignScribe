@@ -2,11 +2,11 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Chip } from '../ui/Chip';
 import { HoldRing } from '../ui/HoldRing';
 import { Icon } from '../ui/Icon';
-import { isLive, useVision, visionStore } from './store';
+import { isEnabled, useVision, visionStore } from './store';
 import type { GestureLabel } from './types';
 
-/** True once real input (camera, or the test hook) is running. Static design values are shown until then. */
-export const useLive = (): boolean => useVision(isLive);
+/** True whenever vision is switched on. Static design values only show with ?dev=1&vision=off. */
+export const useLive = (): boolean => useVision(isEnabled);
 
 /** Wraps design-only illustrations (a drawn hand, a fake ring). They disappear when the camera is live. */
 export function Demo({ children }: { children: ReactNode }) {

@@ -3,6 +3,20 @@ import type { Checks } from './checks';
 import type { VisionUI } from './controller';
 import type { HandFrame } from './types';
 
+const params = new URLSearchParams(window.location.search);
+const DEV = params.get('dev') === '1';
+/**
+ * How the app gets hand frames. Normal use: the real camera. With ?dev=1 only:
+ * vision=off  no camera at all (screenshots, layout work); vision=mock  frames come from a test hook.
+ */
+export const VISION_MODE: 'camera' | 'off' | 'mock' = !DEV
+  ? 'camera'
+  : params.get('vision') === 'off'
+    ? 'off'
+    : params.get('vision') === 'mock'
+      ? 'mock'
+      : 'camera';
+
 export type VisionStatus =
   | 'off' //       vision disabled (?vision=off, dev only)
   | 'asking' //    waiting for the browser's camera permission
@@ -31,7 +45,7 @@ export interface VisionState {
 }
 
 const initial: VisionState = {
-  status: 'off',
+  status: VISION_MODE === 'off' ? 'off' : 'asking',
   message: '',
   source: 'none',
   stream: null,
@@ -65,7 +79,8 @@ class VisionStore {
 
 export const visionStore = new VisionStore();
 
-export const isLive = (s: VisionState): boolean => s.status === 'running';
+/** vision is switched on (even if the camera or model is not working yet): design placeholders give way to real state */
+export const isEnabled = (s: VisionState): boolean => s.status !== 'off';
 
 /** Subscribe to a slice of the vision state. Re-renders only when the selected value changes. */
 export function useVision<T>(select: (s: VisionState) => T): T {
