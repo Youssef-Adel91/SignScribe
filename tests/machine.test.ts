@@ -34,7 +34,9 @@ describe('forward flow', () => {
   it('04 -> 05 on YES', () => expect(screen(send(at(4), { type: 'YES' }))).toBe(5));
   it('05 -> 06 on YES with spell', () => expect(screen(send(at(5), { type: 'YES' }))).toBe(6));
   it('05 -> 10 on YES with cards', () =>
-    expect(screen(send(at(5), { type: 'CHOOSE_METHOD', method: 'card' }, { type: 'YES' }))).toBe(10));
+    expect(screen(send(at(5), { type: 'CHOOSE_METHOD', method: 'card' }, { type: 'YES' }))).toBe(
+      10,
+    ));
   it('06 -> 07 when a letter candidate appears', () => expect(screen(at(7))).toBe(7));
   it('07 -> 06 when a letter is confirmed', () => {
     const s = send(at(7), { type: 'LETTER_CONFIRMED', letter: 'L' });
@@ -110,7 +112,8 @@ describe('spelling', () => {
     expect(screen(s)).toBe(11);
     expect(s.context.words).toEqual(['HELP']);
   });
-  it('YES with an empty message does nothing', () => expect(screen(send(at(6), { type: 'YES' }))).toBe(6));
+  it('YES with an empty message does nothing', () =>
+    expect(screen(send(at(6), { type: 'YES' }))).toBe(6));
 });
 
 describe('09 word suggestion', () => {
@@ -125,7 +128,8 @@ describe('09 word suggestion', () => {
     expect(s.context.words).toEqual(['HELO']);
     expect(screen(s)).toBe(6);
   });
-  it('NO keeps the original', () => expect(send(at(9), { type: 'NO' }).context.words).toEqual(['HELO']));
+  it('NO keeps the original', () =>
+    expect(send(at(9), { type: 'NO' }).context.words).toEqual(['HELO']));
   it('DELETE puts the word back and drops a letter', () => {
     const s = send(at(9), { type: 'DELETE' });
     expect(screen(s)).toBe(6);
@@ -153,13 +157,19 @@ describe('10 picture cards', () => {
     expect(s.context.cardCandidate).toBeNull();
   });
   it('YES with no words does nothing', () => {
-    const s = send(at(5), { type: 'CHOOSE_METHOD', method: 'card' }, { type: 'YES' }, { type: 'YES' });
+    const s = send(
+      at(5),
+      { type: 'CHOOSE_METHOD', method: 'card' },
+      { type: 'YES' },
+      { type: 'YES' },
+    );
     expect(screen(s)).toBe(10);
   });
 });
 
 describe('11 review', () => {
-  it('builds "Hello, I need a doctor."', () => expect(at(11).context.sentence).toBe('Hello, I need a doctor.'));
+  it('builds "Hello, I need a doctor."', () =>
+    expect(at(11).context.sentence).toBe('Hello, I need a doctor.'));
   it('DELETE drops the last word and rewrites the sentence', () => {
     const s = send(at(11), { type: 'DELETE' });
     expect(s.context.words).toEqual(['HELLO', 'I', 'NEED']);
@@ -179,7 +189,14 @@ describe('safety: nothing reaches 12 without YES on 11', () => {
   });
   it('NO / DELETE / HELP / HAND_LOST on 11 never reach 12', () => {
     const base = at(11);
-    for (const e of [{ type: 'NO' }, { type: 'DELETE' }, { type: 'HELP_TOGGLE' }, { type: 'HAND_LOST' }, { type: 'FINISH' }, { type: 'EDIT' }] as Ev[]) {
+    for (const e of [
+      { type: 'NO' },
+      { type: 'DELETE' },
+      { type: 'HELP_TOGGLE' },
+      { type: 'HAND_LOST' },
+      { type: 'FINISH' },
+      { type: 'EDIT' },
+    ] as Ev[]) {
       expect(screen(send(base, e))).not.toBe(12);
     }
   });
@@ -195,7 +212,11 @@ describe('safety: nothing reaches 12 without YES on 11', () => {
 describe('03 preferences', () => {
   it('stores hand, display; English alphabet only', () => {
     let s = at(3);
-    s = send(s, { type: 'CHOOSE_HAND', hand: 'left' }, { type: 'CHOOSE_DISPLAY', display: 'contrast' });
+    s = send(
+      s,
+      { type: 'CHOOSE_HAND', hand: 'left' },
+      { type: 'CHOOSE_DISPLAY', display: 'contrast' },
+    );
     expect(s.context.hand).toBe('left');
     expect(s.context.display).toBe('contrast');
     s = send(s, { type: 'CHOOSE_ALPHABET', alphabet: 'arabic' });
@@ -225,16 +246,23 @@ describe('08 hand lost overlay', () => {
   }
   it('ignores input while the hand is lost (message stays safe)', () => {
     const lost = at(8);
-    for (const e of [{ type: 'DELETE' }, { type: 'SPACE' }, { type: 'YES' }, { type: 'NO' }] as Ev[]) {
+    for (const e of [
+      { type: 'DELETE' },
+      { type: 'SPACE' },
+      { type: 'YES' },
+      { type: 'NO' },
+    ] as Ev[]) {
       const s = send(lost, e);
       expect(screen(s)).toBe(8);
       expect(s.context.word).toBe(lost.context.word);
     }
   });
   it('does not appear on screens that do not need a hand tracked for input', () => {
-    for (const n of [1, 2, 3, 4, 5, 11, 12]) expect(screen(send(at(n), { type: 'HAND_LOST' }))).toBe(n);
+    for (const n of [1, 2, 3, 4, 5, 11, 12])
+      expect(screen(send(at(n), { type: 'HAND_LOST' }))).toBe(n);
   });
-  it('HAND_BACK without a lost hand does nothing', () => expect(screen(send(at(6), { type: 'HAND_BACK' }))).toBe(6));
+  it('HAND_BACK without a lost hand does nothing', () =>
+    expect(screen(send(at(6), { type: 'HAND_BACK' }))).toBe(6));
 });
 
 describe('13 help overlay', () => {
@@ -260,32 +288,71 @@ describe('13 help overlay', () => {
     expect(screen(send(s, { type: 'HELP_TOGGLE' }))).toBe(8);
   });
   it('remembers a hand lost / back while help is open', () => {
-    const lostBehind = send(at(6), { type: 'HELP_TOGGLE' }, { type: 'HAND_LOST' }, { type: 'HELP_TOGGLE' });
+    const lostBehind = send(
+      at(6),
+      { type: 'HELP_TOGGLE' },
+      { type: 'HAND_LOST' },
+      { type: 'HELP_TOGGLE' },
+    );
     expect(screen(lostBehind)).toBe(8);
-    const backBehind = send(at(8), { type: 'HELP_TOGGLE' }, { type: 'HAND_BACK' }, { type: 'HELP_TOGGLE' });
+    const backBehind = send(
+      at(8),
+      { type: 'HELP_TOGGLE' },
+      { type: 'HAND_BACK' },
+      { type: 'HELP_TOGGLE' },
+    );
     expect(screen(backBehind)).toBe(6);
   });
 });
 
 describe('no dead ends', () => {
   const EVENTS: Ev[] = [
-    { type: 'WAKE' }, { type: 'CHECKS_PASSED' },
-    { type: 'CHOOSE_HAND', hand: 'left' }, { type: 'CHOOSE_ALPHABET', alphabet: 'english' },
-    { type: 'CHOOSE_DISPLAY', display: 'large' }, { type: 'CHOOSE_CONTEXT', place: 'Shop' },
-    { type: 'CHOOSE_METHOD', method: 'card' }, { type: 'CHOOSE_METHOD', method: 'spell' },
+    { type: 'WAKE' },
+    { type: 'CHECKS_PASSED' },
+    { type: 'CHOOSE_HAND', hand: 'left' },
+    { type: 'CHOOSE_ALPHABET', alphabet: 'english' },
+    { type: 'CHOOSE_DISPLAY', display: 'large' },
+    { type: 'CHOOSE_CONTEXT', place: 'Shop' },
+    { type: 'CHOOSE_METHOD', method: 'card' },
+    { type: 'CHOOSE_METHOD', method: 'spell' },
     { type: 'LETTER_CANDIDATE', candidate: { letter: 'H', confidence: 0.9, alternatives: [] } },
-    { type: 'LETTER_CONFIRMED', letter: 'H' }, { type: 'LETTER_CONFIRMED', letter: 'E' },
-    { type: 'LETTER_CONFIRMED', letter: 'O' }, { type: 'LETTER_CONFIRMED', letter: 'L' }, { type: 'CANDIDATE_LOST' },
-    { type: 'SPACE' }, { type: 'DELETE' }, { type: 'WORD_ACCEPT' }, { type: 'WORD_REJECT' },
+    { type: 'LETTER_CONFIRMED', letter: 'H' },
+    { type: 'LETTER_CONFIRMED', letter: 'E' },
+    { type: 'LETTER_CONFIRMED', letter: 'O' },
+    { type: 'LETTER_CONFIRMED', letter: 'L' },
+    { type: 'CANDIDATE_LOST' },
+    { type: 'SPACE' },
+    { type: 'DELETE' },
+    { type: 'WORD_ACCEPT' },
+    { type: 'WORD_REJECT' },
     { type: 'CARD_CANDIDATE', candidate: { word: 'DOCTOR', confidence: 0.9, trackId: 1 } },
-    { type: 'CARD_LOST' }, { type: 'CARD_ADDED', word: 'DOCTOR' }, { type: 'CARD_ADDED', word: 'HELP' },
-    { type: 'YES' }, { type: 'NO' }, { type: 'HAND_LOST' }, { type: 'HAND_BACK' },
-    { type: 'HELP_TOGGLE' }, { type: 'FINISH' }, { type: 'NEW_SENTENCE' }, { type: 'EDIT' },
+    { type: 'CARD_LOST' },
+    { type: 'CARD_ADDED', word: 'DOCTOR' },
+    { type: 'CARD_ADDED', word: 'HELP' },
+    { type: 'YES' },
+    { type: 'NO' },
+    { type: 'HAND_LOST' },
+    { type: 'HAND_BACK' },
+    { type: 'HELP_TOGGLE' },
+    { type: 'FINISH' },
+    { type: 'NEW_SENTENCE' },
+    { type: 'EDIT' },
   ];
   const key = (s: Snap) => {
     const c = s.context;
-    return JSON.stringify([s.value, c.overlay, c.overlayBefore, c.method, c.word.length > 0, Math.min(c.words.length, 2),
-      !!c.candidate, !!c.cardCandidate, !!c.suggestion, c.afterWord, c.sentenceConfirmed]);
+    return JSON.stringify([
+      s.value,
+      c.overlay,
+      c.overlayBefore,
+      c.method,
+      c.word.length > 0,
+      Math.min(c.words.length, 2),
+      !!c.candidate,
+      !!c.cardCandidate,
+      !!c.suggestion,
+      c.afterWord,
+      c.sentenceConfirmed,
+    ]);
   };
   const place = (s: Snap) => JSON.stringify([s.value, s.context.overlay]);
 
@@ -311,9 +378,12 @@ describe('no dead ends', () => {
     edges.set(k, out);
   }
 
-  it('explores a meaningful number of abstract states', () => expect(nodes.size).toBeGreaterThan(40));
+  it('explores a meaningful number of abstract states', () =>
+    expect(nodes.size).toBeGreaterThan(40));
   it('from every state some event leads to a different screen', () => {
-    const stuck = [...nodes.values()].filter((s) => !EVENTS.some((e) => place(send(s, e)) !== place(s)));
+    const stuck = [...nodes.values()].filter(
+      (s) => !EVENTS.some((e) => place(send(s, e)) !== place(s)),
+    );
     expect(stuck.map((s) => place(s))).toEqual([]);
   });
   it('from every state the welcome screen is reachable again', () => {
@@ -338,7 +408,8 @@ describe('no dead ends', () => {
       if (under(s) === 12) continue;
       for (const e of EVENTS) {
         const n = send(s, e);
-        if (under(n) === 12) expect([under(s), s.context.overlay, e.type]).toEqual([11, 'none', 'YES']);
+        if (under(n) === 12)
+          expect([under(s), s.context.overlay, e.type]).toEqual([11, 'none', 'YES']);
       }
     }
   });

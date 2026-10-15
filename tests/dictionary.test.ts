@@ -28,13 +28,16 @@ describe('closestMatch', () => {
     expect(closestMatch('DOCTOR', 'Clinic')).toBeNull();
     expect(closestMatch('AB', 'Clinic')).toBeNull();
   });
-  it('names with no near neighbour get no suggestion', () => expect(closestMatch('ZQXW', 'Clinic')).toBeNull());
+  it('names with no near neighbour get no suggestion', () =>
+    expect(closestMatch('ZQXW', 'Clinic')).toBeNull());
   it('isKnownWord is case-insensitive', () => expect(isKnownWord('doctor', 'Clinic')).toBe(true));
 });
 
 describe('offline sentence (phase 1 placeholder)', () => {
   it('Hello, I need a doctor.', () =>
-    expect(offlineSentence(['HELLO', 'I', 'NEED', 'DOCTOR'], 'Clinic', 0)).toBe('Hello, I need a doctor.'));
+    expect(offlineSentence(['HELLO', 'I', 'NEED', 'DOCTOR'], 'Clinic', 0)).toBe(
+      'Hello, I need a doctor.',
+    ));
   it('keeps every content word in every variant', () => {
     for (let a = 0; a < 3; a++) {
       const s = offlineSentence(['HELLO', 'I', 'NEED', 'DOCTOR'], 'Clinic', a).toLowerCase();

@@ -69,3 +69,6 @@ alt text, `prefers-reduced-motion`, focus styles; high-contrast/large-text as a 
 
 I will keep a table in `docs/DONE.md` with each checklist item, the evidence (test name / manual
 procedure) and a status of `verified here`, `needs your camera`, or `not met`.
+
+## Phase 1 status
+Done: state machine, 13 responsive screens, a11y tokens + tests, `?dev=1` simulator, screenshot comparison (`npm run compare`), old generated assets/tools deleted. See docs/DONE.md.
