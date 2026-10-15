@@ -85,7 +85,11 @@ export type Ev =
   | { type: 'NEW_SENTENCE' }
   | { type: 'EDIT' };
 
-export const DEFAULT_SETTINGS: Settings = { hand: 'right', alphabet: 'english', display: 'standard' };
+export const DEFAULT_SETTINGS: Settings = {
+  hand: 'right',
+  alphabet: 'english',
+  display: 'standard',
+};
 
 /* ---------- pure helpers ---------- */
 
@@ -134,7 +138,9 @@ export const signScribeMachine = setup({
     setDisplay: assign(({ event }) =>
       event.type === 'CHOOSE_DISPLAY' ? { display: event.display } : {},
     ),
-    setPlace: assign(({ event }) => (event.type === 'CHOOSE_CONTEXT' ? { place: event.place } : {})),
+    setPlace: assign(({ event }) =>
+      event.type === 'CHOOSE_CONTEXT' ? { place: event.place } : {},
+    ),
     setMethod: assign(({ event }) =>
       event.type === 'CHOOSE_METHOD' ? { method: event.method } : {},
     ),
@@ -311,12 +317,24 @@ export const signScribeMachine = setup({
         DELETE: { guard: 'idle', actions: 'deleteLast', target: '.ready' },
         SPACE: [
           { guard: and(['idle', 'wordEmpty']), target: '.ready', actions: 'clearCandidate' },
-          { guard: and(['idle', 'needsSuggestion']), target: 'wordSuggestion', actions: ['afterSpace', 'prepareSuggestion'] },
+          {
+            guard: and(['idle', 'needsSuggestion']),
+            target: 'wordSuggestion',
+            actions: ['afterSpace', 'prepareSuggestion'],
+          },
           { guard: 'idle', target: '.ready', actions: 'pushWord' },
         ],
         YES: [
-          { guard: and(['idle', 'needsSuggestion']), target: 'wordSuggestion', actions: ['afterDone', 'prepareSuggestion'] },
-          { guard: and(['idle', 'wordsAfterPush']), target: 'review', actions: ['pushWord', 'computeSentence'] },
+          {
+            guard: and(['idle', 'needsSuggestion']),
+            target: 'wordSuggestion',
+            actions: ['afterDone', 'prepareSuggestion'],
+          },
+          {
+            guard: and(['idle', 'wordsAfterPush']),
+            target: 'review',
+            actions: ['pushWord', 'computeSentence'],
+          },
         ],
       },
       states: {
@@ -343,19 +361,35 @@ export const signScribeMachine = setup({
           { guard: 'idle', actions: 'handLost' },
         ],
         WORD_ACCEPT: [
-          { guard: and(['idle', ({ context }) => context.afterWord === 'review']), target: 'review', actions: ['acceptSuggestion', 'computeSentence'] },
+          {
+            guard: and(['idle', ({ context }) => context.afterWord === 'review']),
+            target: 'review',
+            actions: ['acceptSuggestion', 'computeSentence'],
+          },
           { guard: 'idle', target: 'spell', actions: 'acceptSuggestion' },
         ],
         YES: [
-          { guard: and(['idle', ({ context }) => context.afterWord === 'review']), target: 'review', actions: ['acceptSuggestion', 'computeSentence'] },
+          {
+            guard: and(['idle', ({ context }) => context.afterWord === 'review']),
+            target: 'review',
+            actions: ['acceptSuggestion', 'computeSentence'],
+          },
           { guard: 'idle', target: 'spell', actions: 'acceptSuggestion' },
         ],
         WORD_REJECT: [
-          { guard: and(['idle', ({ context }) => context.afterWord === 'review']), target: 'review', actions: ['rejectSuggestion', 'computeSentence'] },
+          {
+            guard: and(['idle', ({ context }) => context.afterWord === 'review']),
+            target: 'review',
+            actions: ['rejectSuggestion', 'computeSentence'],
+          },
           { guard: 'idle', target: 'spell', actions: 'rejectSuggestion' },
         ],
         NO: [
-          { guard: and(['idle', ({ context }) => context.afterWord === 'review']), target: 'review', actions: ['rejectSuggestion', 'computeSentence'] },
+          {
+            guard: and(['idle', ({ context }) => context.afterWord === 'review']),
+            target: 'review',
+            actions: ['rejectSuggestion', 'computeSentence'],
+          },
           { guard: 'idle', target: 'spell', actions: 'rejectSuggestion' },
         ],
         DELETE: { guard: 'idle', target: 'spell', actions: 'reopenWord' },
@@ -411,21 +445,41 @@ export function screenOf(value: unknown, ctx: Pick<Ctx, 'overlay'>): number {
     return (value as { spell: string }).spell === 'recognizing' ? 7 : 6;
   }
   switch (value) {
-    case 'welcome': return 1;
-    case 'cameraCheck': return 2;
-    case 'preferences': return 3;
-    case 'context': return 4;
-    case 'method': return 5;
-    case 'wordSuggestion': return 9;
-    case 'cards': return 10;
-    case 'review': return 11;
-    case 'share': return 12;
-    default: return 1;
+    case 'welcome':
+      return 1;
+    case 'cameraCheck':
+      return 2;
+    case 'preferences':
+      return 3;
+    case 'context':
+      return 4;
+    case 'method':
+      return 5;
+    case 'wordSuggestion':
+      return 9;
+    case 'cards':
+      return 10;
+    case 'review':
+      return 11;
+    case 'share':
+      return 12;
+    default:
+      return 1;
   }
 }
 
 export const SCREEN_NAMES = [
-  'Welcome', 'Camera check', 'Preferences', 'Context', 'Method', 'Spell ready', 'Spell recognizing',
-  'Hand lost', 'Word suggestion', 'Picture card', 'Review sentence', 'Share', 'Gesture guide',
+  'Welcome',
+  'Camera check',
+  'Preferences',
+  'Context',
+  'Method',
+  'Spell ready',
+  'Spell recognizing',
+  'Hand lost',
+  'Word suggestion',
+  'Picture card',
+  'Review sentence',
+  'Share',
+  'Gesture guide',
 ] as const;
-
