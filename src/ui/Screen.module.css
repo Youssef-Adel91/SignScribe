@@ -1,0 +1,11 @@
+.screen {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100dvh;
+  background: var(--bg);
+}
+.main {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+}

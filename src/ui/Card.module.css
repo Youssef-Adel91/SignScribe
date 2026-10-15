@@ -1,0 +1,21 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-14);
+  width: 100%;
+  padding: var(--s-22) var(--s-24) var(--s-24);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.title {
+  font-size: var(--fs-16);
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  line-height: 1.2;
+}
+:global([data-display='contrast']) .title {
+  color: var(--muted);
+}

@@ -1,0 +1,117 @@
+/* Design tokens. Values mirror the Figma file at 1440x900 (u = 1px there) and scale with the window.
+   --u is a length (about 1px at 1440x900), clamped so a 1280x720 laptop and a 1920x1080 kiosk both work. */
+:root {
+  --u: clamp(0.8px, min(calc(100vw / 1440), calc(100vh / 900)), 1.4px);
+  --ts: 1; /* text scale: 1.25 when the user chose large text */
+
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #475569;
+  --muted-2: #64748b; /* 4.76:1 on white: placeholder text */
+  --line: #e2e8f0;
+  --line-2: #cbd5e1;
+  --line-3: #94a3b8;
+
+  --teal: #0f766e;
+  --teal-ink: #115e59;
+  --teal-bg: #ccfbf1;
+  --teal-wash: #f0fdfa;
+  --teal-soft: #5eead4;
+
+  --green-bg: #dcfce7;
+  --green-ink: #166534;
+  --green-dot: #16a34a; /* decorative dot only, never carries text */
+  --green-badge: #15803d; /* white text on it: 5.0:1 */
+
+  --amber-bg: #fef3c7;
+  --amber: #f59e0b;
+  --amber-ink: #92400e;
+  --amber-letter: #b45309; /* recognised letter on white: 5.0:1 */
+
+  --red: #dc2626;
+  --blue: #2563eb;
+  --blue-bg: #dbeafe;
+  --blue-ink: #1e3a8a;
+  --blue-track: #bfdbfe;
+
+  --cam: #1e293b;
+  --cam-deep: #0b1220;
+  --cam-person: #273449;
+  --cam-text: #cbd5e1; /* command zone text on the camera panel: 9.85:1 */
+  --cam-text-off: #94a3b8; /* idle command zone: 5.7:1 */
+  --cam-pill: rgba(11, 18, 32, 0.9);
+  --cam-line: rgba(255, 255, 255, 0.8);
+
+  --focus: #2563eb;
+  --radius-card: calc(var(--u) * 16);
+  --s-4: calc(var(--u) * 4);
+  --s-6: calc(var(--u) * 6);
+  --s-8: calc(var(--u) * 8);
+  --s-10: calc(var(--u) * 10);
+  --s-12: calc(var(--u) * 12);
+  --s-14: calc(var(--u) * 14);
+  --s-16: calc(var(--u) * 16);
+  --s-18: calc(var(--u) * 18);
+  --s-20: calc(var(--u) * 20);
+  --s-22: calc(var(--u) * 22);
+  --s-24: calc(var(--u) * 24);
+  --s-26: calc(var(--u) * 26);
+  --s-28: calc(var(--u) * 28);
+  --s-32: calc(var(--u) * 32);
+  --s-36: calc(var(--u) * 36);
+  --s-40: calc(var(--u) * 40);
+  --s-48: calc(var(--u) * 48);
+  --s-60: calc(var(--u) * 60);
+  --s-80: calc(var(--u) * 80);
+  --fs-14: max(14px, calc(var(--u) * 14 * var(--ts)));
+  --fs-16: max(16px, calc(var(--u) * 16 * var(--ts)));
+  --fs-17: max(16px, calc(var(--u) * 17 * var(--ts)));
+  --fs-18: max(16px, calc(var(--u) * 18 * var(--ts)));
+  --fs-19: max(16px, calc(var(--u) * 19 * var(--ts)));
+  --fs-20: max(16px, calc(var(--u) * 20 * var(--ts)));
+  --fs-22: max(16px, calc(var(--u) * 22 * var(--ts)));
+  --fs-24: max(16px, calc(var(--u) * 24 * var(--ts)));
+  --fs-26: max(16px, calc(var(--u) * 26 * var(--ts)));
+  --fs-28: max(16px, calc(var(--u) * 28 * var(--ts)));
+  --fs-30: max(16px, calc(var(--u) * 30 * var(--ts)));
+  --fs-32: max(16px, calc(var(--u) * 32 * var(--ts)));
+  --fs-34: max(16px, calc(var(--u) * 34 * var(--ts)));
+  --fs-40: max(16px, calc(var(--u) * 40 * var(--ts)));
+  --fs-56: max(16px, calc(var(--u) * 56 * var(--ts)));
+  --fs-60: max(16px, calc(var(--u) * 60 * var(--ts)));
+  --fs-92: max(16px, calc(var(--u) * 92 * var(--ts)));
+}
+
+/* Display choices made on screen 03 */
+:root[data-display='large'],
+:root[data-display='contrast'] {
+  --ts: 1.25;
+}
+:root[data-display='contrast'] {
+  --bg: #ffffff;
+  --ink: #000000;
+  --ink-2: #0f172a;
+  --muted: #1e293b;
+  --muted-2: #334155;
+  --line: #475569;
+  --line-2: #334155;
+  --line-3: #1e293b;
+  --teal: #0b5953;
+  --teal-ink: #083d39;
+  --teal-bg: #b6f3e8;
+  --green-ink: #0b3d1d;
+  --green-badge: #0f5f2c;
+  --amber-ink: #5c2a07;
+  --amber-letter: #7c2d12;
+  --cam-text: #ffffff;
+  --cam-text-off: #cbd5e1;
+  --focus: #1d4ed8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion: 0;
+  }
+}
