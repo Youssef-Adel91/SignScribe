@@ -1,0 +1,43 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-height: calc(var(--u) * 150);
+  width: 100%;
+  flex-wrap: wrap;
+}
+.letters {
+  font-size: var(--fs-60);
+  font-weight: 700;
+  letter-spacing: 6px;
+  line-height: 1.3;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.flagged {
+  color: var(--red);
+  text-decoration: underline;
+  text-decoration-thickness: 6px;
+  text-underline-offset: 10px;
+}
+/* amber letter on white: #b45309 = 5.0:1; underline is the second cue */
+.candidate {
+  color: var(--amber-letter);
+  text-decoration: underline;
+  text-decoration-thickness: 6px;
+  text-underline-offset: 12px;
+}
+.caret {
+  width: 4px;
+  height: calc(var(--u) * 56);
+  background: var(--teal);
+  margin-left: 6px;
+  flex: none;
+}
+.placeholder {
+  font-size: var(--fs-26);
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--muted-2);
+  margin-left: 6px;
+}

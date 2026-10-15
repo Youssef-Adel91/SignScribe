@@ -1,54 +1,82 @@
-import { Asset, CamLabel, Card, CommandZone, Hint, SigningArea } from '../ui/parts';
-import { BuilderFrame } from '../ui/builder';
-import { useNav } from '../nav';
-import { useSession } from '../session';
+import { CamPill, CameraView } from '../ui/CameraView';
+import { Card } from '../ui/Card';
+import { Chip } from '../ui/Chip';
+import { CommandZone, SigningArea } from '../ui/CommandZone';
+import { Hint } from '../ui/HintBar';
+import { HoldRing } from '../ui/HoldRing';
+import { Icon } from '../ui/Icon';
+import { Message } from '../ui/Message';
+import { BuilderBody } from '../ui/Builder';
+import { Screen } from '../ui/Screen';
+import { useAnnounceOnChange } from '../output/announcer';
+import { useCtx } from '../state/MachineProvider';
+import styles from './S09WordSuggestion.module.css';
 
 export default function S09WordSuggestion() {
-  const nav = useNav();
-  const { place } = useSession();
+  const { hand, place, suggestion } = useCtx();
+  const original = suggestion?.original ?? '';
+  const match = suggestion?.match ?? '';
+  useAnnounceOnChange(
+    match ? `Did you mean ${match}? ${original} is not in the ${place} word list.` : null,
+  );
   return (
-    <BuilderFrame
-      name="09 Word suggestion"
-      chipKind="green"
-      chipText="Hand detected"
-      hints={[['3:1562', 'Yes', nav.next, true], ['3:1594', 'No, keep my word', nav.back], ['3:1626', 'Delete letters', nav.back]]}
-      cam={
+    <Screen
+      steps={['done', 'active', 'todo', 'todo']}
+      chips={
         <>
-          <CommandZone cls="opacity-95" highlightDone />
-          <SigningArea />
-          <div className="absolute left-[182px] size-[96px] top-[300px]">
-            <Asset id="3:1474" className="absolute inset-0" />
-            <div className="absolute content-stretch flex inset-0 items-center justify-center">
-              <Asset id="3:1478" className="relative shrink-0 size-[38px]" />
-            </div>
-          </div>
-          <CamLabel cls="bg-[rgba(11,18,32,0.82)] left-[250px] top-[490px]">Thumbs up in the command zone = Yes</CamLabel>
+          <Chip kind="gray">Context: {place}</Chip>
+          <Chip kind="green">Hand detected</Chip>
+          <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }
-      side={
+      hints={
         <>
-          <Card title="YOUR WORD">
-            <div className="content-stretch flex h-[100px] items-center relative shrink-0 w-full">
-              <div className="content-stretch flex flex-col gap-[2px] items-start relative shrink-0">
-                <p className="[word-break:break-word] font-['Inter:Bold'] font-bold leading-[78px] not-italic relative shrink-0 text-[#dc2626] text-[60px] tracking-[6px] whitespace-nowrap">HELO</p>
-                <div className="bg-[#dc2626] h-[6px] relative shrink-0 w-[190px]" />
+          <Hint gesture="up" label="Yes" suggested />
+          <Hint gesture="down" label="No, keep my word" />
+          <Hint gesture="fist" label="Delete letters" />
+        </>
+      }
+    >
+      <BuilderBody
+        title="Did you mean this word?"
+        camera={
+          <CameraView label="Camera preview. Thumbs up in the command zone means yes.">
+            <CommandZone signingHand={hand} active="Done" />
+            <SigningArea signingHand={hand} />
+            <div className={styles.ring}>
+              <HoldRing progress={0.75} size="100%" label="Hold to confirm yes">
+                <Icon name="check" size="40%" strokeWidth={3.2} />
+              </HoldRing>
+            </div>
+            <CamPill style={{ left: '56%', bottom: '11.3%', top: 'auto' }}>
+              Thumbs up in the command zone = Yes
+            </CamPill>
+          </CameraView>
+        }
+        side={
+          <>
+            <Card title="Your word">
+              <div className={styles.word}>
+                <Message text={original} flagged />
               </div>
-            </div>
-          </Card>
-          <div className="bg-[#f0fdfa] border-3 border-[#0f766e] border-solid content-stretch flex flex-col gap-[12px] items-start pb-[24px] pt-[22px] px-[24px] relative rounded-[16px] shrink-0 w-full">
-            <div className="content-stretch flex gap-[8px] items-center relative shrink-0">
-              <Asset id="3:1490" className="relative shrink-0 size-[22px]" />
-              <p className="[word-break:break-word] font-['Inter:Bold'] font-bold leading-[17px] not-italic relative shrink-0 text-[#115e59] text-[14px] tracking-[0.8px] whitespace-nowrap">DID YOU MEAN</p>
-            </div>
-            <p className="[word-break:break-word] font-['Inter:Bold'] font-bold leading-[78px] not-italic relative shrink-0 text-[#115e59] text-[60px] tracking-[6px] whitespace-nowrap">HELLO</p>
-            <p className="[word-break:break-word] font-['Inter:Medium'] font-medium leading-[22px] min-w-full not-italic relative shrink-0 text-[#334155] text-[17px] w-[min-content]">"HELO" is not in the {place} word list. "HELLO" is the closest match.</p>
-            <div className="content-stretch flex gap-[12px] items-center relative shrink-0">
-              <Hint icon="3:1497" label="Yes, use HELLO" active onClick={nav.next} />
-              <Hint icon="3:1529" label="No, keep HELO" onClick={nav.back} />
-            </div>
-          </div>
-        </>
-      }
-    />
+            </Card>
+            <section className={styles.suggest} aria-label="Suggestion">
+              <p className={styles.kicker}>
+                <Icon name="sparkle" size="var(--s-22)" />
+                DID YOU MEAN
+              </p>
+              <p className={styles.match}>{match}</p>
+              <p className={styles.why}>
+                "{original}" is not in the {place} word list. "{match}" is the closest match.
+              </p>
+              <ul className={styles.hints}>
+                <Hint gesture="up" label={`Yes, use ${match}`} suggested />
+                <Hint gesture="down" label={`No, keep ${original}`} />
+              </ul>
+            </section>
+          </>
+        }
+      />
+    </Screen>
   );
 }

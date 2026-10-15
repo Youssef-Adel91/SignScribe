@@ -1,0 +1,18 @@
+.hand {
+  height: var(--h);
+  width: calc(var(--h) / 1.3);
+  flex: none;
+  overflow: visible;
+}
+.line {
+  fill: none;
+  stroke: var(--stroke);
+  stroke-width: max(3px, calc(var(--h) * 0.028));
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.dot {
+  fill: var(--dot);
+  r: max(2.6px, calc(var(--h) * 0.022));
+}
