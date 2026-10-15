@@ -1,0 +1,58 @@
+.ring {
+  position: absolute;
+  left: 22.75%;
+  top: 50%;
+  width: 12%;
+  aspect-ratio: 1;
+  z-index: 2;
+}
+.word {
+  width: 100%;
+  min-height: calc(var(--u) * 100);
+  display: flex;
+  align-items: center;
+}
+.word > div {
+  min-height: 0;
+}
+.suggest {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-12);
+  padding: var(--s-22) var(--s-24) var(--s-24);
+  background: var(--teal-wash);
+  border: 3px solid var(--teal);
+  border-radius: var(--s-16);
+}
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  font-size: var(--fs-16);
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  line-height: 1.2;
+  color: var(--teal-ink);
+}
+.match {
+  font-size: var(--fs-60);
+  font-weight: 700;
+  letter-spacing: 6px;
+  line-height: 1.3;
+  color: var(--teal-ink);
+  overflow-wrap: anywhere;
+}
+.why {
+  font-size: var(--fs-17);
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+.hints {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-12);
+  margin-top: var(--s-6);
+  padding-top: var(--s-10);
+}

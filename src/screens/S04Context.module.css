@@ -1,0 +1,42 @@
+.row {
+  margin-top: var(--s-20);
+  gap: var(--s-24);
+}
+.tile {
+  width: calc(var(--u) * 300);
+  height: calc(var(--u) * 300);
+  gap: var(--s-10);
+}
+.disc {
+  display: grid;
+  place-items: center;
+  width: calc(var(--u) * 84);
+  height: calc(var(--u) * 84);
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: var(--teal);
+}
+.discOn {
+  background: var(--teal);
+  color: #fff;
+}
+.pointer {
+  position: absolute;
+  left: 50%;
+  top: 63.3%;
+  width: calc(var(--u) * 76);
+  height: calc(var(--u) * 76);
+}
+.dot {
+  width: 29%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--blue);
+  border: 3px solid #fff;
+}
+@media (max-width: 1100px) {
+  .tile {
+    width: calc(var(--u) * 220);
+    height: calc(var(--u) * 240);
+  }
+}

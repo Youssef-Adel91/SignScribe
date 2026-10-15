@@ -1,0 +1,15 @@
+.hand {
+  width: calc(var(--u) * 340);
+  height: calc(var(--u) * 170);
+  gap: var(--s-8);
+}
+.small {
+  width: calc(var(--u) * 260);
+  height: calc(var(--u) * 100);
+}
+@media (max-width: 1100px) {
+  .hand,
+  .small {
+    width: calc(var(--u) * 240);
+  }
+}
