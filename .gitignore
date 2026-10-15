@@ -15,3 +15,4 @@ public/models/*.cache
 tools/**/__pycache__
 tools/train/data/
 tools/cards/dataset/
+tools/compare/out/
