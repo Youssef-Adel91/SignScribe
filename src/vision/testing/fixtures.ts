@@ -9,14 +9,7 @@ import type { HandFrame, HandObs, Landmark } from '../types';
  * Hand frame: wrist at the origin, +y along the fingers, palm length (wrist to middle knuckle) = 1.
  */
 export type Pose =
-  | 'open'
-  | 'fist'
-  | 'thumbsUp'
-  | 'thumbsDown'
-  | 'point'
-  | 'peace'
-  | 'fistThumbSide'
-  | 'halfCurl';
+  'open' | 'fist' | 'thumbsUp' | 'thumbsDown' | 'point' | 'peace' | 'fistThumbSide' | 'halfCurl';
 
 interface Opts {
   /** centre of the palm in the un-mirrored frame, 0..1 */

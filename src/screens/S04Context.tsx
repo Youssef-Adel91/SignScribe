@@ -8,6 +8,8 @@ import { useCtx } from '../state/MachineProvider';
 import type { Place } from '../nlp/words';
 import common from './common.module.css';
 import styles from './S04Context.module.css';
+import { HandChip } from '../vision/bits';
+import { Demo } from '../vision/bits';
 
 const PLACES: { key: Place; sub: string; icon: IconName }[] = [
   { key: 'Clinic', sub: 'doctor · pain · medicine', icon: 'cross' },
@@ -24,7 +26,7 @@ export default function S04Context() {
       chips={
         <>
           <Chip kind="green">Camera on</Chip>
-          <Chip kind="green">Hand detected</Chip>
+          <HandChip />
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }
@@ -52,16 +54,19 @@ export default function S04Context() {
                 sub={p.sub}
                 size="md"
                 className={styles.tile}
+                dwell={{ type: 'CHOOSE_CONTEXT', place: p.key }}
               >
                 <span className={`${styles.disc} ${on ? styles.discOn : ''}`}>
                   <Icon name={p.icon} size="var(--s-44)" />
                 </span>
                 {on && (
-                  <span className={styles.pointer}>
-                    <HoldRing progress={0.7} size="100%" tone="light" label="Hold to choose">
-                      <span className={styles.dot} />
-                    </HoldRing>
-                  </span>
+                  <Demo>
+                    <span className={styles.pointer}>
+                      <HoldRing progress={0.7} size="100%" tone="light" label="Hold to choose">
+                        <span className={styles.dot} />
+                      </HoldRing>
+                    </span>
+                  </Demo>
                 )}
               </Tile>
             );

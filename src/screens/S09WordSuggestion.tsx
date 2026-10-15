@@ -3,7 +3,6 @@ import { Card } from '../ui/Card';
 import { Chip } from '../ui/Chip';
 import { CommandZone, SigningArea } from '../ui/CommandZone';
 import { Hint } from '../ui/HintBar';
-import { HoldRing } from '../ui/HoldRing';
 import { Icon } from '../ui/Icon';
 import { Message } from '../ui/Message';
 import { BuilderBody } from '../ui/Builder';
@@ -11,6 +10,8 @@ import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
 import { useCtx } from '../state/MachineProvider';
 import styles from './S09WordSuggestion.module.css';
+import { HandChip } from '../vision/bits';
+import { CommandRing } from '../vision/bits';
 
 export default function S09WordSuggestion() {
   const { hand, place, suggestion } = useCtx();
@@ -25,7 +26,7 @@ export default function S09WordSuggestion() {
       chips={
         <>
           <Chip kind="gray">Context: {place}</Chip>
-          <Chip kind="green">Hand detected</Chip>
+          <HandChip />
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }
@@ -44,9 +45,7 @@ export default function S09WordSuggestion() {
             <CommandZone signingHand={hand} active="Done" />
             <SigningArea signingHand={hand} />
             <div className={styles.ring}>
-              <HoldRing progress={0.75} size="100%" label="Hold to confirm yes">
-                <Icon name="check" size="40%" strokeWidth={3.2} />
-              </HoldRing>
+              <CommandRing label="up" fallback={0.75} />
             </div>
             <CamPill style={{ left: '56%', bottom: '11.3%', top: 'auto' }}>
               Thumbs up in the command zone = Yes

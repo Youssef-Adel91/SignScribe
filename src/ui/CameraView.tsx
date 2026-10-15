@@ -1,4 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { LiveVideo, SkeletonCanvas } from '../vision/bits';
+import { useVision } from '../vision/store';
 import styles from './CameraView.module.css';
 
 interface Props {
@@ -17,18 +19,23 @@ interface Props {
  * Overlay children are positioned with percentages / cqw so they follow the panel size.
  */
 export function CameraView({ label, children, className = '', style, hideChip }: Props) {
+  const hasVideo = useVision((st) => st.stream !== null);
   return (
     <section className={`${styles.camera} ${className}`} style={style} aria-label={label}>
-      <svg
-        className={styles.person}
-        viewBox="0 0 800 600"
-        preserveAspectRatio="xMidYMax slice"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <circle cx="400" cy="162" r="63" />
-        <path d="M160 600C160 372 280 300 400 300C520 300 640 372 640 600H160Z" />
-      </svg>
+      {!hasVideo && (
+        <svg
+          className={styles.person}
+          viewBox="0 0 800 600"
+          preserveAspectRatio="xMidYMax slice"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <circle cx="400" cy="162" r="63" />
+          <path d="M160 600C160 372 280 300 400 300C520 300 640 372 640 600H160Z" />
+        </svg>
+      )}
+      <LiveVideo className={styles.video} />
+      <SkeletonCanvas className={styles.skeleton} />
       {!hideChip && (
         <p className={styles.chip}>
           <span className={styles.dot} aria-hidden="true" />

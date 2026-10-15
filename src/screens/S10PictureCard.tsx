@@ -5,13 +5,14 @@ import { CommandZone } from '../ui/CommandZone';
 import { HandGlyph } from '../ui/HandGlyph';
 import { Hint } from '../ui/HintBar';
 import { HoldRing } from '../ui/HoldRing';
-import { Icon } from '../ui/Icon';
+import { Icon, type IconName } from '../ui/Icon';
 import { BuilderBody } from '../ui/Builder';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
 import { useCtx } from '../state/MachineProvider';
 import { CARD_PACKS, cardFor } from './cardPack';
 import styles from './S10PictureCard.module.css';
+import { useDwellTarget } from '../vision/targets';
 
 const pretty = (w: string) => (w === 'I' ? 'I' : w.toLowerCase());
 /** "I" + "need" read as one phrase chip, like the design. */
@@ -24,6 +25,17 @@ function group(words: string[]): string[] {
     } else out.push(pretty(words[i]));
   }
   return out;
+}
+
+/** A card in the pack. Pointing at it and holding adds it, for people who cannot hold a printed card. */
+function PackCell({ word, icon, on }: { word: string; icon: IconName; on: boolean }) {
+  const ref = useDwellTarget({ type: 'CARD_ADDED', word: word.toUpperCase() });
+  return (
+    <li ref={ref} className={`${styles.cell} ${on ? styles.on : ''}`}>
+      <Icon name={icon} size="var(--s-32)" strokeWidth={3} />
+      <span>{word}</span>
+    </li>
+  );
 }
 
 export default function S10PictureCard() {
@@ -121,15 +133,14 @@ export default function S10PictureCard() {
             </Card>
             <Card title={`${place} cards`}>
               <ul className={styles.grid}>
-                {pack.map((c) => {
-                  const on = cand?.word.toLowerCase() === c.word.toLowerCase();
-                  return (
-                    <li key={c.word} className={`${styles.cell} ${on ? styles.on : ''}`}>
-                      <Icon name={c.icon} size="var(--s-32)" strokeWidth={3} />
-                      <span>{c.word}</span>
-                    </li>
-                  );
-                })}
+                {pack.map((c) => (
+                  <PackCell
+                    key={c.word}
+                    word={c.word}
+                    icon={c.icon}
+                    on={cand?.word.toLowerCase() === c.word.toLowerCase()}
+                  />
+                ))}
               </ul>
             </Card>
           </>

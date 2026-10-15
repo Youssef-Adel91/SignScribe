@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm run lint && npm run test && vite build",
-    "compare": "node tools/compare/screens.mjs"
+    "compare": "node tools/compare/screens.mjs",
+    "models": "node tools/get-models.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.1.0",

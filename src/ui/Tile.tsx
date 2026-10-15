@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import type { Ev } from '../state/machine';
+import { useDwellTarget } from '../vision/targets';
 import { Icon } from './Icon';
 import styles from './Tile.module.css';
 
@@ -12,6 +14,8 @@ interface Props {
   className?: string;
   /** big title, used for the main choice tiles */
   size?: 'sm' | 'md' | 'lg';
+  /** the machine event sent when this tile is chosen by point-and-hold */
+  dwell?: Ev;
 }
 
 /** A choice. It is chosen by pointing and holding (the camera), so it has no click handler. */
@@ -23,9 +27,12 @@ export function Tile({
   children,
   className = '',
   size = 'md',
+  dwell,
 }: Props) {
+  const ref = useDwellTarget(unavailable ? null : dwell);
   return (
     <li
+      ref={ref}
       className={`${styles.tile} ${styles[size]} ${selected ? styles.selected : ''} ${unavailable ? styles.off : ''} ${className}`}
     >
       {children}

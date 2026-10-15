@@ -7,6 +7,7 @@ import { useCtx } from '../state/MachineProvider';
 import { AVAILABLE_ALPHABETS, type Alphabet, type Display } from '../state/machine';
 import common from './common.module.css';
 import styles from './S03Preferences.module.css';
+import { HandChip } from '../vision/bits';
 
 const ALPHABETS: { key: Alphabet; title: string; sub: string }[] = [
   { key: 'arabic', title: 'Arabic', sub: 'ArSL letters' },
@@ -27,7 +28,7 @@ export default function S03Preferences() {
       chips={
         <>
           <Chip kind="green">Camera on</Chip>
-          <Chip kind="green">Hand detected</Chip>
+          <HandChip />
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }
@@ -49,7 +50,13 @@ export default function S03Preferences() {
           Which hand do you sign with?
         </h2>
         <ul className={common.row} aria-labelledby="q-hand">
-          <Tile selected={hand === 'left'} title="Left hand" size="sm" className={styles.hand}>
+          <Tile
+            selected={hand === 'left'}
+            title="Left hand"
+            size="sm"
+            className={styles.hand}
+            dwell={{ type: 'CHOOSE_HAND', hand: 'left' }}
+          >
             <HandGlyph
               gesture="openLeft"
               height="calc(var(--u) * 110)"
@@ -57,7 +64,13 @@ export default function S03Preferences() {
               label=""
             />
           </Tile>
-          <Tile selected={hand === 'right'} title="Right hand" size="sm" className={styles.hand}>
+          <Tile
+            selected={hand === 'right'}
+            title="Right hand"
+            size="sm"
+            className={styles.hand}
+            dwell={{ type: 'CHOOSE_HAND', hand: 'right' }}
+          >
             <HandGlyph
               gesture="open"
               height="calc(var(--u) * 110)"
@@ -79,6 +92,7 @@ export default function S03Preferences() {
               title={a.title}
               sub={a.sub}
               className={styles.small}
+              dwell={{ type: 'CHOOSE_ALPHABET', alphabet: a.key }}
             />
           ))}
         </ul>
@@ -94,6 +108,7 @@ export default function S03Preferences() {
               title={d.title}
               sub={d.sub}
               className={styles.small}
+              dwell={{ type: 'CHOOSE_DISPLAY', display: d.key }}
             />
           ))}
         </ul>

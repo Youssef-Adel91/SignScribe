@@ -8,32 +8,41 @@ import { Screen } from '../ui/Screen';
 import { useCtx } from '../state/MachineProvider';
 import common from './common.module.css';
 import styles from './S05Method.module.css';
+import { HandChip } from '../vision/bits';
+import { Demo } from '../vision/bits';
+import { useDwellTarget } from '../vision/targets';
+import type { Method } from '../state/machine';
 
 function Option({
+  method,
   selected,
   art,
   title,
   text,
   pill,
 }: {
+  method: Method;
   selected: boolean;
   art: ReactNode;
   title: string;
   text: string;
   pill: string;
 }) {
+  const ref = useDwellTarget({ type: 'CHOOSE_METHOD', method });
   return (
-    <li className={`${styles.card} ${selected ? styles.selected : ''}`}>
+    <li ref={ref} className={`${styles.card} ${selected ? styles.selected : ''}`}>
       <div className={styles.art}>{art}</div>
       <h2 className={styles.title}>{title}</h2>
       <p className={styles.text}>{text}</p>
       <p className={styles.pill}>{pill}</p>
       {selected && (
-        <span className={styles.pointer}>
-          <HoldRing progress={0.7} size="100%" tone="light" label="Hold to choose">
-            <span className={styles.dot} />
-          </HoldRing>
-        </span>
+        <Demo>
+          <span className={styles.pointer}>
+            <HoldRing progress={0.7} size="100%" tone="light" label="Hold to choose">
+              <span className={styles.dot} />
+            </HoldRing>
+          </span>
+        </Demo>
       )}
       <span className="sr-only">{selected ? 'Selected' : ''}</span>
     </li>
@@ -48,7 +57,7 @@ export default function S05Method() {
       chips={
         <>
           <Chip kind="gray">Context: {place}</Chip>
-          <Chip kind="green">Hand detected</Chip>
+          <HandChip />
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }
@@ -67,6 +76,7 @@ export default function S05Method() {
         </p>
         <ul className={styles.options} aria-label="Ways to build a message">
           <Option
+            method="spell"
             selected={method === 'spell'}
             art={
               <HandGlyph
@@ -81,6 +91,7 @@ export default function S05Method() {
             pill="Best for names and new words"
           />
           <Option
+            method="card"
             selected={method === 'card'}
             art={
               <div className={styles.cardArt}>

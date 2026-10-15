@@ -56,3 +56,13 @@ h3 {
     transition: none !important;
   }
 }
+
+/* design-only illustrations are replaced by the real camera once it is running */
+:root[data-live='1'] [data-demo] {
+  display: none !important;
+}
+/* the choice the pointer is holding on */
+[data-dwell][data-hot='true'] {
+  outline: 4px solid var(--teal);
+  outline-offset: 4px;
+}

@@ -1,6 +1,7 @@
 import { HandGlyph, type Gesture } from './HandGlyph';
 import styles from './CommandZone.module.css';
 import type { Hand } from '../state/machine';
+import { useActiveCommand } from '../vision/bits';
 
 const ITEMS: { gesture: Gesture; label: string }[] = [
   { gesture: 'open', label: 'Space' },
@@ -21,8 +22,9 @@ interface Props {
   active?: 'Space' | 'Delete' | 'Done' | 'Cancel';
 }
 
-export function CommandZone({ signingHand, idle, active }: Props) {
+export function CommandZone({ signingHand, idle, active: designActive }: Props) {
   const side = zoneSide(signingHand);
+  const active = useActiveCommand(designActive);
   return (
     <section
       className={`${styles.zone} ${side === 'left' ? styles.left : styles.right} ${idle ? styles.idle : ''}`}

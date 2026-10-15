@@ -11,7 +11,7 @@ coverage
 playwright-report
 test-results
 # large local model caches (see README for download)
-public/models/*.cache
+public/models/
 tools/**/__pycache__
 tools/train/data/
 tools/cards/dataset/

@@ -7,11 +7,18 @@ import { Icon } from '../ui/Icon';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
 import styles from './S01Welcome.module.css';
+import { Demo, useLive } from '../vision/bits';
+import { useVision } from '../vision/store';
 
 const CAPTION = 'Hand detected. Keep holding…';
 
 export default function S01Welcome() {
-  useAnnounceOnChange(CAPTION);
+  const live = useLive();
+  const wake = useVision((s) => s.ui?.wake ?? 0);
+  const hands = useVision((s) => s.ui?.hands ?? 0);
+  const caption =
+    !live || wake > 0 ? CAPTION : hands > 0 ? 'Open your hand fully' : 'Raise your open hand';
+  useAnnounceOnChange(wake > 0 || !live ? CAPTION : null);
   return (
     <Screen
       chips={
@@ -52,18 +59,22 @@ export default function S01Welcome() {
           </p>
         </div>
         <CameraView label="Camera preview. Raise an open hand to start." className={styles.cam}>
-          <div className={styles.ring}>
-            <HoldRing progress={0.7} size="100%" label="Wake gesture hold" />
-          </div>
-          <HandGlyph
-            gesture="open"
-            height="41.2cqw"
-            stroke="var(--teal-soft)"
-            dot="#fff"
-            label="Open hand detected"
-            className={styles.hand}
-          />
-          <CamPill style={{ left: '52%', top: 'auto', bottom: '12.5%' }}>{CAPTION}</CamPill>
+          {(!live || wake > 0) && (
+            <div className={styles.ring}>
+              <HoldRing progress={live ? wake : 0.7} size="100%" label="Wake gesture hold" />
+            </div>
+          )}
+          <Demo>
+            <HandGlyph
+              gesture="open"
+              height="41.2cqw"
+              stroke="var(--teal-soft)"
+              dot="#fff"
+              label="Open hand detected"
+              className={styles.hand}
+            />
+          </Demo>
+          <CamPill style={{ left: '52%', top: 'auto', bottom: '12.5%' }}>{caption}</CamPill>
         </CameraView>
       </div>
     </Screen>

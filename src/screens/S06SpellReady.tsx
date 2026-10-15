@@ -10,6 +10,7 @@ import { BuilderBody } from '../ui/Builder';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
 import { useCtx } from '../state/MachineProvider';
+import { HandChip } from '../vision/bits';
 
 export default function S06SpellReady() {
   const { hand, place, words, word } = useCtx();
@@ -22,7 +23,7 @@ export default function S06SpellReady() {
       chips={
         <>
           <Chip kind="gray">Context: {place}</Chip>
-          <Chip kind="amber">Waiting for a hand</Chip>
+          <HandChip idle />
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }

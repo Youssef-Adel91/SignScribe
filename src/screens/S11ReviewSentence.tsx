@@ -3,13 +3,35 @@ import { Card } from '../ui/Card';
 import { Chip } from '../ui/Chip';
 import { HandGlyph } from '../ui/HandGlyph';
 import { Hint } from '../ui/HintBar';
-import { HoldRing } from '../ui/HoldRing';
 import { Icon } from '../ui/Icon';
 import { InfoList, InfoRow } from '../ui/InfoRow';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
 import { useCtx } from '../state/MachineProvider';
 import styles from './S11ReviewSentence.module.css';
+import { HandChip } from '../vision/bits';
+import type { ReactNode } from 'react';
+import type { Ev } from '../state/machine';
+import { CommandRing, Demo } from '../vision/bits';
+import { useDwellTarget } from '../vision/targets';
+
+/** One of the two answer buttons: chosen by point-and-hold, like thumbs up / thumbs down. */
+function Action({
+  className,
+  event,
+  children,
+}: {
+  className: string;
+  event: Ev;
+  children: ReactNode;
+}) {
+  const ref = useDwellTarget(event);
+  return (
+    <li ref={ref} className={className}>
+      {children}
+    </li>
+  );
+}
 
 export default function S11ReviewSentence() {
   const { place, words, sentence } = useCtx();
@@ -24,7 +46,7 @@ export default function S11ReviewSentence() {
       chips={
         <>
           <Chip kind="gray">Context: {place}</Chip>
-          <Chip kind="green">Hand detected</Chip>
+          <HandChip />
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }
@@ -65,7 +87,7 @@ export default function S11ReviewSentence() {
               Nothing is shown to the other person until you say yes.
             </p>
             <ul className={styles.actions}>
-              <li className={`${styles.action} ${styles.yes}`}>
+              <Action className={`${styles.action} ${styles.yes}`} event={{ type: 'YES' }}>
                 <HandGlyph
                   gesture="up"
                   height="max(40px, calc(var(--u) * 52))"
@@ -73,8 +95,8 @@ export default function S11ReviewSentence() {
                   label=""
                 />
                 Yes, use it
-              </li>
-              <li className={`${styles.action} ${styles.no}`}>
+              </Action>
+              <Action className={`${styles.action} ${styles.no}`} event={{ type: 'NO' }}>
                 <HandGlyph
                   gesture="down"
                   height="max(40px, calc(var(--u) * 52))"
@@ -82,25 +104,25 @@ export default function S11ReviewSentence() {
                   label=""
                 />
                 Try another
-              </li>
+              </Action>
             </ul>
           </section>
         </div>
         <div className={styles.side}>
           <div className={styles.cam}>
             <CameraView label="Camera preview. Thumbs up uses the sentence, thumbs down tries another.">
-              <HandGlyph
-                gesture="up"
-                height="22cqw"
-                stroke="var(--teal-soft)"
-                dot="#fff"
-                label="Thumbs up detected"
-                className={styles.hand}
-              />
+              <Demo>
+                <HandGlyph
+                  gesture="up"
+                  height="22cqw"
+                  stroke="var(--teal-soft)"
+                  dot="#fff"
+                  label="Thumbs up detected"
+                  className={styles.hand}
+                />
+              </Demo>
               <div className={styles.ring}>
-                <HoldRing progress={0.75} size="100%" label="Hold to use the sentence">
-                  <Icon name="check" size="40%" strokeWidth={3.2} />
-                </HoldRing>
+                <CommandRing label="up" fallback={0.75} />
               </div>
               <CamPill style={{ left: '50%', bottom: '4%', top: 'auto' }}>
                 Thumbs up = use it

@@ -6,17 +6,39 @@ import { Icon, type IconName } from '../ui/Icon';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
 import styles from './S02CameraCheck.module.css';
+import { HandChip } from '../vision/bits';
+import { Demo, useLive } from '../vision/bits';
+import { useVision } from '../vision/store';
+import type { Checks } from '../vision/checks';
 
 type Tone = 'ok' | 'warn';
-/** PLACEHOLDER values (Phase 3 replaces them with live light / distance / hand sensing). */
-const CHECKS: { title: string; text: string; tone: Tone; icon: IconName }[] = [
+/** Shown until the camera is live (design values). Live, the three rows come from the real checks. */
+const DESIGN_CHECKS: { title: string; text: string; tone: Tone; icon: IconName }[] = [
   { title: 'Light', text: 'Good light on your hands', tone: 'ok', icon: 'sun' },
   { title: 'Distance', text: 'A bit far. Move a little closer.', tone: 'warn', icon: 'move' },
   { title: 'Hand visible', text: 'Your whole hand is in view', tone: 'ok', icon: 'hand' },
 ];
-const TIP = 'Move a little closer.';
+const DESIGN_TIP = 'Move a little closer.';
+
+function toRows(c: Checks): { title: string; text: string; tone: Tone; icon: IconName }[] {
+  const tone = (st: string): Tone => (st === 'ok' ? 'ok' : 'warn');
+  return [
+    { title: 'Light', text: c.light.text, tone: tone(c.light.state), icon: 'sun' },
+    { title: 'Distance', text: c.distance.text, tone: tone(c.distance.state), icon: 'move' },
+    { title: 'Hand visible', text: c.hand.text, tone: tone(c.hand.state), icon: 'hand' },
+  ];
+}
+/** the first thing that is not right, as one short sentence */
+function tipFor(c: Checks): string {
+  const bad = [c.light, c.distance, c.hand].find((i) => i.state !== 'ok');
+  return bad ? bad.text : 'Everything looks good. Hold still.';
+}
 
 export default function S02CameraCheck() {
+  const live = useLive();
+  const liveChecks = useVision((st) => st.checks);
+  const CHECKS = live && liveChecks ? toRows(liveChecks) : DESIGN_CHECKS;
+  const TIP = live && liveChecks ? tipFor(liveChecks) : DESIGN_TIP;
   useAnnounceOnChange(`Spoken tip: ${TIP}`);
   return (
     <Screen
@@ -24,7 +46,7 @@ export default function S02CameraCheck() {
       chips={
         <>
           <Chip kind="green">Camera on</Chip>
-          <Chip kind="green">Hand detected</Chip>
+          <HandChip />
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }
@@ -36,14 +58,16 @@ export default function S02CameraCheck() {
           className={styles.cam}
         >
           <div className={styles.frame} />
-          <HandGlyph
-            gesture="open"
-            height="49.8cqw"
-            stroke="var(--teal-soft)"
-            dot="#fff"
-            label="Open hand detected"
-            className={styles.hand}
-          />
+          <Demo>
+            <HandGlyph
+              gesture="open"
+              height="49.8cqw"
+              stroke="var(--teal-soft)"
+              dot="#fff"
+              label="Open hand detected"
+              className={styles.hand}
+            />
+          </Demo>
           <CamPill style={{ left: '52%', top: 'auto', bottom: '1.5%' }}>
             Keep your hands inside the dashed frame
           </CamPill>

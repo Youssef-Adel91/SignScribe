@@ -11,6 +11,8 @@ import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
 import { useCtx } from '../state/MachineProvider';
 import styles from './S07SpellRecognizing.module.css';
+import { HandChip } from '../vision/bits';
+import { Demo } from '../vision/bits';
 
 export default function S07SpellRecognizing() {
   const { hand, place, words, word, candidate } = useCtx();
@@ -27,7 +29,7 @@ export default function S07SpellRecognizing() {
       chips={
         <>
           <Chip kind="gray">Context: {place}</Chip>
-          <Chip kind="green">Hand detected</Chip>
+          <HandChip />
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }
@@ -46,20 +48,22 @@ export default function S07SpellRecognizing() {
           <CameraView label={`Camera preview. Recognising the letter ${letter}.`}>
             <CommandZone signingHand={hand} />
             <SigningArea signingHand={hand} />
-            <HandGlyph
-              gesture="point"
-              height="30.9cqw"
-              stroke="var(--teal-soft)"
-              dot="#fff"
-              label="Your signing hand"
-              className={styles.hand}
-            />
-            <div className={styles.ring}>
-              {/* progress is a static design value until the dwell engine exists (Phase 2) */}
-              <HoldRing progress={0.75} size="100%" label={`Hold to confirm ${letter}`}>
-                <span className={styles.letter}>{letter}</span>
-              </HoldRing>
-            </div>
+            <Demo>
+              <HandGlyph
+                gesture="point"
+                height="30.9cqw"
+                stroke="var(--teal-soft)"
+                dot="#fff"
+                label="Your signing hand"
+                className={styles.hand}
+              />
+              <div className={styles.ring}>
+                {/* progress is a static design value until the dwell engine exists (Phase 2) */}
+                <HoldRing progress={0.75} size="100%" label={`Hold to confirm ${letter}`}>
+                  <span className={styles.letter}>{letter}</span>
+                </HoldRing>
+              </div>
+            </Demo>
             <CamPill style={{ bottom: '11.3%', top: 'auto' }}>{caption}</CamPill>
           </CameraView>
         }

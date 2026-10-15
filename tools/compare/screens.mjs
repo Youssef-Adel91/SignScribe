@@ -51,7 +51,7 @@ try {
       reducedMotion: 'reduce',
     });
     const page = await ctx.newPage();
-    await page.goto(`${url}?dev=1#${n}`);
+    await page.goto(`${url}?dev=1&vision=off#${n}`);
     await page.waitForSelector(`[data-screen="${n}"]`);
     await page.evaluate(() => document.fonts.ready);
     await page.addStyleTag({

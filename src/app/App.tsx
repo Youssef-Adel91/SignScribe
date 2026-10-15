@@ -3,6 +3,10 @@ import { AnnouncerProvider } from '../output/announcer';
 import { MachineProvider, useSend } from '../state/MachineProvider';
 import { PATH_TO_SCREEN } from '../state/paths';
 import { DevPanel } from '../dev/DevPanel';
+import { VisionDebug } from '../dev/VisionDebug';
+import { PointerOverlay } from '../vision/PointerOverlay';
+import { StatusBanner } from '../vision/StatusBanner';
+import { VisionProvider } from '../vision/VisionProvider';
 import { ScreenHost } from './ScreenHost';
 
 const params = new URLSearchParams(window.location.search);
@@ -31,7 +35,11 @@ export function App() {
       <MachineProvider key={boot.key}>
         {DEV && <Replay screen={boot.screen} />}
         <ScreenHost />
+        <VisionProvider />
+        <PointerOverlay />
+        <StatusBanner />
         {DEV && <DevPanel goTo={(screen) => setBoot((b) => ({ key: b.key + 1, screen }))} />}
+        {DEV && <VisionDebug />}
       </MachineProvider>
     </AnnouncerProvider>
   );

@@ -6,7 +6,13 @@ const T2: Target = { id: 'b', rect: { x: 500, y: 100, w: 200, h: 120 }, event: {
 const on = (t: Target) => ({ x: t.rect.x + t.rect.w / 2, y: t.rect.y + t.rect.h / 2 });
 
 /** runs the engine at 30 fps; returns the first fired target and the progress samples */
-function run(e: DwellEngine, p: { x: number; y: number } | null, targets: Target[], from: number, ms: number) {
+function run(
+  e: DwellEngine,
+  p: { x: number; y: number } | null,
+  targets: Target[],
+  from: number,
+  ms: number,
+) {
   const progress: number[] = [];
   let fired: Target | null = null;
   let t = from;
@@ -29,7 +35,8 @@ describe('DwellEngine', () => {
   it('progress rises steadily from 0 towards 1', () => {
     const e = new DwellEngine();
     const r = run(e, on(T1), [T1], 0, 700);
-    for (let i = 1; i < r.progress.length; i++) expect(r.progress[i]).toBeGreaterThanOrEqual(r.progress[i - 1]);
+    for (let i = 1; i < r.progress.length; i++)
+      expect(r.progress[i]).toBeGreaterThanOrEqual(r.progress[i - 1]);
     expect(r.progress[0]).toBe(0);
     expect(r.progress[r.progress.length - 1]).toBeGreaterThan(0.8);
   });
@@ -65,13 +72,21 @@ describe('DwellEngine', () => {
     expect(c.fired?.id).toBe('a');
   });
   it('picks the nearest of two overlapping targets', () => {
-    const near: Target = { id: 'n', rect: { x: 180, y: 100, w: 200, h: 120 }, event: { type: 'YES' } };
+    const near: Target = {
+      id: 'n',
+      rect: { x: 180, y: 100, w: 200, h: 120 },
+      event: { type: 'YES' },
+    };
     const e = new DwellEngine();
     const r = run(e, { x: 330, y: 160 }, [T1, near], 0, 1000);
     expect(r.fired?.id).toBe('n');
   });
   it('small targets get a hit area of at least MIN_HIT px', () => {
-    const tiny: Target = { id: 't', rect: { x: 300, y: 300, w: 40, h: 40 }, event: { type: 'YES' } };
+    const tiny: Target = {
+      id: 't',
+      rect: { x: 300, y: 300, w: 40, h: 40 },
+      event: { type: 'YES' },
+    };
     const e = new DwellEngine();
     const r = run(e, { x: 320 + MIN_HIT / 2 - 4, y: 320 }, [tiny], 0, 1000);
     expect(r.fired?.id).toBe('t');

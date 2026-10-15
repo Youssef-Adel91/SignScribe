@@ -5,6 +5,7 @@ import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
 import { useCtx } from '../state/MachineProvider';
 import styles from './S12Share.module.css';
+import { HandChip } from '../vision/bits';
 
 /** Auto-fit tiers so a long sentence still fits without scrolling. */
 export function sizeTier(sentence: string): 'l' | 'm' | 's' {
@@ -20,7 +21,7 @@ export default function S12Share() {
       chips={
         <>
           <Chip kind="green">Reading aloud</Chip>
-          <Chip kind="green">Hand detected</Chip>
+          <HandChip />
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
       }

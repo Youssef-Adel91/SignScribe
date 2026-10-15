@@ -29,7 +29,10 @@ class Sim {
   run(ms: number, hands: HandObs[] | (() => HandObs[])) {
     const end = this.t + ms;
     for (; this.t < end; this.t += 33) {
-      const r = this.c.step(makeFrame(this.t, typeof hands === 'function' ? hands() : hands), this.inp);
+      const r = this.c.step(
+        makeFrame(this.t, typeof hands === 'function' ? hands() : hands),
+        this.inp,
+      );
       this.last = r.ui;
       for (const e of r.events) this.log.push({ t: this.t, e });
     }
@@ -108,10 +111,10 @@ describe('help: both hands open', () => {
   });
   it('works when MediaPipe gives both hands the same label', () => {
     const s = new Sim(new GestureController(), input(5));
-    s.run(
-      1500,
-      [hand('open', { cx: 0.3, handedness: 'Right' }), hand('open', { cx: 0.7, handedness: 'Right' })],
-    );
+    s.run(1500, [
+      hand('open', { cx: 0.3, handedness: 'Right' }),
+      hand('open', { cx: 0.7, handedness: 'Right' }),
+    ]);
     expect(s.types()).toEqual(['HELP_TOGGLE']);
   });
 });
@@ -126,7 +129,10 @@ describe('thumbs and the same-meaning-everywhere rule', () => {
   });
   it('thumbs down = NO', () => {
     for (const screen of [2, 3, 4, 5, 6, 9, 10, 11]) {
-      const s = new Sim(new GestureController(), input(screen, { needsHand: [6, 9, 10].includes(screen) }));
+      const s = new Sim(
+        new GestureController(),
+        input(screen, { needsHand: [6, 9, 10].includes(screen) }),
+      );
       s.run(2500, [hand('thumbsDown', ZONE)]);
       expect(s.types(), `screen ${screen}`).toEqual(['NO']);
     }
@@ -243,8 +249,16 @@ describe('hand lost and back', () => {
 
 describe('pointing and dwell', () => {
   const targets = (): Target[] => [
-    { id: 'left', rect: { x: 200, y: 250, w: 300, h: 200 }, event: { type: 'CHOOSE_HAND', hand: 'left' } },
-    { id: 'right', rect: { x: 700, y: 250, w: 300, h: 200 }, event: { type: 'CHOOSE_HAND', hand: 'right' } },
+    {
+      id: 'left',
+      rect: { x: 200, y: 250, w: 300, h: 200 },
+      event: { type: 'CHOOSE_HAND', hand: 'left' },
+    },
+    {
+      id: 'right',
+      rect: { x: 700, y: 250, w: 300, h: 200 },
+      event: { type: 'CHOOSE_HAND', hand: 'right' },
+    },
   ];
   /** a pointing hand whose fingertip lands on the given viewport pixel */
   const pointAt = (sx: number, sy: number): HandObs => {
@@ -285,7 +299,10 @@ describe('pointing and dwell', () => {
     for (const pose of ['open', 'fist'] as const) {
       const s = new Sim(new GestureController(targets), input(3));
       s.run(2000, [makeHand(pose, { size: 0.2, cx: 0.4, cy: 0.5 })]);
-      expect(s.types().filter((t) => t === 'CHOOSE_HAND'), pose).toEqual([]);
+      expect(
+        s.types().filter((t) => t === 'CHOOSE_HAND'),
+        pose,
+      ).toEqual([]);
     }
   });
   it('a pointing hand moves the pointer and a tiny hand jitter does not change the choice', () => {
@@ -349,7 +366,9 @@ describe('evaluateChecks', () => {
   });
   it('far and close hands are flagged', () => {
     expect(evaluateChecks(140, f('open', { size: 0.05 })).distance.state).toBe('warn');
-    expect(evaluateChecks(140, f('open', { size: 0.6, cx: 0.5, cy: 0.5 })).distance.state).toBe('warn');
+    expect(evaluateChecks(140, f('open', { size: 0.6, cx: 0.5, cy: 0.5 })).distance.state).toBe(
+      'warn',
+    );
     expect(evaluateChecks(140, f('open', { size: 0.2 })).distance.state).toBe('ok');
   });
   it('a hand cut off by the frame edge is flagged', () => {

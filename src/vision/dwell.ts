@@ -137,7 +137,11 @@ export class DwellEngine {
         this.lostSince = null;
         return { targetId: null, progress: 0, fired: null };
       }
-      return { targetId: this.cur, progress: Math.min(1, this.acc / this.adaptive.ms), fired: null };
+      return {
+        targetId: this.cur,
+        progress: Math.min(1, this.acc / this.adaptive.ms),
+        fired: null,
+      };
     }
     return { targetId: null, progress: 0, fired: null };
   }
