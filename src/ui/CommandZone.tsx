@@ -30,7 +30,7 @@ export function CommandZone({ signingHand, idle, active: designActive }: Props) 
       className={`${styles.zone} ${side === 'left' ? styles.left : styles.right} ${idle ? styles.idle : ''}`}
       aria-label={`Command zone, ${side} side of the camera. Keep your ${side} hand here.`}
     >
-      <h3 className={styles.title}>COMMAND ZONE</h3>
+      <h2 className={styles.title}>COMMAND ZONE</h2>
       <ul className={styles.items}>
         {ITEMS.map((it) => (
           <li key={it.label} className={`${styles.item} ${active === it.label ? styles.on : ''}`}>

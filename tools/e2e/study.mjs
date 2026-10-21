@@ -82,6 +82,25 @@ try {
 
   await panel.locator('input[type=number]').fill('0');
   await clickPanel('Start session');
+  await page.waitForSelector('form');
+  check(
+    'the background questions and consent come first',
+    /Before we start/.test(await page.textContent('form')),
+  );
+  const startBtn = page.getByRole('button', { name: /left|Tick the consent|Start$/ });
+  check(
+    'Start is disabled until everything is answered and the consent is ticked',
+    await startBtn.isDisabled(),
+  );
+  const pg = await page.locator('form fieldset').count();
+  for (let i = 0; i < pg; i++)
+    await page.locator('form fieldset').nth(i).locator('input[type=radio]').first().check();
+  check(
+    '...still disabled without the consent tick',
+    await page.getByRole('button', { name: 'Tick the consent line' }).isDisabled(),
+  );
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Start', exact: true }).click();
   check(
     'participant 0 starts with the camera block',
     /Camera hand signs/.test(await panel.textContent()),

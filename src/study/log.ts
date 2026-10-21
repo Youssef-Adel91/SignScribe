@@ -1,5 +1,6 @@
 import type { Mode, TaskSetId } from './design';
-import { ITEMS, type Answers, type Preference } from './survey';
+import { ITEMS, scores, type Answers, type Preference } from './survey';
+import { PROFILE, type ProfileAnswers, type SessionMeta } from './profile';
 
 export interface TrialLog {
   participant: number;
@@ -22,6 +23,17 @@ export interface TrialLog {
   success: boolean;
   endedBy: 'done' | 'gaveup';
   finalText: string;
+  /** camera trials only: measured while the trial ran (null for keyboard trials) */
+  cameraFps: number | null;
+  inferMsMean: number | null;
+  delegate: 'GPU' | 'CPU' | null;
+}
+
+export interface ProfileLog {
+  participant: number;
+  answers: ProfileAnswers;
+  consent: true;
+  at: string;
 }
 
 export interface SurveyLog {
@@ -41,6 +53,8 @@ export interface StudyData {
   trials: TrialLog[];
   surveys: SurveyLog[];
   comparisons: ComparisonLog[];
+  profiles: ProfileLog[];
+  sessions: SessionMeta[];
 }
 
 export const emptyData = (): StudyData => ({
@@ -48,6 +62,8 @@ export const emptyData = (): StudyData => ({
   trials: [],
   surveys: [],
   comparisons: [],
+  profiles: [],
+  sessions: [],
 });
 
 /** total mistakes the person had to deal with in a trial */
@@ -77,6 +93,9 @@ export function trialsCsv(d: StudyData): string {
     'attempts',
     'success',
     'ended_by',
+    'camera_fps',
+    'model_ms_mean',
+    'delegate',
     'final_text',
   ];
   const lines = d.trials.map((t) =>
@@ -96,6 +115,9 @@ export function trialsCsv(d: StudyData): string {
       t.attempts,
       t.success,
       t.endedBy,
+      t.cameraFps === null ? '' : t.cameraFps.toFixed(2),
+      t.inferMsMean === null ? '' : t.inferMsMean.toFixed(2),
+      t.delegate ?? '',
       t.finalText,
     ]),
   );
@@ -116,6 +138,68 @@ export function comparisonCsv(d: StudyData): string {
     row([c.participant, ...ids.map((id) => c.answers[id] ?? '')]),
   );
   return [row(['participant', ...ids]), ...lines].join('\n') + '\n';
+}
+
+export function profileCsv(d: StudyData): string {
+  const ids = PROFILE.map((q) => q.id);
+  const lines = d.profiles.map((p) =>
+    row([p.participant, p.at, ...ids.map((id) => p.answers[id] ?? '')]),
+  );
+  return [row(['participant', 'consent_at', ...ids]), ...lines].join('\n') + '\n';
+}
+
+export function sessionCsv(d: StudyData): string {
+  const head = [
+    'participant',
+    'started_at',
+    'app_version',
+    'user_agent',
+    'screen',
+    'cores',
+    'text_size',
+    'contrast',
+    'hold_time',
+    'voice',
+    'signing_hand',
+  ];
+  const lines = d.sessions.map((m) =>
+    row([
+      m.participant,
+      new Date(m.startedAt).toISOString(),
+      m.appVersion,
+      m.userAgent,
+      m.screen,
+      m.cores ?? '',
+      m.textSize,
+      m.contrast,
+      m.dwell,
+      m.voice,
+      m.signingHand,
+    ]),
+  );
+  return [row(head), ...lines].join('\n') + '\n';
+}
+
+/** one row per participant and method: the mean answer (1..5) per dimension, ready for a paired test */
+export function scoresCsv(d: StudyData): string {
+  const lines = d.surveys.map((s) => {
+    const sc = scores(s.answers);
+    const f = (v: number | null) => (v === null ? '' : v.toFixed(3));
+    return row([
+      s.participant,
+      s.block,
+      s.mode,
+      f(sc.satisfaction),
+      f(sc.engagement),
+      f(sc.usability),
+    ]);
+  });
+  return (
+    [
+      row(['participant', 'block', 'mode', 'satisfaction', 'engagement', 'usability']),
+      ...lines,
+    ].join('\n') + '\n'
+  );
 }
 
 export interface ModeSummary {
@@ -158,6 +242,8 @@ export function loadData(): StudyData {
       trials: p.trials,
       surveys: p.surveys,
       comparisons: Array.isArray(p.comparisons) ? p.comparisons : [],
+      profiles: Array.isArray(p.profiles) ? p.profiles : [],
+      sessions: Array.isArray(p.sessions) ? p.sessions : [],
     };
   } catch {
     return emptyData();

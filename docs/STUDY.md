@@ -21,13 +21,20 @@ Time (ms), corrections (delete / backspace), rejections ("try another"), backs (
 After each method: 11 closed statements, one idea each, same wording for both methods, 5 balanced choices of equal range with a neutral middle ("Neither agree nor disagree"). 2 items satisfaction, 2 engagement, 7 usability (one per Lab 2 heuristic: navigation, familiarity, consistency, error prevention, feedback, visual clarity, flexibility and efficiency).
 After both: 3 questions (easier, more enjoyable, would choose), answers camera / no difference / keyboard and mouse; the two real choices swap sides for every second participant.
 
+## Before the first task (Phase 7)
+After "Start session" the participant answers five background questions (age group, writing hand, sign language, experience with gesture interfaces, comfort with keyboard and mouse) and the facilitator ticks the consent line (what the study is, that data are anonymous: a number, no name, no pictures; that they can stop). Nothing starts without both. Each session also records, once, the computer it ran on (browser, screen, cores) and the settings (text size, contrast, hold time, voice, signing hand) and **which build** of the app (git commit), so results can be traced to the code.
+
 ## How to run a session
 1. `npm run build && npm run preview` (or `npm run dev`), open `/?study=1` (add `&dev=1` only for developers). Allow the camera. The Study console is at the bottom left.
 2. Type the participant number, Start session. The console says which method comes first.
 3. Camera block: before the first task let the participant do the wake-up, camera check and comfort screens (not logged). "Start task" restarts the app at the context screen with their settings kept; the trial ends when the sentence is confirmed (screen 12) or you press "Participant gave up".
 4. Keyboard block: a plain form opens over the app.
 5. After each block the participant fills the survey; after both, the comparison.
-6. Export with the CSV / JSON buttons (also visible before the next participant). Data stays in the browser (`localStorage`) until cleared; export after every session.
+6. Export with the CSV / JSON buttons (Trials, Scores, Survey, Comparison, Profile, Session, and all as JSON) (also visible before the next participant). Data stays in the browser (`localStorage`) until cleared; export after every session.
 
 ## Analysis (to do with real data)
 No results exist yet. Do not quote any number from this document. Suggested: paired comparison of time and errors per participant (Wilcoxon signed-rank, small n), medians of the Likert scores per dimension, and the counts of the comparison questions.
+
+## Analysis script
+    python ml/analysis/study_report.py --dir exports/ --out docs/reports/study.md
+reads the CSV files and writes a report: who started with which method, time / errors / attempts / success per person (median of their tasks, then paired Wilcoxon signed-rank with exact p-values up to 25 pairs and the rank-biserial effect size), the three survey dimensions, the direct comparison questions (sign test), camera speed on the participants' computers, a summary of who took part. It warns when there are too few participants (with 5 pairs the smallest possible p is 0.0625), when sessions came from different builds, when a participant lacks one method, and when sessions were recorded in a headless test browser (test data, not people). The statistics are tested against a brute-force enumeration and against scipy (`ml/tests/test_study_report.py`).

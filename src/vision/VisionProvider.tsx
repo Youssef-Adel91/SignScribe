@@ -148,6 +148,7 @@ export function VisionProvider() {
     let lastHot: string | null = null;
 
     const onFrame = (frame: HandFrame, inferMs: number) => {
+      const stepStart = performance.now();
       const snap = actor.getSnapshot();
       const screen = screenOf(snap.value, snap.context);
       // on the card screen a hand holds the card and the camera may not see it: a card in view counts as presence
@@ -189,6 +190,7 @@ export function VisionProvider() {
         ui,
         checks,
         inferMs,
+        stepMs: performance.now() - stepStart,
         fps: fps.tick(frame.t),
         advice: prev.message === advice.message && prev.light === advice.light ? prev : advice,
         letters: { ...visionStore.state.letters, ui: lr.ui },
@@ -254,7 +256,7 @@ export function VisionProvider() {
         });
         tracker = await createHandTracker();
         if (disposed) return;
-        visionStore.set({ status: 'running', message: '' });
+        visionStore.set({ status: 'running', message: '', delegate: tracker.delegate });
 
         const c = document.createElement('canvas');
         c.width = 32;

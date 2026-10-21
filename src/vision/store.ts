@@ -40,6 +40,10 @@ export interface VisionState {
   fps: number;
   /** ms the hand model took for the last frame */
   inferMs: number;
+  /** ms our own code (gestures, letters) took for the last frame */
+  stepMs: number;
+  /** how the hand model runs: on the graphics chip or the processor (null before it started) */
+  delegate: 'GPU' | 'CPU' | null;
   /** mean brightness of the picture, 0..255 */
   luma: number | null;
   video: { w: number; h: number };
@@ -67,6 +71,8 @@ const initial: VisionState = {
   stream: null,
   fps: 0,
   inferMs: 0,
+  stepMs: 0,
+  delegate: null,
   luma: null,
   video: { w: 0, h: 0 },
   frame: null,

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { onMachineEvent } from '../state/MachineProvider';
+import { visionStore } from '../vision/store';
 
 export interface Counters {
   corrections: number;
@@ -38,4 +39,44 @@ export function useTrialRecorder(active: boolean) {
     [],
   );
   return c;
+}
+
+export interface CameraStats {
+  cameraFps: number | null;
+  inferMsMean: number | null;
+  delegate: 'GPU' | 'CPU' | null;
+}
+export const NO_CAMERA_STATS: CameraStats = { cameraFps: null, inferMsMean: null, delegate: null };
+
+/**
+ * What the real camera pipeline did while a camera trial ran: frames per second and the mean time
+ * of the hand model, measured from the frames themselves. With the mock camera they are null, so a
+ * synthetic session never writes camera numbers into the data.
+ */
+export function useCameraStats(active: boolean): () => CameraStats {
+  const acc = useRef({ frames: 0, first: 0, last: 0, infer: 0 });
+  useEffect(() => {
+    if (!active) return;
+    acc.current = { frames: 0, first: 0, last: 0, infer: 0 };
+    let seen: unknown = null;
+    return visionStore.subscribe(() => {
+      const st = visionStore.state;
+      if (st.source !== 'camera' || !st.frame || st.frame === seen) return;
+      seen = st.frame;
+      const a = acc.current;
+      if (a.frames === 0) a.first = st.frame.t;
+      a.last = st.frame.t;
+      a.frames++;
+      a.infer += st.inferMs;
+    });
+  }, [active]);
+  return () => {
+    const a = acc.current;
+    if (a.frames < 2 || a.last <= a.first) return NO_CAMERA_STATS;
+    return {
+      cameraFps: ((a.frames - 1) * 1000) / (a.last - a.first),
+      inferMsMean: a.infer / a.frames,
+      delegate: visionStore.state.delegate,
+    };
+  };
 }

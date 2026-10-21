@@ -18,6 +18,8 @@ import {
   type TrialLog,
 } from '../src/study/log';
 import { initialState, studyReducer, type Action, type StudyState } from '../src/study/flow';
+import { PROFILE, profileComplete, type SessionMeta } from '../src/study/profile';
+import { profileCsv, scoresCsv, sessionCsv } from '../src/study/log';
 import { WORDS } from '../src/nlp/words';
 import { CARD_PACKS } from '../src/screens/cardPack';
 
@@ -139,6 +141,9 @@ const trial = (over: Partial<TrialLog> = {}): TrialLog => ({
   success: true,
   endedBy: 'done',
   finalText: 'Doctor, help.',
+  cameraFps: null,
+  inferMsMean: null,
+  delegate: null,
   ...over,
 });
 
@@ -188,8 +193,30 @@ describe('session flow', () => {
       success: true,
       endedBy: 'done',
       finalText: 'x',
+      cameraFps: null,
+      inferMsMean: null,
+      delegate: null,
     },
   };
+  const META: SessionMeta = {
+    participant: 1,
+    startedAt: 1_700_000_000_000,
+    appVersion: 'abc123',
+    userAgent: 'test',
+    screen: '1440x900',
+    cores: 8,
+    textSize: 'normal',
+    contrast: 'standard',
+    dwell: 'auto',
+    voice: true,
+    signingHand: 'right',
+  };
+  const PROFILE_ACTION = (participant = 1): Action => ({
+    type: 'PROFILE',
+    answers: Object.fromEntries(PROFILE.map((q) => [q.id, q.options[0].value])),
+    session: { ...META, participant },
+    at: '2026-01-01T00:00:00.000Z',
+  });
   const run = (s: StudyState, ...a: Action[]) => a.reduce(studyReducer, s);
   const answers = Object.fromEntries(ITEMS.map((i) => [i.id, 3])) as Answers;
   const doBlock = (s: StudyState) =>
@@ -205,6 +232,8 @@ describe('session flow', () => {
 
   it('goes through 3 tasks, a survey, 3 tasks, a survey, the comparison, done', () => {
     let s = run(initialState(), { type: 'START', participant: 1 });
+    expect(s.phase).toEqual({ kind: 'profile' });
+    s = run(s, PROFILE_ACTION());
     expect(s.phase).toEqual({ kind: 'ready', block: 0, task: 0 });
     s = doBlock(s);
     expect(s.phase).toEqual({ kind: 'survey', block: 0 });
@@ -219,6 +248,8 @@ describe('session flow', () => {
     expect(s.data.surveys.map((x) => x.mode)).toEqual(['keyboard', 'camera']); // participant 1: keyboard first
     expect(s.data.trials.map((t) => t.taskId)).toEqual(['A1', 'A2', 'A3', 'B1', 'B2', 'B3']);
     expect(s.data.comparisons).toHaveLength(1);
+    expect(s.data.profiles).toHaveLength(1);
+    expect(s.data.sessions[0]).toMatchObject({ participant: 1, appVersion: 'abc123' });
   });
   it('ignores actions that do not fit the current phase', () => {
     const s0 = initialState();
@@ -226,16 +257,100 @@ describe('session flow', () => {
     const s1 = run(s0, { type: 'START', participant: 0 });
     expect(studyReducer(s1, { type: 'SURVEY', answers })).toBe(s1);
     expect(studyReducer(s1, END)).toBe(s1);
+    expect(studyReducer(s1, { type: 'BEGIN', now: 1 })).toBe(s1); // the profile comes first
+    const s2 = run(s1, PROFILE_ACTION(0));
+    expect(studyReducer(s2, PROFILE_ACTION(0))).toBe(s2); // only once
   });
   it('RESET keeps the collected data', () => {
     const s = run(
       initialState(),
       { type: 'START', participant: 0 },
+      PROFILE_ACTION(0),
       { type: 'BEGIN', now: 1 },
       END,
       { type: 'RESET' },
     );
     expect(s.phase.kind).toBe('setup');
     expect(s.data.trials).toHaveLength(1);
+  });
+});
+
+describe('profile and session records', () => {
+  it('every background question is closed and the scale question has a neutral middle', () => {
+    for (const q of PROFILE) expect(q.options.length).toBeGreaterThanOrEqual(2);
+    const kbm = PROFILE.find((q) => q.id === 'kbm')!;
+    expect(kbm.options[2].label).toMatch(/neither/i);
+    expect(PROFILE.find((q) => q.id === 'age')!.options.some((o) => o.value === 'na')).toBe(true);
+  });
+  it('an answer must be one of the offered options', () => {
+    const ok = Object.fromEntries(PROFILE.map((q) => [q.id, q.options[0].value]));
+    expect(profileComplete(ok)).toBe(true);
+    expect(profileComplete({ ...ok, age: 'banana' })).toBe(false);
+    expect(profileComplete({ age: '18-24' })).toBe(false);
+  });
+  const data = () => ({
+    ...emptyData(),
+    profiles: [
+      {
+        participant: 3,
+        answers: {
+          age: '18-24',
+          writing_hand: 'left',
+          sign_language: 'none',
+          gesture_ui: 'never',
+          kbm: '4',
+        },
+        consent: true as const,
+        at: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+    sessions: [
+      {
+        participant: 3,
+        startedAt: 1_700_000_000_000,
+        appVersion: 'abc',
+        userAgent: 'UA, with comma',
+        screen: '1x1',
+        cores: null,
+        textSize: 'large',
+        contrast: 'high',
+        dwell: 'slow',
+        voice: false,
+        signingHand: 'left',
+      },
+    ],
+    surveys: [
+      {
+        participant: 3,
+        block: 0 as const,
+        mode: 'camera' as const,
+        answers: Object.fromEntries(ITEMS.map((i) => [i.id, 4])) as Answers,
+      },
+    ],
+  });
+  it('profile and session CSV have a header and one line, with commas escaped', () => {
+    expect(profileCsv(data()).trim().split('\n')).toHaveLength(2);
+    const s = sessionCsv(data()).trim().split('\n');
+    expect(s).toHaveLength(2);
+    expect(s[1]).toContain('"UA, with comma"');
+  });
+  it('scores CSV has the mean per dimension for each participant and method', () => {
+    const [h, r] = scoresCsv(data()).trim().split('\n');
+    expect(h).toBe('participant,block,mode,satisfaction,engagement,usability');
+    expect(r).toBe('3,0,camera,4.000,4.000,4.000');
+  });
+  it('trial CSV carries camera numbers only when they were measured', () => {
+    const lines = trialsCsv({
+      ...emptyData(),
+      trials: [
+        trial({ cameraFps: 27.456, inferMsMean: 12.3456, delegate: 'GPU' }),
+        trial({ mode: 'keyboard' }),
+      ],
+    })
+      .trim()
+      .split('\n');
+    expect(lines[0]).toContain('camera_fps,model_ms_mean,delegate');
+    expect(lines[1]).toContain('27.46,12.35,GPU');
+    expect(lines[2]).toMatch(/,,,"Doctor/);
   });
 });
