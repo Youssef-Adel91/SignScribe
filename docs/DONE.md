@@ -32,3 +32,10 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Card detection and tracking                                                | 5     | not met                                 |                                                                                              |
 | Sentence server                                                            | 6     | not met                                 | sentence text is a placeholder                                                               |
 | Study logger, e2e, axe, perf                                               | 7     | not met                                 |                                                                                              |
+
+## Course requirement added (not yet built)
+| Item | Phase | Status | Evidence |
+| --- | --- | --- | --- |
+| Two interaction techniques compared (satisfaction, engagement, usability, surveys) | study | not met | technique 2 undecided, see PLAN.md |
+| Study logger: same task in both modes, time + errors + post-task survey | study (moved earlier) | not met | |
+| Phase 2 gesture numbers measured on a real camera | 2 | needs my camera | `docs/PHASE2_CHECKLIST.md` |

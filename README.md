@@ -4,7 +4,7 @@ A camera-controlled interface that turns hand signs into written sentences. No k
 once it is running: you raise a hand to start, point and hold to choose, and use thumbs, a fist and an
 open palm for yes / no / delete / space.
 
-Status: Phase 2 of 7 (camera, hand tracking, gestures, pointer, dwell). Letter recognition and picture-card
+Status: Phase 2 of 7 (see `CLAUDE.md` for the working rules; camera, hand tracking, gestures, pointer, dwell). Letter recognition and picture-card
 detection are NOT built yet. See `PLAN.md` for the phases and `docs/DONE.md` for what is proven and what still
 needs a real camera.
 
@@ -43,4 +43,4 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
     src/dev/       developer panels, mounted only with ?dev=1
     tests/         unit tests (machine, gestures, controller, dwell, pointer, contrast, dictionary ...)
     tools/         models download, screenshot compare, e2e and layout checks
-    docs/          DONE.md (evidence), A11Y.md, PHASE2.md (how the gesture layer works)
+    docs/          DONE.md (evidence), A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)

@@ -63,7 +63,7 @@ alt text, `prefers-reduced-motion`, focus styles; high-contrast/large-text as a 
 4. Letter recognition: collection mode, training scripts, k-NN baseline, 06/07/09 end-to-end.
 5. Card detection + tracking (ONNX runtime, SORT tracker, hold-to-add), card packs.
 6. Sentence server (Express proxy, `.env.example`), validation, offline fallback, safety rule.
-7. Study logger/panel, docs, e2e + axe + perf, final README.
+7. Docs, e2e + axe + perf, final README. (Study logger/panel was moved earlier: it comes right after Phase 3, see the comparison-study section.)
 
 ## 7. Definition-of-done tracking
 
@@ -75,5 +75,15 @@ Done: state machine, 13 responsive screens, a11y tokens + tests, `?dev=1` simula
 
 ## Phase 2 status
 Done (see docs/PHASE2.md and docs/DONE.md): camera, MediaPipe tracker (needs `npm run models`), rule-based gestures with hysteresis, One-Euro pointer, command zones, dwell engine with adaptive time, controller wired to the machine, live HoldRing / command-zone highlight / hand chip / setup checks, dev-only Vision debug panel, `npm run e2e` and `npm run layout`.
-Not verified: real-hand accuracy and real-time speed. They need a webcam (see "Check on your own machine").
+Not verified: real-hand accuracy and real-time speed. They need a webcam (see `docs/PHASE2_CHECKLIST.md`).
 Not started: Phase 3 (speech, context sensing), Phase 4 (letters), Phase 5 (cards), Phase 6 (sentence server), Phase 7 (study logger, axe, perf).
+
+## Course requirement: comparison study (added, changes the order of phases)
+The course asks us to COMPARE TWO different interaction techniques and evaluate them on User Satisfaction, Engagement, Usability and Surveys.
+- Technique 1: camera hand signs (this app).
+- Technique 2: **OPEN QUESTION for Youssef** – candidates: (a) keyboard + mouse baseline (cheapest, familiar, clear control group); (b) touch on a tablet/phone (different modality, needs a device); (c) on-screen keyboard driven by pointer only (isolates "signs vs. pointing"). Decision pending.
+- **Study logger moves earlier**: it is built right after Phase 3 (before letter recognition), not in Phase 7. Same task in both modes (write a sentence), log time, errors and the post-task survey answers; export JSON/CSV.
+- Surveys follow Lab 3: closed, specific, unbiased questions, balanced equal-range choices, always a neutral middle option; define the problem and target users first.
+- Usability grading rules (Lab 2): Navigation, Familiarity, Consistency, Error Prevention, Feedback, Visual Clarity, Flexibility & Efficiency. Every primary action needs a gesture equivalent, immediate feedback and error recovery.
+- Course deadlines: Phase 1 week 4, Phase 2 week 6, Phase 3 week 13, Phase 4 week 14. What the course "Phase 2" requires is unconfirmed (Youssef asks the TA); it is not assumed to equal the phases above.
+- Open: model training / $1 and k-NN experiments in Python (as in the labs) vs. in the browser. Proposal only, not decided.
