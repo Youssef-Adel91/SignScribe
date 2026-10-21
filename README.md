@@ -11,7 +11,7 @@ needs a real camera.
 ## Run it
 
     npm ci
-    npm run models     # once, needs internet: copies the MediaPipe runtime and downloads the hand model (about 8 MB)
+    npm run models     # once, needs internet: copies the MediaPipe and ONNX Runtime wasm and downloads the hand model (about 8 MB)
     npm run dev        # http://localhost:5173  (allow the camera when the browser asks)
 
 Without `npm run models` the app still starts and tells you "Hand model not found". Use Chrome or Edge on a laptop
@@ -27,6 +27,7 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
 | `/?study=1`             | comparison study console (facilitator): camera vs keyboard + mouse, surveys, CSV export. See `docs/STUDY.md` |
 | `/?collect=1`           | data collection for the letter model (researcher tool). See `docs/MODEL_HANDOFF.md` |
 | `/?woz=1`               | Wizard of Oz: a facilitator types the letters (no model needed) |
+| `/?cards=print`         | printable sheet of the picture cards |
 | `/?dev=1&vision=mock`   | no camera; `window.__signscribe.play(hands, ms)` feeds synthetic landmarks (used by `npm run e2e`) |
 
 ## Checks
@@ -34,6 +35,7 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
     npm run check      # typecheck, lint, unit tests, production build
     npm run e2e        # needs a build: whole flow driven by synthetic hands, no mouse or keyboard; camera error messages
     npm run layout     # needs a build: no scrolling or overflow on any screen at 1280x720, 1440x900, 1920x1080 (reports Normal, Large and Extra large text)
+    npm run e2e:cards  # needs `npm run models` and a build: card path incl. ONNX Runtime Web with a test-only model
     npm run e2e:collect # needs a build: collection mode and Wizard of Oz with synthetic hands
     npm run ml:test    # Python: dataset, trainers, $P vs dollarpy (needs ml/requirements.txt)
     npm run e2e:study  # needs a build: a whole study session in the browser, then the CSV is checked
@@ -47,8 +49,10 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
     src/ui/        shared components (HandGlyph, HoldRing, HintBar, CommandZone, CameraView ...)
     src/recognition/ letters: k-NN, $P, model loader, hold logic    src/collect/  data collection mode
     ml/            Python training tools (k-NN, $P), tests
+    src/cards/     picture cards: YOLO decode, SORT tracker, hold-to-add, ONNX loader
+    src/data/      contexts.json (card packs + detector classes)
     src/nlp/       word lists, edit distance, offline sentence builder
     src/dev/       developer panels, mounted only with ?dev=1
     tests/         unit tests (machine, gestures, controller, dwell, pointer, contrast, dictionary ...)
     tools/         models download, screenshot compare, e2e and layout checks
-    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, STUDY.md, PHASE4.md, DATASET.md, MODEL_FORMAT.md, MODEL_HANDOFF.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)
+    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, STUDY.md, PHASE4.md, DATASET.md, MODEL_FORMAT.md, MODEL_HANDOFF.md, CARDS.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)

@@ -79,3 +79,17 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Letter recognition accuracy | 4 | not met | no model, no real data. Procedure: `docs/MODEL_HANDOFF.md` |
 | Moving-letter (J, Z) accuracy | 4 | not met | same |
 | Threshold values (`LETTER`) feel right | 4 | needs my camera | tune after a model exists |
+
+## Phase 5 (picture cards; no detector)
+| Item | Phase | Status | Evidence |
+| --- | --- | --- | --- |
+| Card list and detector classes in one data file shared by app and Python | 5 | verified here | `tests/cards.test.ts`, `ml/tests/test_cards.py` |
+| YOLO output decoding, letterbox, NMS, shape errors | 5 | verified here (made-up tensors) | `tests/cards.test.ts` |
+| SORT tracker: Kalman + Hungarian, id kept, gap, class vote, speed | 5 | verified here (synthetic boxes) | `tests/cards.test.ts` |
+| Hold-to-add: hold, no repeat, passing card ignored, other place's card, largest card, screen reset | 5 | verified here | `tests/cards.test.ts`, `npm run e2e:cards` |
+| ONNX Runtime Web loads and runs a model in Chromium, through decode, SORT and the state machine | 5 | verified here with a TEST-ONLY model that always says "Doctor" | `npm run e2e:cards` |
+| Honest notices: no detector / broken / test model / card from another place | 5 | verified here | `src/cards/CardNotice.tsx`, e2e |
+| Label checker, export and ONNX checker scripts | 5 | verified here (made-up folders, fixture) | `npm run ml:test` |
+| Printable card sheet `/?cards=print` | 5 | verified here (renders); printing needs my printer | `/?cards=print` |
+| Card detector finds real printed cards; accuracy; speed in the browser | 5 | not met | no model, no photos. Procedure: `docs/CARDS.md` |
+| Hold time / speed limits feel right with a real card | 5 | needs my camera | `CARD` in `src/cards/controller.ts` |

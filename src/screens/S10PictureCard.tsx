@@ -13,6 +13,8 @@ import { useCtx } from '../state/MachineProvider';
 import { CARD_PACKS, cardFor } from './cardPack';
 import styles from './S10PictureCard.module.css';
 import { useDwellTarget } from '../vision/targets';
+import { Demo } from '../vision/bits';
+import { LiveCardOverlay } from '../cards/LiveCardOverlay';
 
 const pretty = (w: string) => (w === 'I' ? 'I' : w.toLowerCase());
 /** "I" + "need" read as one phrase chip, like the design. */
@@ -81,7 +83,7 @@ export default function S10PictureCard() {
           >
             <CommandZone signingHand={hand} />
             {cand && (
-              <>
+              <Demo>
                 <div className={styles.paper}>
                   {def && <Icon name={def.icon} size="42%" strokeWidth={7} />}
                   <span className={styles.paperText}>{def?.word ?? cand.word}</span>
@@ -108,8 +110,9 @@ export default function S10PictureCard() {
                     <Icon name="check" size="40%" strokeWidth={3.2} />
                   </HoldRing>
                 </div>
-              </>
+              </Demo>
             )}
+            <LiveCardOverlay />
             <CamPill style={{ left: '56%', bottom: '3.3%', top: 'auto' }}>{caption}</CamPill>
           </CameraView>
         }

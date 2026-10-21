@@ -3,6 +3,7 @@ import type { Checks } from './checks';
 import { NO_ADVICE, type ContextAdvice } from './context';
 import type { LetterUI } from '../recognition/letterController';
 import type { ModelStatus } from '../recognition/types';
+import { IDLE_CARD_UI, type CardUI } from '../cards/controller';
 import type { VisionUI } from './controller';
 import type { HandFrame } from './types';
 
@@ -48,6 +49,8 @@ export interface VisionState {
   /** light / distance drift while the app is in use */
   advice: ContextAdvice;
   /** letter recognition: model state and what the recognizer sees now */
+  /** picture cards: detector state and what it sees now */
+  cards: { status: ModelStatus; message: string; synthetic: boolean; ui: CardUI };
   letters: {
     status: ModelStatus;
     message: string;
@@ -70,6 +73,7 @@ const initial: VisionState = {
   ui: null,
   checks: null,
   advice: NO_ADVICE,
+  cards: { status: 'idle', message: '', synthetic: false, ui: IDLE_CARD_UI },
   letters: { status: 'idle', message: '', synthetic: false, motionStatus: 'idle', ui: null },
 };
 

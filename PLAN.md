@@ -100,3 +100,6 @@ Open: Phase 7 keeps adding polish (axe, performance); the final study report nee
 ## Phase 4 status (branch feat/phase4-recognition, stacked on the study mode)
 Done: collection mode, dataset format, Python trainers (k-NN, $P), model JSON loader, replaceable recogniser interface, letter hold logic, Wizard-of-Oz panel, honest "no model" notice. See docs/PHASE4.md.
 STOP POINT reached as agreed: the model itself is for Youssef and the team. Handoff: docs/MODEL_HANDOFF.md. Phases 5-7 continue without waiting for the model.
+
+## Phase 5 status (branch feat/phase5-cards, stacked on Phase 4)
+Done: card list as data (`src/data/contexts.json`), YOLOv8 decoding, SORT tracker, hold-to-add controller, ONNX Runtime Web loader, live overlay, honest notices, printable cards, Python label/export/check tools. See docs/CARDS.md. The detector itself needs photos and training by the team (not started, as agreed for models).

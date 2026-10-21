@@ -11,7 +11,15 @@ export interface MockHand {
   handedness?: 'Left' | 'Right';
 }
 
+import type { Detection } from '../cards/types';
+
+/** card detections the test hook feeds to the card tracker (screen 10) */
+let mockCards: Detection[] = [];
+export const getMockCards = (): Detection[] => mockCards;
+
 export interface MockApi {
+  /** card boxes seen by the (pretend) card detector until changed; [] = no card */
+  setCards(dets: Detection[]): void;
   /** Feed synthetic hands for `ms` of VIRTUAL time (33 ms per frame, no real waiting). */
   play(hands: MockHand[], ms: number): Promise<void>;
   /** a pointing hand whose fingertip lands on viewport pixel (sx, sy) */
@@ -62,6 +70,9 @@ export function installMock(
       return { pose: 'point', cx: want.x - (tip.x - 0.5), cy: want.y - (tip.y - 0.5) };
     },
     setLuma,
+    setCards(dets) {
+      mockCards = dets;
+    },
     now: () => t,
   };
   window.__signscribe = api;

@@ -15,6 +15,6 @@ describe('models in public/models', () => {
       m.meta?.synthetic,
       `${f} was trained on generated data: delete it, or set ALLOW_SYNTHETIC_MODEL=1 for a local pipeline test`,
     ).not.toBe(true);
-    expect(m.format).toBe('signscribe-model');
+    expect(['signscribe-model', 'signscribe-cards']).toContain(m.format);
   });
 });

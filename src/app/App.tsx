@@ -4,6 +4,8 @@ import { MachineProvider, useSend } from '../state/MachineProvider';
 import { PATH_TO_SCREEN } from '../state/paths';
 import { DevPanel } from '../dev/DevPanel';
 import { VisionDebug } from '../dev/VisionDebug';
+import { CardSheet } from '../cards/CardSheet';
+import { CardNotice } from '../cards/CardNotice';
 import { LetterNotice } from '../recognition/LetterNotice';
 import { ContextNotice } from '../vision/ContextNotice';
 import { PointerOverlay } from '../vision/PointerOverlay';
@@ -24,6 +26,8 @@ export const STUDY = params.get('study') === '1';
 export const COLLECT = params.get('collect') === '1';
 /** Wizard-of-Oz letter entry for studies before a letter model exists. */
 export const WOZ = params.get('woz') === '1';
+/** Printable sheet of the picture cards. */
+export const CARD_SHEET = params.get('cards') === 'print';
 
 function initialScreen(): number {
   if (!DEV) return 1;
@@ -49,12 +53,14 @@ function Body() {
         {STUDY && <StudyPanel />}
         {COLLECT && <CollectPanel />}
         {WOZ && <WozPanel />}
+        {CARD_SHEET && <CardSheet />}
         <ScreenHost />
         <VisionProvider />
         <PointerOverlay />
         <StatusBanner />
         <ContextNotice />
         <LetterNotice />
+        <CardNotice />
         {DEV && <DevPanel goTo={(screen) => setBoot((b) => ({ key: b.key + 1, screen }))} />}
         {DEV && <VisionDebug />}
       </MachineProvider>

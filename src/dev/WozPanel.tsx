@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LETTERS } from '../collect/dataset';
-import { useScreenNumber, useSend } from '../state/MachineProvider';
+import { useCtx, useScreenNumber, useSend } from '../state/MachineProvider';
+import { CARD_PACKS } from '../screens/cardPack';
 import styles from './DevPanel.module.css';
 
 /**
@@ -11,6 +12,7 @@ import styles from './DevPanel.module.css';
 export function WozPanel() {
   const send = useSend();
   const screen = useScreenNumber();
+  const { place } = useCtx();
   const [open, setOpen] = useState(true);
   if (!open)
     return (
@@ -42,6 +44,20 @@ export function WozPanel() {
           ? 'Click the letter the participant signs.'
           : 'Letters work on the spelling screens (06, 07).'}
       </p>
+      {screen === 10 && (
+        <fieldset>
+          <legend>Card shown ({place})</legend>
+          {CARD_PACKS[place].map((c) => (
+            <button
+              key={c.word}
+              type="button"
+              onClick={() => send({ type: 'CARD_ADDED', word: c.word.toUpperCase() })}
+            >
+              {c.word}
+            </button>
+          ))}
+        </fieldset>
+      )}
       <fieldset>
         <legend>Letter</legend>
         {LETTERS.map((l) => (

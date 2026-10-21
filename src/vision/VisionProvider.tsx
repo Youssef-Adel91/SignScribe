@@ -6,11 +6,16 @@ import { CameraError, openCamera, type OpenCamera } from './camera';
 import { ContextSensor } from './context';
 import { GestureController } from './controller';
 import { palmFraction } from './landmarks';
+import { CardController, IDLE_CARD_UI } from '../cards/controller';
+import { OnnxCardDetector } from '../cards/onnx';
+import { SortTracker } from '../cards/sort';
+import type { CardDetector, Detection } from '../cards/types';
 import { LetterController } from '../recognition/letterController';
 import { loadModels, type LoadedModels } from '../recognition/models';
 import { createHandTracker, ModelMissingError, type HandTracker } from './hands';
 import { getTargets, setHot } from './targets';
 import { VISION_MODE as MODE, visionStore } from './store';
+import { getMockCards } from './mock';
 import type { HandFrame } from './types';
 
 /**
@@ -28,6 +33,104 @@ export function VisionProvider() {
     const fps = new FpsMeter();
     const sensor = new ContextSensor();
     let letters = new LetterController(null, null);
+    // picture cards: detector (loaded the first time screen 10 is shown) -> SORT tracker -> hold-to-add
+    const sort = new SortTracker();
+    const cardCtl = new CardController();
+    let detector: CardDetector | null = null;
+    let cardsLoading = false;
+    let cardBusy = false;
+    let lastCardRun = -Infinity;
+    let video: HTMLVideoElement | null = null;
+    const CARD_EVERY_MS = 100;
+    const runCards = (dets: Detection[], t: number) => {
+      const snap = actor.getSnapshot();
+      const r = cardCtl.step(sort.update(dets, t), t, { screen: 10, place: snap.context.place });
+      for (const e of r.events) actor.send(e);
+      visionStore.set({ cards: { ...visionStore.state.cards, ui: r.ui } });
+    };
+    const loadCards = () => {
+      if (cardsLoading || MODE === 'mock') return;
+      cardsLoading = true;
+      visionStore.set({ cards: { ...visionStore.state.cards, status: 'loading' } });
+      OnnxCardDetector.create()
+        .then((r) => {
+          if (disposed) return;
+          if ('missing' in r) {
+            visionStore.set({
+              cards: {
+                status: 'missing',
+                message: 'No card detector yet.',
+                synthetic: false,
+                ui: IDLE_CARD_UI,
+              },
+            });
+          } else {
+            detector = r.detector;
+            visionStore.set({
+              cards: {
+                status: 'ready',
+                message: '',
+                synthetic: r.detector.meta.meta.synthetic,
+                ui: IDLE_CARD_UI,
+              },
+            });
+          }
+        })
+        .catch((e: unknown) => {
+          if (!disposed)
+            visionStore.set({
+              cards: {
+                status: 'error',
+                message: e instanceof Error ? e.message : String(e),
+                synthetic: false,
+                ui: IDLE_CARD_UI,
+              },
+            });
+        });
+    };
+    const cardIdle = (
+      t: number,
+      screen: number,
+      place: Parameters<typeof cardCtl.step>[2]['place'],
+    ) => {
+      if (!visionStore.state.cards.ui.box && !visionStore.state.cards.ui.word) return;
+      cardCtl.step([], t, { screen, place }); // lets the controller reset
+      sort.reset();
+      visionStore.set({ cards: { ...visionStore.state.cards, ui: IDLE_CARD_UI } });
+    };
+    /** one detector update on screen 10; `dets` come from the mock hook, or null to run the real detector */
+    const cardTick = (t: number, dets: Detection[] | null) => {
+      const snap = actor.getSnapshot();
+      const screen = screenOf(snap.value, snap.context);
+      // the card detector also runs under the "hand lost" notice: a card appearing brings the screen back
+      if (!snap.matches('cards') || snap.context.overlay === 'help')
+        return cardIdle(t, screen, snap.context.place);
+      if (MODE === 'mock') {
+        if (visionStore.state.cards.status !== 'ready')
+          visionStore.set({ cards: { ...visionStore.state.cards, status: 'ready' } });
+        return runCards(dets ?? [], t);
+      }
+      if (!detector) return loadCards();
+      if (cardBusy || !video || t - lastCardRun < CARD_EVERY_MS) return;
+      cardBusy = true;
+      lastCardRun = t;
+      detector
+        .detect(video, video.videoWidth, video.videoHeight)
+        .then((found) => !disposed && runCards(found, t))
+        .catch((e: unknown) => {
+          detector?.close();
+          detector = null;
+          visionStore.set({
+            cards: {
+              status: 'error',
+              message: `Card detection stopped: ${e instanceof Error ? e.message : String(e)}`,
+              synthetic: false,
+              ui: IDLE_CARD_UI,
+            },
+          });
+        })
+        .finally(() => (cardBusy = false));
+    };
     // letter models are optional files; the app works (with a clear notice) when they are absent
     void loadModels().then((m: LoadedModels) => {
       if (disposed) return;
@@ -47,8 +150,11 @@ export function VisionProvider() {
     const onFrame = (frame: HandFrame, inferMs: number) => {
       const snap = actor.getSnapshot();
       const screen = screenOf(snap.value, snap.context);
+      // on the card screen a hand holds the card and the camera may not see it: a card in view counts as presence
       const needsHand =
-        snap.matches('spell') || snap.matches('wordSuggestion') || snap.matches('cards');
+        snap.matches('spell') ||
+        snap.matches('wordSuggestion') ||
+        (snap.matches('cards') && !visionStore.state.cards.ui.box);
       const checks = evaluateChecks(visionStore.state.luma, frame);
       const { events, ui } = controller.step(frame, {
         screen,
@@ -63,6 +169,10 @@ export function VisionProvider() {
       if (events.some((e) => e.type === 'NO' || e.type === 'DELETE' || e.type === 'SPACE'))
         letters.notifyCommand();
       for (const e of [...events, ...lr.events]) actor.send(e);
+
+      // ---- picture cards: the mock camera is driven by frames, the real one by its own timer (cardTick)
+      if (MODE === 'mock') cardTick(frame.t, getMockCards());
+      else if (screen !== 10) cardIdle(frame.t, screen, snap.context.place);
       if (ui.dwell.id !== lastHot) {
         lastHot = ui.dwell.id;
         setHot(lastHot);
@@ -109,6 +219,7 @@ export function VisionProvider() {
     let tracker: HandTracker | null = null;
     let raf = 0;
     let lumaTimer = 0;
+    let cardTimer = 0;
 
     const fail = (e: unknown) => {
       if (e instanceof ModelMissingError) {
@@ -156,15 +267,17 @@ export function VisionProvider() {
         }, 500);
 
         let lastVideoTime = -1;
-        const video = cam.video;
+        video = cam.video;
+        const vid = cam.video;
+        cardTimer = window.setInterval(() => cardTick(performance.now(), null), CARD_EVERY_MS);
         const loop = () => {
           if (disposed || !tracker) return;
-          if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
-            lastVideoTime = video.currentTime;
+          if (vid.readyState >= 2 && vid.currentTime !== lastVideoTime) {
+            lastVideoTime = vid.currentTime;
             const t = performance.now();
             try {
-              const { hands, ms } = tracker.detect(video, t);
-              onFrame({ t, hands, width: video.videoWidth, height: video.videoHeight }, ms);
+              const { hands, ms } = tracker.detect(vid, t);
+              onFrame({ t, hands, width: vid.videoWidth, height: vid.videoHeight }, ms);
             } catch (e) {
               fail(e);
               return;
@@ -182,7 +295,9 @@ export function VisionProvider() {
       disposed = true;
       cancelAnimationFrame(raf);
       clearInterval(lumaTimer);
+      clearInterval(cardTimer);
       tracker?.close();
+      detector?.close();
       cam?.stop();
       setHot(null);
       visionStore.reset();

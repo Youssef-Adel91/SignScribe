@@ -211,6 +211,8 @@ export class GestureController {
         }
       }
     } else {
+      // the screen no longer needs a hand (for example a card is now in view): close the notice
+      if (this.lost) events.push({ type: 'HAND_BACK' });
       this.noHandSince = null;
       this.backSince = null;
       this.lost = false;

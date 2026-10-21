@@ -25,11 +25,28 @@ for (const f of [
   console.log(`copied  wasm/${f}  (${(statSync(join(wasmOut, f)).size / 1e6).toFixed(1)} MB)`);
 }
 
+// ONNX Runtime Web (runs the card detector): copy its WebAssembly files, no download needed
+{
+  const ortSrc = join(root, 'node_modules/onnxruntime-web/dist');
+  const ortOut = join(out, 'ort');
+  mkdirSync(ortOut, { recursive: true });
+  for (const f of ['ort-wasm-simd-threaded.mjs', 'ort-wasm-simd-threaded.wasm']) {
+    if (!existsSync(join(ortSrc, f))) {
+      console.error(`node_modules/onnxruntime-web/dist/${f} is missing. Run \`npm ci\` first.`);
+      process.exit(1);
+    }
+    copyFileSync(join(ortSrc, f), join(ortOut, f));
+    console.log(`copied  ort/${f}  (${(statSync(join(ortOut, f)).size / 1e6).toFixed(1)} MB)`);
+  }
+}
+
 const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const target = join(out, 'hand_landmarker.task');
 if (existsSync(target) && statSync(target).size > 1e6) {
-  console.log(`kept    hand_landmarker.task (${(statSync(target).size / 1e6).toFixed(1)} MB), already there`);
+  console.log(
+    `kept    hand_landmarker.task (${(statSync(target).size / 1e6).toFixed(1)} MB), already there`,
+  );
 } else {
   console.log(`downloading ${MODEL_URL}`);
   let res;
@@ -41,7 +58,9 @@ if (existsSync(target) && statSync(target).size > 1e6) {
     process.exit(2);
   }
   if (!res.ok) {
-    console.error(`Download failed: HTTP ${res.status}. Save the file from the URL above as ${target}`);
+    console.error(
+      `Download failed: HTTP ${res.status}. Save the file from the URL above as ${target}`,
+    );
     process.exit(2);
   }
   const buf = Buffer.from(await res.arrayBuffer());

@@ -393,3 +393,21 @@ describe('commandEvent table', () => {
     expect(commandEvent(1, 'down')).toBeNull();
   });
 });
+
+describe('hand lost notice when the screen stops needing a hand', () => {
+  it('sends HAND_BACK once when needsHand turns off while the notice is open', () => {
+    const sim = new Sim(new GestureController(), input(10, { needsHand: true }));
+    sim.run(1500, []);
+    expect(sim.types()).toEqual(['HAND_LOST']);
+    sim.inp = { ...sim.inp, needsHand: false }; // a card is in view
+    sim.run(500, []);
+    expect(sim.types()).toEqual(['HAND_LOST', 'HAND_BACK']);
+  });
+  it('sends nothing when no notice was open', () => {
+    const sim = new Sim(new GestureController(), input(10, { needsHand: true }));
+    sim.run(500, []);
+    sim.inp = { ...sim.inp, needsHand: false };
+    sim.run(500, []);
+    expect(sim.types()).toEqual([]);
+  });
+});
