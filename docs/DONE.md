@@ -52,3 +52,15 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Speech is audible and understandable in the browser | 3 | needs my camera / speakers | |
 | No overflow at Normal and Large text on 14 screens x 3 sizes x 2 modes | 3 | verified here | `npm run layout` (84 combos each) |
 | No overflow at Extra large text | 3 | not met | docs/KNOWN_ISSUES.md #3 |
+
+## Study mode (comparison with keyboard and mouse)
+| Item | Phase | Status | Evidence |
+| --- | --- | --- | --- |
+| Counterbalancing: each mode first for half, each set with each mode equally often | study | verified here | `tests/study.test.ts` |
+| Both task sets can be produced by both methods (words are in the word list and on a card) | study | verified here | `tests/study.test.ts` |
+| Survey follows Lab 3 (closed, balanced 5 points, neutral middle, one idea per item) and covers satisfaction, engagement, usability and the 7 Lab 2 heuristics | study | verified here (automatic checks of the rules) | `tests/study.test.ts`; wording itself needs a human review |
+| Protocol (3 tasks, survey, 3 tasks, survey, comparison, done), invalid actions ignored | study | verified here | `tests/study.test.ts` |
+| CSV / JSON export, summary uses only logged trials | study | verified here | `tests/study.test.ts` |
+| Whole session in a browser: camera trial via gestures, give up, keyboard trial, surveys, CSV | study | verified here (synthetic hands) | `npm run e2e:study` |
+| Study run with real participants | study | not met | no data collected |
+| Camera method measured with letters or a real card | study | not met | needs Phase 4 / 5 |

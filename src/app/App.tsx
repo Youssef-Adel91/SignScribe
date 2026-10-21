@@ -9,10 +9,14 @@ import { PointerOverlay } from '../vision/PointerOverlay';
 import { StatusBanner } from '../vision/StatusBanner';
 import { VisionProvider } from '../vision/VisionProvider';
 import { ScreenHost } from './ScreenHost';
+import { StudyPanel } from '../study/StudyPanel';
+import { StudyProvider } from '../study/StudyProvider';
 
 const params = new URLSearchParams(window.location.search);
 /** Developer simulator. Without ?dev=1 there is no mouse or keyboard navigation at all. */
 export const DEV = params.get('dev') === '1';
+/** Comparison study console (facilitator). Independent of ?dev=1. */
+export const STUDY = params.get('study') === '1';
 
 function initialScreen(): number {
   if (!DEV) return 1;
@@ -29,12 +33,13 @@ function Replay({ screen }: { screen: number }) {
   return null;
 }
 
-export function App() {
+function Body() {
   const [boot, setBoot] = useState({ key: 0, screen: initialScreen() });
   return (
-    <AnnouncerProvider>
+    <>
       <MachineProvider key={boot.key}>
         {DEV && <Replay screen={boot.screen} />}
+        {STUDY && <StudyPanel />}
         <ScreenHost />
         <VisionProvider />
         <PointerOverlay />
@@ -43,6 +48,16 @@ export function App() {
         {DEV && <DevPanel goTo={(screen) => setBoot((b) => ({ key: b.key + 1, screen }))} />}
         {DEV && <VisionDebug />}
       </MachineProvider>
+    </>
+  );
+}
+
+export function App() {
+  return (
+    <AnnouncerProvider>
+      <StudyProvider enabled={STUDY}>
+        <Body />
+      </StudyProvider>
     </AnnouncerProvider>
   );
 }

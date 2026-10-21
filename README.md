@@ -24,6 +24,7 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
 | `/?dev=1`               | real camera + two panels: the **Dev simulator** (jump to any screen, send gestures) and **Vision debug** (fps, inference ms, gesture + confidence, pointer, dwell, command progress) |
 | `/?dev=1#7`             | jump to screen 7                                                                                   |
 | `/?dev=1&vision=off`    | no camera at all (layout work, screenshots)                                                        |
+| `/?study=1`             | comparison study console (facilitator): camera vs keyboard + mouse, surveys, CSV export. See `docs/STUDY.md` |
 | `/?dev=1&vision=mock`   | no camera; `window.__signscribe.play(hands, ms)` feeds synthetic landmarks (used by `npm run e2e`) |
 
 ## Checks
@@ -31,6 +32,7 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
     npm run check      # typecheck, lint, unit tests, production build
     npm run e2e        # needs a build: whole flow driven by synthetic hands, no mouse or keyboard; camera error messages
     npm run layout     # needs a build: no scrolling or overflow on any screen at 1280x720, 1440x900, 1920x1080 (reports Normal, Large and Extra large text)
+    npm run e2e:study  # needs a build: a whole study session in the browser, then the CSV is checked
     npm run compare    # needs a build: each screen next to its Figma export (tools/compare/out/)
 
 ## Layout of the code
@@ -43,4 +45,4 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
     src/dev/       developer panels, mounted only with ?dev=1
     tests/         unit tests (machine, gestures, controller, dwell, pointer, contrast, dictionary ...)
     tools/         models download, screenshot compare, e2e and layout checks
-    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)
+    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, STUDY.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)

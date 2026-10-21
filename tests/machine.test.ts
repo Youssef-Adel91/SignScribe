@@ -443,3 +443,24 @@ describe('no dead ends', () => {
     }
   });
 });
+
+describe('study restart', () => {
+  it('goes to the context screen from anywhere, clears the message, keeps the settings', () => {
+    for (const n of [1, 6, 9, 10, 11, 12, 13, 14]) {
+      let s = at(n);
+      if (n === 14)
+        s = send(
+          s,
+          { type: 'CHOOSE_DWELL', dwell: 'slow' },
+          { type: 'CHOOSE_CONTRAST', contrast: 'high' },
+        );
+      const r = send(s, { type: 'STUDY_RESTART' });
+      expect(screen(r), `from ${n}`).toBe(4);
+      expect(r.context.words).toEqual([]);
+      expect(r.context.sentence).toBe('');
+      expect(r.context.overlay).toBe('none');
+      expect(r.context.place).toBe('Clinic');
+      if (n === 14) expect(r.context).toMatchObject({ dwell: 'slow', contrast: 'high' });
+    }
+  });
+});

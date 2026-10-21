@@ -92,3 +92,7 @@ The course asks us to COMPARE TWO different interaction techniques and evaluate 
 ## Phase 3 status (branch feat/phase3-context-settings)
 Done: context sensing with tips, screen 14 comfort settings (text size, contrast, hold time, voice), adaptive-dwell display, speech synthesis, aria-live for tips. See docs/PHASE3.md and docs/DONE.md. Known gap: Extra large text overflows (KNOWN_ISSUES #3).
 Next: study mode (comparison with keyboard + mouse), then Phase 4.
+
+## Study mode status (branch feat/study-mode, stacked on Phase 3)
+Done: `?study=1` facilitator console, Latin-square plan, camera trials logged from machine events, keyboard + mouse task, surveys after each method and a comparison, CSV/JSON export. See docs/STUDY.md.
+Open: Phase 7 keeps adding polish (axe, performance); the final study report needs real participants.

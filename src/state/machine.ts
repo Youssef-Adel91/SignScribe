@@ -93,7 +93,9 @@ export type Ev =
   | { type: 'HELP_TOGGLE' }
   | { type: 'FINISH' }
   | { type: 'NEW_SENTENCE' }
-  | { type: 'EDIT' };
+  | { type: 'EDIT' }
+  /** study mode only: start the next trial from the context screen, keeping the settings */
+  | { type: 'STUDY_RESTART' };
 
 export const DEFAULT_SETTINGS: Settings = {
   hand: 'right',
@@ -238,6 +240,11 @@ export const signScribeMachine = setup({
       overlay: 'none' as const,
       overlayBefore: 'none' as const,
     }),
+    resetChoices: assign({
+      place: 'Clinic' as const,
+      method: 'spell' as const,
+      afterWord: 'spell' as const,
+    }),
     computeSentence: assign(({ context }) => ({
       sentence: offlineSentence(context.words, context.place, 0),
       sentenceAttempt: 0,
@@ -283,6 +290,7 @@ export const signScribeMachine = setup({
   // open their handlers do not fire and the event bubbles up to these.
   on: {
     HELP_TOGGLE: { actions: 'toggleHelp' },
+    STUDY_RESTART: { target: '.context', actions: ['resetSession', 'resetChoices'] },
     NO: { guard: 'helpOpen', actions: 'toggleHelp' },
     HAND_BACK: [
       { guard: 'handLostOpen', actions: 'handBack' },

@@ -79,15 +79,21 @@ try {
         const r = el.getBoundingClientRect();
         return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
       }, sel);
-    const pointAtTile = async (screenNo, text) => {
+    const pointAtTile = async (screenNo, text, anyTile = false) => {
       await page.waitForSelector(`[data-screen="${screenNo}"] [data-dwell]`);
-      const c = await page.evaluate((t) => {
-        const el = [...document.querySelectorAll('[data-screen] li')].find(
-          (e) => e.textContent.includes(t) && e.getClientRects().length,
-        );
-        const r = el.getBoundingClientRect();
-        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-      }, text);
+      const c = await page.evaluate(
+        ([t, anyTile]) => {
+          const el = [...document.querySelectorAll('[data-screen] li')].find(
+            (e) =>
+              (anyTile || e.dataset.dwell) &&
+              e.textContent.includes(t) &&
+              e.getClientRects().length,
+          );
+          const r = el.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        },
+        [text, anyTile],
+      );
       const h = await page.evaluate(([x, y]) => window.__signscribe.pointAt(x, y), [c.x, c.y]);
       await play([h], 1500);
       await play([], 400); // lower the hand so the next choice starts fresh
@@ -121,7 +127,7 @@ try {
       () => JSON.parse(localStorage.getItem('signscribe.settings.v2') || '{}').hand,
     );
     check('point-and-hold on "Left hand" selects it (03)', hand === 'left', `saved hand = ${hand}`);
-    await pointAtTile(3, 'Arabic');
+    await pointAtTile(3, 'Arabic', true);
     check(
       '"Coming soon" alphabet cannot be chosen',
       (await page.evaluate(

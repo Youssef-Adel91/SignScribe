@@ -6,6 +6,14 @@ import { loadSettings, saveSettings } from './settings';
 
 export const Machine = createActorContext(signScribeMachine);
 
+/** Read-only tap on every event the machine receives (used by the study logger; nothing else). */
+type Tap = (e: Ev, screen: number) => void;
+const taps = new Set<Tap>();
+export function onMachineEvent(t: Tap): () => void {
+  taps.add(t);
+  return () => taps.delete(t);
+}
+
 function Persist() {
   const { hand, alphabet, textSize, contrast, dwell, voice } = Machine.useSelector(
     (s) => s.context,
@@ -21,7 +29,18 @@ function Persist() {
 
 export function MachineProvider({ children }: { children: ReactNode }) {
   return (
-    <Machine.Provider options={{ input: loadSettings() }}>
+    <Machine.Provider
+      options={{
+        input: loadSettings(),
+        inspect: (ie) => {
+          if (taps.size === 0 || ie.type !== '@xstate.event') return;
+          const snap = ie.actorRef.getSnapshot() as { value: unknown; context: Ctx } | undefined;
+          if (!snap) return;
+          const screen = screenOf(snap.value, snap.context);
+          for (const t of taps) t(ie.event as Ev, screen);
+        },
+      }}
+    >
       <Persist />
       {children}
     </Machine.Provider>
