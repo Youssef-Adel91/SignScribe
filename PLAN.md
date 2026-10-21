@@ -81,9 +81,10 @@ Not started: Phase 3 (speech, context sensing), Phase 4 (letters), Phase 5 (card
 ## Course requirement: comparison study (added, changes the order of phases)
 The course asks us to COMPARE TWO different interaction techniques and evaluate them on User Satisfaction, Engagement, Usability and Surveys.
 - Technique 1: camera hand signs (this app).
-- Technique 2: **OPEN QUESTION for Youssef** – candidates: (a) keyboard + mouse baseline (cheapest, familiar, clear control group); (b) touch on a tablet/phone (different modality, needs a device); (c) on-screen keyboard driven by pointer only (isolates "signs vs. pointing"). Decision pending.
+- Technique 2: **DECIDED (Youssef): keyboard + mouse baseline.** Design: within-subject (every participant does the task in both modes) with the order counterbalanced (half start with camera signs, half with keyboard + mouse). Rejected: touch, pointer-only on-screen keyboard.
 - **Study logger moves earlier**: it is built right after Phase 3 (before letter recognition), not in Phase 7. Same task in both modes (write a sentence), log time, errors and the post-task survey answers; export JSON/CSV.
 - Surveys follow Lab 3: closed, specific, unbiased questions, balanced equal-range choices, always a neutral middle option; define the problem and target users first.
 - Usability grading rules (Lab 2): Navigation, Familiarity, Consistency, Error Prevention, Feedback, Visual Clarity, Flexibility & Efficiency. Every primary action needs a gesture equivalent, immediate feedback and error recovery.
 - Course deadlines: Phase 1 week 4, Phase 2 week 6, Phase 3 week 13, Phase 4 week 14. What the course "Phase 2" requires is unconfirmed (Youssef asks the TA); it is not assumed to equal the phases above.
-- Open: model training / $1 and k-NN experiments in Python (as in the labs) vs. in the browser. Proposal only, not decided.
+- **DECIDED (Youssef): training in Python.** k-NN for static letters, $1 (dollarpy) for moving signs only. The browser app only consumes an exported model JSON. Tooling stops at the end of Phase 4; then it is handed over to Youssef and the team.
+- Still open: what the course's own Phase 2 (week 6) requires. Youssef is asking the TA; nothing is assumed.

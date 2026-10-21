@@ -36,9 +36,9 @@ Design: Figma file key 11g6ZDeS8xInkvy58p7yMO ("HCI Project"), page "Screens" ha
 
 ## Course requirements (from lab slides)
 - Project must COMPARE TWO interaction techniques, evaluated on: User Satisfaction, Engagement, Usability, Surveys.
-  Technique 1 = camera hand signs. Technique 2 = NOT decided (open question in PLAN.md; ask Youssef).
+  Technique 1 = camera hand signs. Technique 2 = keyboard + mouse (DECIDED). Within-subject, order counterbalanced.
 - So the study logger comes early: same task (write a sentence) in both modes; log time, errors, short post-task survey.
-- Course deadlines: course Phase 1 week 4, Phase 2 week 6, Phase 3 week 13, Phase 4 week 14. What course Phase 2 requires is unclear (Youssef will ask the TA). Do not assume it equals PLAN.md phases.
+- Course deadlines: course Phase 1 week 4, Phase 2 week 6, Phase 3 week 13, Phase 4 week 14. What course Phase 2 requires is still unknown (Youssef is asking the TA). Do not assume it equals PLAN.md phases.
 - Lab 2 usability rules used for grading: Navigation, Familiarity, Consistency, Error Prevention, Feedback, Visual Clarity, Flexibility & Efficiency.
 - Lab 3 survey rules: closed, specific, unbiased questions; balanced answer choices of equal ranges; always a middle/neutral option; define the problem and target users first.
-- Labs use Python (MediaPipe, dollarpy, sockets). Propose (do not decide) doing training and $1/k-NN experiments in Python, with the browser app consuming the exported model.
+- Labs use Python (MediaPipe, dollarpy, sockets). DECIDED: training in Python (k-NN for static letters, $1 only for moving signs); the browser app consumes an exported model JSON. Tooling stops at the end of Phase 4.
