@@ -6,7 +6,8 @@ Owner: Youssef. Talk to him in Egyptian Arabic (plain, student style). Code, com
 ## Status
 Phase 2 of 7 (see PLAN.md): camera, MediaPipe hand tracking, rule-based gestures, pointer, dwell, command zone.
 NOT built: letter recognition (4), context sensing/settings/TTS (3), card detection (5), sentence server (6), study logger (moved earlier, see PLAN.md).
-Do not start Phase 3 until Youssef confirms Phase 2 works on his camera (docs/PHASE2_CHECKLIST.md).
+Youssef decided (overrides the earlier wait): build the whole platform first (Phase 3 -> study mode -> 4 -> 5 -> 6 -> 7), then fix bugs from camera testing. Order, one branch + PR per phase, `npm run check` green.
+Camera bugs go in docs/KNOWN_ISSUES.md; do not fix them unless they block the phase being built. After Phase 4 write docs/MODEL_HANDOFF.md, then continue with 5-7 without waiting for the model.
 
 ## Commands
     npm ci
@@ -30,7 +31,7 @@ Design: Figma file key 11g6ZDeS8xInkvy58p7yMO ("HCI Project"), page "Screens" ha
 - Never state an accuracy, fps or latency number unless measured on a real camera with real hands. Synthetic landmarks only prove logic. In docs/DONE.md use: "verified here / needs my camera / not met".
 - Gesture thresholds are heuristics. When Youssef reports a misfire: write a test that reproduces it, adjust, and note it in docs/PHASE2.md.
 - Do NOT vibe-code the sign-recognition model. Build tooling only (collection mode, dataset format, training scripts, k-NN baseline) up to the end of Phase 4, then stop and hand over to Youssef and the team.
-- `npm run check` green on every commit. Small commits, clear messages. Work on branches and open PRs; never push to main.
+- `npm run check` green on every commit. Small commits, clear messages. Work on branches and open PRs; never push to main (the earlier question about pushing to main is still unanswered; keep branches + PRs).
 - Documentation is part of the work: update README, PLAN.md and docs/DONE.md with every change.
 - Every primary action needs a gesture equivalent, immediate feedback and error recovery.
 
