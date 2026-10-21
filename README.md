@@ -17,6 +17,12 @@ needs a real camera.
 Without `npm run models` the app still starts and tells you "Hand model not found". Use Chrome or Edge on a laptop
 with a webcam. `localhost` counts as a secure origin, so no https is needed for development.
 
+## Sentence server (optional)
+
+    npm run server     # see server/README.md; then open /?server=ws://localhost:8787
+
+Without it the app writes sentences with simple offline rules. With it, a language model suggests a nicer one that must pass a safety rule (only your words plus helper words).
+
 ## Developer switches (all need `?dev=1`; without it the app takes only camera input)
 
 | URL                     | What it does                                                                                       |
@@ -27,6 +33,7 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
 | `/?study=1`             | comparison study console (facilitator): camera vs keyboard + mouse, surveys, CSV export. See `docs/STUDY.md` |
 | `/?collect=1`           | data collection for the letter model (researcher tool). See `docs/MODEL_HANDOFF.md` |
 | `/?woz=1`               | Wizard of Oz: a facilitator types the letters (no model needed) |
+| `/?server=ws://localhost:8787` | use the sentence server (localhost only) |
 | `/?cards=print`         | printable sheet of the picture cards |
 | `/?dev=1&vision=mock`   | no camera; `window.__signscribe.play(hands, ms)` feeds synthetic landmarks (used by `npm run e2e`) |
 
@@ -35,6 +42,7 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
     npm run check      # typecheck, lint, unit tests, production build
     npm run e2e        # needs a build: whole flow driven by synthetic hands, no mouse or keyboard; camera error messages
     npm run layout     # needs a build: no scrolling or overflow on any screen at 1280x720, 1440x900, 1920x1080 (reports Normal, Large and Extra large text)
+    npm run e2e:server # needs a build: the app with a real sentence server, a dead one and a hostile one
     npm run e2e:cards  # needs `npm run models` and a build: card path incl. ONNX Runtime Web with a test-only model
     npm run e2e:collect # needs a build: collection mode and Wizard of Oz with synthetic hands
     npm run ml:test    # Python: dataset, trainers, $P vs dollarpy (needs ml/requirements.txt)
@@ -51,7 +59,8 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
     ml/            Python training tools (k-NN, $P), tests
     src/cards/     picture cards: YOLO decode, SORT tracker, hold-to-add, ONNX loader
     src/data/      contexts.json (card packs + detector classes)
-    src/nlp/       word lists, edit distance, offline sentence builder
+    server/        sentence server (Node, WebSocket + TCP), see server/README.md
+    src/nlp/       word lists, safety rule, protocol, sentence client, edit distance, offline sentence builder
     src/dev/       developer panels, mounted only with ?dev=1
     tests/         unit tests (machine, gestures, controller, dwell, pointer, contrast, dictionary ...)
     tools/         models download, screenshot compare, e2e and layout checks

@@ -5,18 +5,19 @@ Owner: Youssef. Talk to him in Egyptian Arabic (plain, student style). Code, com
 
 ## Status
 Phase 3 of 7 done on a branch (see PLAN.md): camera, MediaPipe hand tracking, rule-based gestures, pointer, dwell, command zone.
-Built on branches: context/settings/TTS (3), study mode, letter-recognition TOOLING (4, no model: handoff in docs/MODEL_HANDOFF.md). Cards (5): pipeline built, NO detector trained (docs/CARDS.md). NOT built: sentence server (6), final study polish/axe/perf (7).
+Built on branches: context/settings/TTS (3), study mode, letter-recognition TOOLING (4, no model: handoff in docs/MODEL_HANDOFF.md). Cards (5): pipeline built, NO detector trained (docs/CARDS.md). Sentence server (6) built, never tried with the live API (no key). NOT built: final study polish/axe/perf (7).
 Youssef decided (overrides the earlier wait): build the whole platform first (Phase 3 -> study mode -> 4 -> 5 -> 6 -> 7), then fix bugs from camera testing. Order, one branch + PR per phase, `npm run check` green.
 Camera bugs go in docs/KNOWN_ISSUES.md; do not fix them unless they block the phase being built. After Phase 4 write docs/MODEL_HANDOFF.md, then continue with 5-7 without waiting for the model.
 
 ## Commands
     npm ci
+    npm run server     # sentence server (.env from .env.example)
     npm run models     # copies MediaPipe wasm + downloads hand_landmarker.task into public/models
     npm run dev        # http://localhost:5173 (?dev=1 for dev panels; vision=off | vision=mock)
     npm run check      # typecheck + lint + unit tests (see npm run check) + production build. Keep green on every commit
     npm run e2e        # needs a build; flow driven by synthetic hands (31 checks)
     npm run layout     # needs a build; 78 screen/size combos
-    npm run e2e:study | e2e:collect | e2e:cards   # study session / collection mode in a browser (synthetic hands)
+    npm run e2e:study | e2e:collect | e2e:cards | e2e:server   # study session / collection mode in a browser (synthetic hands)
     npm run ml:test    # Python tests for ml/ (pip install -r ml/requirements.txt)
     npm run compare    # needs a build; screens next to Figma exports (tools/compare/out)
 
@@ -25,7 +26,7 @@ Camera bugs go in docs/KNOWN_ISSUES.md; do not fix them unless they block the ph
     src/vision/   camera, MediaPipe, landmarks, gestures, pointer (One-Euro), dwell, zones, controller, checks
     src/screens/  S01..S13, driven by the machine; no click/key handlers (tested)
     src/ui/       shared components    src/nlp/  word lists, offline sentence builder
-    src/dev/      panels, only with ?dev=1    src/recognition/ src/collect/ src/cards/ ml/   letters: recognisers, collection mode, Python training
+    src/dev/      panels, only with ?dev=1    src/recognition/ src/collect/ src/cards/ server/ ml/   letters: recognisers, collection mode, Python training
     src/study/  comparison study (?study=1): plan, survey, log, console
     tests/        vitest    tools/  models, e2e, layout, compare    docs/  DONE.md, A11Y.md, PHASE2.md, PHASE2_CHECKLIST.md
 Design: Figma file key 11g6ZDeS8xInkvy58p7yMO ("HCI Project"), page "Screens" has the 13 frames; PNG exports in public/design/.

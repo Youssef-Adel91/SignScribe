@@ -93,3 +93,16 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Printable card sheet `/?cards=print` | 5 | verified here (renders); printing needs my printer | `/?cards=print` |
 | Card detector finds real printed cards; accuracy; speed in the browser | 5 | not met | no model, no photos. Procedure: `docs/CARDS.md` |
 | Hold time / speed limits feel right with a real card | 5 | needs my camera | `CARD` in `src/cards/controller.ts` |
+
+## Phase 6 (sentence server)
+| Item | Phase | Status | Evidence |
+| --- | --- | --- | --- |
+| Safety rule: chosen words kept, no added facts / negations / links, length limits | 6 | verified here | `tests/validate.test.ts` |
+| The offline builder obeys the rule for every pack and wording (found and fixed a dropped "Hello") | 6 | verified here | `tests/validate.test.ts` |
+| Protocol parsing, size / rate limits (bad messages count), origin allow-list | 6 | verified here | `tests/server.test.ts` |
+| Server over a real WebSocket and a real TCP socket (lab style, plus a Python client) | 6 | verified here | `tests/server.test.ts`, manual `server/examples/client.py` |
+| Fallback to offline rules: bad / slow / failing / repeating / missing model, reason in `note`, no words in logs | 6 | verified here (fake model) | `tests/server.test.ts` |
+| Anthropic request format and key handling | 6 | verified here with a fake HTTP client | `tests/server.test.ts` |
+| App uses the server sentence only if it passes the rule (again in browser and machine), ignores stale / hostile / far-away servers; study mode ignores it | 6 | verified here | `tests/sentenceClient.test.ts`, `npm run e2e:server` |
+| The language model itself: sentences are good, prompt works with the live API, model name valid | 6 | not met | no API key here; try with a key |
+| Latency of the real model | 6 | not met | not measured |

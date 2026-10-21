@@ -34,7 +34,7 @@ function Action({
 }
 
 export default function S11ReviewSentence() {
-  const { place, words, sentence } = useCtx();
+  const { place, words, sentence, sentenceSource } = useCtx();
   useAnnounceOnChange(
     sentence
       ? `Suggested sentence: ${sentence}. Thumbs up to use it, thumbs down to try another.`
@@ -81,7 +81,14 @@ export default function S11ReviewSentence() {
               SUGGESTED SENTENCE
               <span className={styles.style}>{place} style</span>
             </p>
-            <p className={styles.sentence}>{sentence}</p>
+            <p className={styles.sentence} data-source={sentenceSource}>
+              {sentence}
+            </p>
+            <p className={styles.source} data-testid="sentence-source">
+              {sentenceSource === 'server'
+                ? 'Written by the language model. The app checked it: only your words and small helper words.'
+                : 'Written by simple rules from your words.'}
+            </p>
             <p className={styles.safe}>
               <Icon name="shield" size="var(--s-24)" />
               Nothing is shown to the other person until you say yes.

@@ -1,6 +1,7 @@
 import { and, assign, setup } from 'xstate';
 import { closestMatch, isKnownWord } from '../nlp/dictionary';
 import { offlineSentence } from '../nlp/sentence';
+import { validateSentence } from '../nlp/validate';
 import type { Place } from '../nlp/words';
 
 /* ---------- types ---------- */
@@ -60,6 +61,8 @@ export interface Ctx extends Settings {
   sentence: string;
   sentenceAttempt: number;
   sentenceConfirmed: boolean;
+  /** who wrote the sentence on screen: the offline rules, or the sentence server (checked by the safety rule) */
+  sentenceSource: 'offline' | 'server';
   overlay: Overlay;
   /** overlay to return to when help closes */
   overlayBefore: Overlay;
@@ -94,6 +97,8 @@ export type Ev =
   | { type: 'FINISH' }
   | { type: 'NEW_SENTENCE' }
   | { type: 'EDIT' }
+  /** the sentence server answered; accepted only if it is still the sentence being waited for and passes the safety rule */
+  | { type: 'SENTENCE_SERVER'; sentence: string; words: string[]; attempt: number }
   /** study mode only: start the next trial from the context screen, keeping the settings */
   | { type: 'STUDY_RESTART' };
 
@@ -138,6 +143,14 @@ export const signScribeMachine = setup({
     needsSuggestion,
     hasWords,
     wordsAfterPush,
+    serverSentenceOk: ({ context, event }) =>
+      event.type === 'SENTENCE_SERVER' &&
+      context.overlay === 'none' &&
+      !context.sentenceConfirmed &&
+      event.attempt === context.sentenceAttempt &&
+      event.words.length === context.words.length &&
+      event.words.every((w, i) => w === context.words[i]) &&
+      validateSentence(context.words, event.sentence).ok,
     alphabetAvailable: ({ event }) =>
       event.type === 'CHOOSE_ALPHABET' && AVAILABLE_ALPHABETS.includes(event.alphabet),
     methodIsCard: ({ context }) => context.method === 'card',
@@ -227,6 +240,7 @@ export const signScribeMachine = setup({
       sentence: '',
       sentenceAttempt: 0,
       sentenceConfirmed: false,
+      sentenceSource: 'offline' as const,
     }),
     resetSession: assign({
       word: '',
@@ -237,6 +251,7 @@ export const signScribeMachine = setup({
       sentence: '',
       sentenceAttempt: 0,
       sentenceConfirmed: false,
+      sentenceSource: 'offline' as const,
       overlay: 'none' as const,
       overlayBefore: 'none' as const,
     }),
@@ -249,11 +264,18 @@ export const signScribeMachine = setup({
       sentence: offlineSentence(context.words, context.place, 0),
       sentenceAttempt: 0,
       sentenceConfirmed: false,
+      sentenceSource: 'offline' as const,
     })),
     tryAnother: assign(({ context }) => ({
       sentenceAttempt: context.sentenceAttempt + 1,
       sentence: offlineSentence(context.words, context.place, context.sentenceAttempt + 1),
+      sentenceSource: 'offline' as const,
     })),
+    applyServerSentence: assign(({ event }) =>
+      event.type === 'SENTENCE_SERVER'
+        ? { sentence: event.sentence.trim(), sentenceSource: 'server' as const }
+        : {},
+    ),
     confirmSentence: assign({ sentenceConfirmed: true }),
     unconfirmSentence: assign({ sentenceConfirmed: false }),
     handLost: assign({ overlay: 'handLost' as const }),
@@ -282,6 +304,7 @@ export const signScribeMachine = setup({
     sentence: '',
     sentenceAttempt: 0,
     sentenceConfirmed: false,
+    sentenceSource: 'offline',
     overlay: 'none',
     overlayBefore: 'none',
   }),
@@ -446,6 +469,7 @@ export const signScribeMachine = setup({
     },
     /* 11 */ review: {
       on: {
+        SENTENCE_SERVER: { guard: 'serverSentenceOk', actions: 'applyServerSentence' },
         YES: { guard: 'idle', target: 'share', actions: 'confirmSentence' },
         NO: { guard: 'idle', actions: 'tryAnother' },
         DELETE: [

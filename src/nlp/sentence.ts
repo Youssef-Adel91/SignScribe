@@ -15,12 +15,14 @@ export function offlineSentence(words: readonly string[], _place: Place, attempt
   const core = iNeed ? `I need a ${rest[2]}` : rest.join(' ');
   rest = [];
   const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+  // a greeting the person chose is kept in every wording
+  const greet = hello ? 'Hello, ' : '';
   switch (attempt % 3) {
     case 0:
       return hello ? `Hello, ${core}.` : `${cap(core)}.`;
     case 1:
-      return `Excuse me, ${core}, please.`;
+      return `${greet}${hello ? 'excuse me' : 'Excuse me'}, ${core}, please.`;
     default:
-      return `Please, ${core}.`;
+      return `${greet}${hello ? 'please' : 'Please'}, ${core}.`;
   }
 }

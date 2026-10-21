@@ -103,3 +103,6 @@ STOP POINT reached as agreed: the model itself is for Youssef and the team. Hand
 
 ## Phase 5 status (branch feat/phase5-cards, stacked on Phase 4)
 Done: card list as data (`src/data/contexts.json`), YOLOv8 decoding, SORT tracker, hold-to-add controller, ONNX Runtime Web loader, live overlay, honest notices, printable cards, Python label/export/check tools. See docs/CARDS.md. The detector itself needs photos and training by the team (not started, as agreed for models).
+
+## Phase 6 status (branch feat/phase6-sentence-server, stacked on Phase 5)
+Done: sentence server (WebSocket for the app + plain TCP lab-style socket, JSON protocol, rate limit, origin list), Anthropic client behind a provider interface, shared safety rule, offline fallback, app bridge (offline first, server sentence swapped in only when valid), `.env.example`, docs in server/README.md. Fixed on the way: the offline builder dropped a chosen "Hello" in two of three wordings. Not tried against the live API (no key here).

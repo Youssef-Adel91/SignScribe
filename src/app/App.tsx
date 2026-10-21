@@ -4,6 +4,8 @@ import { MachineProvider, useSend } from '../state/MachineProvider';
 import { PATH_TO_SCREEN } from '../state/paths';
 import { DevPanel } from '../dev/DevPanel';
 import { VisionDebug } from '../dev/VisionDebug';
+import { SentenceBridge } from '../nlp/SentenceBridge';
+import { WsSentenceClient, resolveSentenceUrl } from '../nlp/sentenceClient';
 import { CardSheet } from '../cards/CardSheet';
 import { CardNotice } from '../cards/CardNotice';
 import { LetterNotice } from '../recognition/LetterNotice';
@@ -28,6 +30,17 @@ export const COLLECT = params.get('collect') === '1';
 export const WOZ = params.get('woz') === '1';
 /** Printable sheet of the picture cards. */
 export const CARD_SHEET = params.get('cards') === 'print';
+/**
+ * Sentence server (Phase 6). Off unless an address is given: the build's VITE_SENTENCE_URL, or `?server=ws://localhost:8787`
+ * for development. The comparison study always uses the offline rules so both methods get the same sentences.
+ */
+const SENTENCE_URL = STUDY
+  ? null
+  : resolveSentenceUrl(
+      window.location.search,
+      import.meta.env.VITE_SENTENCE_URL as string | undefined,
+    );
+const sentenceClient = SENTENCE_URL ? new WsSentenceClient(SENTENCE_URL) : null;
 
 function initialScreen(): number {
   if (!DEV) return 1;
@@ -53,6 +66,7 @@ function Body() {
         {STUDY && <StudyPanel />}
         {COLLECT && <CollectPanel />}
         {WOZ && <WozPanel />}
+        {sentenceClient && <SentenceBridge client={sentenceClient} />}
         {CARD_SHEET && <CardSheet />}
         <ScreenHost />
         <VisionProvider />

@@ -147,3 +147,9 @@
     width: 100%;
   }
 }
+
+.source {
+  font-size: var(--fs-16);
+  color: var(--muted);
+  line-height: 1.3;
+}
