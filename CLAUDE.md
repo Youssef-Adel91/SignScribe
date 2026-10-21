@@ -4,7 +4,7 @@ HCI Fall 2026 course project (MSA). Camera-based interface that turns hand signs
 Owner: Youssef. Talk to him in Egyptian Arabic (plain, student style). Code, commits and docs stay in English.
 
 ## Status
-Phase 2 of 7 (see PLAN.md): camera, MediaPipe hand tracking, rule-based gestures, pointer, dwell, command zone.
+Phase 3 of 7 done on a branch (see PLAN.md): camera, MediaPipe hand tracking, rule-based gestures, pointer, dwell, command zone.
 NOT built: letter recognition (4), context sensing/settings/TTS (3), card detection (5), sentence server (6), study logger (moved earlier, see PLAN.md).
 Youssef decided (overrides the earlier wait): build the whole platform first (Phase 3 -> study mode -> 4 -> 5 -> 6 -> 7), then fix bugs from camera testing. Order, one branch + PR per phase, `npm run check` green.
 Camera bugs go in docs/KNOWN_ISSUES.md; do not fix them unless they block the phase being built. After Phase 4 write docs/MODEL_HANDOFF.md, then continue with 5-7 without waiting for the model.
@@ -13,13 +13,13 @@ Camera bugs go in docs/KNOWN_ISSUES.md; do not fix them unless they block the ph
     npm ci
     npm run models     # copies MediaPipe wasm + downloads hand_landmarker.task into public/models
     npm run dev        # http://localhost:5173 (?dev=1 for dev panels; vision=off | vision=mock)
-    npm run check      # typecheck + lint + unit tests (196) + production build. Keep green on every commit
+    npm run check      # typecheck + lint + unit tests (222) + production build. Keep green on every commit
     npm run e2e        # needs a build; flow driven by synthetic hands (31 checks)
     npm run layout     # needs a build; 78 screen/size combos
     npm run compare    # needs a build; screens next to Figma exports (tools/compare/out)
 
 ## Folder map
-    src/state/    XState v5 machine = the only owner of "which screen" (13 screens; 08 hand lost, 13 help)
+    src/state/    XState v5 machine = the only owner of "which screen" (14 screens; 08 hand lost, 13 help)
     src/vision/   camera, MediaPipe, landmarks, gestures, pointer (One-Euro), dwell, zones, controller, checks
     src/screens/  S01..S13, driven by the machine; no click/key handlers (tested)
     src/ui/       shared components    src/nlp/  word lists, offline sentence builder

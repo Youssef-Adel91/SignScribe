@@ -3,7 +3,9 @@ import { Machine } from '../state/MachineProvider';
 import { screenOf } from '../state/machine';
 import { evaluateChecks, FpsMeter, meanLuma } from './checks';
 import { CameraError, openCamera, type OpenCamera } from './camera';
+import { ContextSensor } from './context';
 import { GestureController } from './controller';
+import { palmFraction } from './landmarks';
 import { createHandTracker, ModelMissingError, type HandTracker } from './hands';
 import { getTargets, setHot } from './targets';
 import { VISION_MODE as MODE, visionStore } from './store';
@@ -22,6 +24,7 @@ export function VisionProvider() {
     let disposed = false;
     const controller = new GestureController(getTargets);
     const fps = new FpsMeter();
+    const sensor = new ContextSensor();
     let lastHot: string | null = null;
 
     const onFrame = (frame: HandFrame, inferMs: number) => {
@@ -33,6 +36,7 @@ export function VisionProvider() {
       const { events, ui } = controller.step(frame, {
         screen,
         signingHand: snap.context.hand,
+        dwell: snap.context.dwell,
         needsHand,
         viewport: { w: window.innerWidth, h: window.innerHeight },
         checks,
@@ -42,7 +46,21 @@ export function VisionProvider() {
         lastHot = ui.dwell.id;
         setHot(lastHot);
       }
-      visionStore.set({ frame, ui, checks, inferMs, fps: fps.tick(frame.t) });
+      const hand0 = frame.hands[0];
+      const advice = sensor.update(
+        frame.t,
+        visionStore.state.luma,
+        hand0 ? palmFraction(hand0, frame.width, frame.height) : null,
+      );
+      const prev = visionStore.state.advice;
+      visionStore.set({
+        frame,
+        ui,
+        checks,
+        inferMs,
+        fps: fps.tick(frame.t),
+        advice: prev.message === advice.message && prev.light === advice.light ? prev : advice,
+      });
     };
 
     let cleanup: () => void = () => {};

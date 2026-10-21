@@ -19,3 +19,10 @@
   color: var(--amber-ink);
   border: 3px solid var(--amber);
 }
+.tip {
+  top: auto;
+  bottom: 110px;
+  background: var(--amber-bg);
+  color: var(--amber-ink);
+  border: 3px solid var(--amber);
+}

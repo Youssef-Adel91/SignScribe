@@ -84,12 +84,14 @@
   --fs-92: max(16px, calc(var(--u) * 92 * var(--ts)));
 }
 
-/* Display choices made on screen 03 */
-:root[data-display='large'],
-:root[data-display='contrast'] {
+/* Comfort choices made on screen 14 */
+:root[data-text-size='large'] {
   --ts: 1.25;
 }
-:root[data-display='contrast'] {
+:root[data-text-size='xlarge'] {
+  --ts: 1.5;
+}
+:root[data-contrast='high'] {
   --bg: #ffffff;
   --ink: #000000;
   --ink-2: #0f172a;

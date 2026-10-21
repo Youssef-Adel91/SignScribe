@@ -14,10 +14,17 @@ const LEAVE_MARGIN = 16;
 /** ...and may be absent (hand flickers) this long without losing the hold */
 const GRACE_MS = 250;
 
-/** Dwell time that adapts to the person: slower after near-misses, quicker after steady successes. */
+/** Fixed hold times for the three manual settings on screen 14 (ms). */
+export const FIXED_DWELL_MS = { slow: 1200, normal: 800, fast: 600 } as const;
+
+/**
+ * Dwell time that adapts to the person: slower after near-misses, quicker after steady successes.
+ * With a fixed setting (screen 14) it stays where the person put it and learns nothing.
+ */
 export class AdaptiveDwell {
   ms: number;
   private streak = 0;
+  private fixed = false;
   constructor(
     start = 800,
     readonly min = 600,
@@ -25,7 +32,22 @@ export class AdaptiveDwell {
   ) {
     this.ms = start;
   }
+  /** 'auto' keeps the learned value (start 800); the others pin the hold time */
+  setMode(mode: 'auto' | keyof typeof FIXED_DWELL_MS): void {
+    if (mode === 'auto') {
+      if (this.fixed) this.ms = 800;
+      this.fixed = false;
+    } else {
+      this.fixed = true;
+      this.ms = FIXED_DWELL_MS[mode];
+    }
+    this.streak = 0;
+  }
+  get isFixed(): boolean {
+    return this.fixed;
+  }
   success(): void {
+    if (this.fixed) return;
     this.streak++;
     if (this.streak >= 3) {
       this.ms = Math.max(this.min, this.ms - 50);
@@ -34,6 +56,7 @@ export class AdaptiveDwell {
   }
   /** pointer left a target after holding most of the way: the person wanted it but drifted */
   nearMiss(): void {
+    if (this.fixed) return;
     this.streak = 0;
     this.ms = Math.min(this.max, this.ms + 100);
   }

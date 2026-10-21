@@ -1,16 +1,21 @@
 import { useEffect, type ReactNode } from 'react';
 import { createActorContext } from '@xstate/react';
 import { screenOf, signScribeMachine, type Ctx, type Ev } from './machine';
+import { setSpeechEnabled } from '../output/speech';
 import { loadSettings, saveSettings } from './settings';
 
 export const Machine = createActorContext(signScribeMachine);
 
 function Persist() {
-  const { hand, alphabet, display } = Machine.useSelector((s) => s.context);
+  const { hand, alphabet, textSize, contrast, dwell, voice } = Machine.useSelector(
+    (s) => s.context,
+  );
   useEffect(() => {
-    saveSettings({ hand, alphabet, display });
-    document.documentElement.dataset.display = display;
-  }, [hand, alphabet, display]);
+    saveSettings({ hand, alphabet, textSize, contrast, dwell, voice });
+    document.documentElement.dataset.textSize = textSize;
+    document.documentElement.dataset.contrast = contrast;
+    setSpeechEnabled(voice);
+  }, [hand, alphabet, textSize, contrast, dwell, voice]);
   return null;
 }
 

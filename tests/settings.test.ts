@@ -7,18 +7,36 @@ describe('settings storage', () => {
   it('returns defaults when nothing is stored', () =>
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS));
   it('round-trips', () => {
-    saveSettings({ hand: 'left', alphabet: 'english', display: 'contrast' });
-    expect(loadSettings()).toEqual({ hand: 'left', alphabet: 'english', display: 'contrast' });
+    const s = {
+      hand: 'left',
+      alphabet: 'english',
+      textSize: 'xlarge',
+      contrast: 'high',
+      dwell: 'slow',
+      voice: false,
+    } as const;
+    saveSettings(s);
+    expect(loadSettings()).toEqual(s);
   });
   it('ignores corrupt or unknown values', () => {
-    localStorage.setItem('signscribe.settings.v1', '{"hand":"banana"');
+    localStorage.setItem('signscribe.settings.v2', '{"hand":"banana"');
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
     localStorage.setItem(
-      'signscribe.settings.v1',
-      JSON.stringify({ hand: 'x', alphabet: 'arabic', display: 'large' }),
+      'signscribe.settings.v2',
+      JSON.stringify({ hand: 'x', alphabet: 'arabic', textSize: 'huge', dwell: 'warp', voice: 3 }),
     );
     const s = loadSettings();
     expect(['left', 'right']).toContain(s.hand);
     expect(s.alphabet).toBe('english'); // Arabic is not available yet
+    expect(s.textSize).toBe(DEFAULT_SETTINGS.textSize);
+    expect(s.dwell).toBe('auto');
+    expect(s.voice).toBe(DEFAULT_SETTINGS.voice);
+  });
+  it('migrates the Phase 1/2 "display" choice', () => {
+    localStorage.setItem(
+      'signscribe.settings.v1',
+      JSON.stringify({ hand: 'left', display: 'contrast' }),
+    );
+    expect(loadSettings()).toMatchObject({ hand: 'left', textSize: 'large', contrast: 'high' });
   });
 });

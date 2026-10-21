@@ -4,7 +4,7 @@ A camera-controlled interface that turns hand signs into written sentences. No k
 once it is running: you raise a hand to start, point and hold to choose, and use thumbs, a fist and an
 open palm for yes / no / delete / space.
 
-Status: Phase 2 of 7 (see `CLAUDE.md` for the working rules; camera, hand tracking, gestures, pointer, dwell). Letter recognition and picture-card
+Status: Phase 3 of 7 (Phase 2 camera layer plus context tips, comfort settings, speech). Earlier: Phase 2 of 7 (see `CLAUDE.md` for the working rules; camera, hand tracking, gestures, pointer, dwell). Letter recognition and picture-card
 detection are NOT built yet. See `PLAN.md` for the phases and `docs/DONE.md` for what is proven and what still
 needs a real camera.
 
@@ -30,17 +30,17 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
 
     npm run check      # typecheck, lint, unit tests, production build
     npm run e2e        # needs a build: whole flow driven by synthetic hands, no mouse or keyboard; camera error messages
-    npm run layout     # needs a build: no scrolling or overflow on any screen at 1280x720, 1440x900, 1920x1080
+    npm run layout     # needs a build: no scrolling or overflow on any screen at 1280x720, 1440x900, 1920x1080 (reports Normal, Large and Extra large text)
     npm run compare    # needs a build: each screen next to its Figma export (tools/compare/out/)
 
 ## Layout of the code
 
     src/state/     XState v5 machine: the only thing that decides which screen is shown
     src/vision/    camera, MediaPipe, landmark features, gestures, pointer, dwell, zones, controller
-    src/screens/   the 13 screens (S01 ... S13), driven by the machine
+    src/screens/   the 14 screens (S01 ... S13 from Figma, S14 comfort settings), driven by the machine
     src/ui/        shared components (HandGlyph, HoldRing, HintBar, CommandZone, CameraView ...)
     src/nlp/       word lists, edit distance, offline sentence builder
     src/dev/       developer panels, mounted only with ?dev=1
     tests/         unit tests (machine, gestures, controller, dwell, pointer, contrast, dictionary ...)
     tools/         models download, screenshot compare, e2e and layout checks
-    docs/          DONE.md (evidence), A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)
+    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)

@@ -22,7 +22,7 @@ const L = (letter: string): Ev[] => [
 ];
 
 describe('paths reach the screens they claim', () => {
-  for (let n = 1; n <= 13; n++) {
+  for (let n = 1; n <= 14; n++) {
     it(`screen ${n}`, () => expect(screen(at(n))).toBe(n));
   }
 });
@@ -30,7 +30,8 @@ describe('paths reach the screens they claim', () => {
 describe('forward flow', () => {
   it('01 -> 02 on WAKE', () => expect(screen(send(start(), { type: 'WAKE' }))).toBe(2));
   it('02 -> 03 on CHECKS_PASSED', () => expect(screen(at(3))).toBe(3));
-  it('03 -> 04 on YES', () => expect(screen(send(at(3), { type: 'YES' }))).toBe(4));
+  it('03 -> 14 (comfort) on YES', () => expect(screen(send(at(3), { type: 'YES' }))).toBe(14));
+  it('14 -> 04 on YES', () => expect(screen(send(at(14), { type: 'YES' }))).toBe(4));
   it('04 -> 05 on YES', () => expect(screen(send(at(4), { type: 'YES' }))).toBe(5));
   it('05 -> 06 on YES with spell', () => expect(screen(send(at(5), { type: 'YES' }))).toBe(6));
   it('05 -> 10 on YES with cards', () =>
@@ -61,7 +62,7 @@ describe('forward flow', () => {
 describe('thumbs down (NO) goes back / cancels', () => {
   it('02 -> 01', () => expect(screen(send(at(2), { type: 'NO' }))).toBe(1));
   it('03 -> 02', () => expect(screen(send(at(3), { type: 'NO' }))).toBe(2));
-  it('04 -> 03', () => expect(screen(send(at(4), { type: 'NO' }))).toBe(3));
+  it('04 -> 14', () => expect(screen(send(at(4), { type: 'NO' }))).toBe(14));
   it('05 -> 04', () => expect(screen(send(at(5), { type: 'NO' }))).toBe(4));
   it('06 -> 05', () => expect(screen(send(at(6), { type: 'NO' }))).toBe(5));
   it('07 cancels the candidate, back to 06', () => {
@@ -209,16 +210,41 @@ describe('safety: nothing reaches 12 without YES on 11', () => {
   });
 });
 
-describe('03 preferences', () => {
-  it('stores hand, display; English alphabet only', () => {
-    let s = at(3);
-    s = send(
-      s,
-      { type: 'CHOOSE_HAND', hand: 'left' },
-      { type: 'CHOOSE_DISPLAY', display: 'contrast' },
+describe('14 comfort settings', () => {
+  it('stores text size, contrast, dwell speed and voice', () => {
+    const s = send(
+      at(14),
+      { type: 'CHOOSE_TEXT_SIZE', textSize: 'xlarge' },
+      { type: 'CHOOSE_CONTRAST', contrast: 'high' },
+      { type: 'CHOOSE_DWELL', dwell: 'slow' },
+      { type: 'CHOOSE_VOICE', voice: false },
     );
+    expect(s.context).toMatchObject({
+      textSize: 'xlarge',
+      contrast: 'high',
+      dwell: 'slow',
+      voice: false,
+    });
+  });
+  it('NO goes back to 03 and 04 NO comes back here', () => {
+    expect(screen(send(at(14), { type: 'NO' }))).toBe(3);
+    expect(screen(send(at(4), { type: 'NO' }))).toBe(14);
+  });
+  it('settings changes are ignored on other screens', () => {
+    expect(send(at(6), { type: 'CHOOSE_DWELL', dwell: 'fast' }).context.dwell).toBe('auto');
+  });
+  it('help and hand lost overlays work over it and return to it', () => {
+    const s = send(at(14), { type: 'HELP_TOGGLE' });
+    expect(screen(s)).toBe(13);
+    expect(screen(send(s, { type: 'HELP_TOGGLE' }))).toBe(14);
+  });
+});
+
+describe('03 preferences', () => {
+  it('stores hand; English alphabet only', () => {
+    let s = at(3);
+    s = send(s, { type: 'CHOOSE_HAND', hand: 'left' });
     expect(s.context.hand).toBe('left');
-    expect(s.context.display).toBe('contrast');
     s = send(s, { type: 'CHOOSE_ALPHABET', alphabet: 'arabic' });
     expect(s.context.alphabet).toBe('english'); // "Coming soon" is not selectable
   });
@@ -311,7 +337,10 @@ describe('no dead ends', () => {
     { type: 'CHECKS_PASSED' },
     { type: 'CHOOSE_HAND', hand: 'left' },
     { type: 'CHOOSE_ALPHABET', alphabet: 'english' },
-    { type: 'CHOOSE_DISPLAY', display: 'large' },
+    { type: 'CHOOSE_TEXT_SIZE', textSize: 'large' },
+    { type: 'CHOOSE_CONTRAST', contrast: 'high' },
+    { type: 'CHOOSE_DWELL', dwell: 'fast' },
+    { type: 'CHOOSE_VOICE', voice: false },
     { type: 'CHOOSE_CONTEXT', place: 'Shop' },
     { type: 'CHOOSE_METHOD', method: 'card' },
     { type: 'CHOOSE_METHOD', method: 'spell' },
@@ -360,7 +389,7 @@ describe('no dead ends', () => {
   const nodes = new Map<string, Snap>();
   const edges = new Map<string, Set<string>>();
   // seed with the representative state of every screen (all reachable from start, see the path tests)
-  const queue: Snap[] = [start(), ...Array.from({ length: 13 }, (_, i) => at(i + 1))];
+  const queue: Snap[] = [start(), ...Array.from({ length: 14 }, (_, i) => at(i + 1))];
   for (const q of queue) nodes.set(key(q), q);
   while (queue.length) {
     const s = queue.shift()!;

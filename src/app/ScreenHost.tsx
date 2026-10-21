@@ -11,7 +11,7 @@ export function ScreenHost() {
   const name = SCREEN_NAMES[n - 1];
   useEffect(() => {
     document.title = `${name} · SignScribe`;
-    announce(`Screen ${n} of 13: ${name}`);
+    announce(`${name}`, { speak: false }); // read aloud by the screen's own caption, not here
   }, [n, name, announce]);
   const Current = SCREENS[n - 1];
   return (

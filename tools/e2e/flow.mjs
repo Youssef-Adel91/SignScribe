@@ -118,24 +118,42 @@ try {
 
     await pointAtTile(3, 'Left hand');
     const hand = await page.evaluate(
-      () => JSON.parse(localStorage.getItem('signscribe.settings.v1') || '{}').hand,
+      () => JSON.parse(localStorage.getItem('signscribe.settings.v2') || '{}').hand,
     );
     check('point-and-hold on "Left hand" selects it (03)', hand === 'left', `saved hand = ${hand}`);
-    await pointAtTile(3, 'Large text');
-    check(
-      'point-and-hold on "Large text" applies it',
-      (await page.evaluate(() => document.documentElement.dataset.display)) === 'large',
-    );
     await pointAtTile(3, 'Arabic');
     check(
       '"Coming soon" alphabet cannot be chosen',
       (await page.evaluate(
-        () => JSON.parse(localStorage.getItem('signscribe.settings.v1') || '{}').alphabet,
+        () => JSON.parse(localStorage.getItem('signscribe.settings.v2') || '{}').alphabet,
       )) === 'english',
     );
 
     await play([{ pose: 'thumbsUp' }], 900);
-    check('thumbs up: 03 -> 04', await waitScreen(4));
+    check('thumbs up: 03 -> 14 (comfort settings)', await waitScreen(14));
+    await play([], 500);
+    const saved = () =>
+      page.evaluate(() => JSON.parse(localStorage.getItem('signscribe.settings.v2') || '{}'));
+    await pointAtTile(14, 'Extra large');
+    check(
+      'point-and-hold on "Extra large" applies it at once',
+      (await page.evaluate(() => document.documentElement.dataset.textSize)) === 'xlarge',
+    );
+    await pointAtTile(14, 'High contrast');
+    check(
+      'point-and-hold on "High contrast" applies it at once',
+      (await page.evaluate(() => document.documentElement.dataset.contrast)) === 'high',
+    );
+    await pointAtTile(14, 'Slower');
+    check('hold time "Slower" is saved', (await saved()).dwell === 'slow');
+    await pointAtTile(14, 'Silent');
+    check('voice "Silent" is saved', (await saved()).voice === false);
+    await pointAtTile(14, 'Normal'); // text size back to normal, so later screens fit
+    await pointAtTile(14, 'Standard');
+    await pointAtTile(14, 'Automatic');
+    await pointAtTile(14, 'Read aloud');
+    await play([{ pose: 'thumbsUp' }], 900);
+    check('thumbs up: 14 -> 04', await waitScreen(4));
     await play([], 500);
     await pointAtTile(4, 'Shop');
     await play([{ pose: 'thumbsUp' }], 900);

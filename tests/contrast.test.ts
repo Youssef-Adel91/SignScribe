@@ -13,7 +13,7 @@ export const ratio = (a: string, b: string) => {
 };
 
 const css = readFileSync('src/styles/tokens.css', 'utf8');
-const token = (name: string, block = css.split(":root[data-display='large']")[0]) => {
+const token = (name: string, block = css.split(":root[data-text-size='large']")[0]) => {
   const m = block.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`));
   if (!m) throw new Error(`token ${name} missing`);
   return m[1];
@@ -49,7 +49,7 @@ describe('contrast ratios match the numbers in PLAN.md section 5', () => {
   });
 
   it('high-contrast palette reaches at least 7:1 for body text and 4.5:1 for the rest', () => {
-    const block = css.split(":root[data-display='contrast']")[1];
+    const block = css.split(":root[data-contrast='high']")[1];
     for (const t of [
       'ink',
       'ink-2',

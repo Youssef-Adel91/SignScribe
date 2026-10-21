@@ -12,6 +12,7 @@ import S10PictureCard from './S10PictureCard';
 import S11ReviewSentence from './S11ReviewSentence';
 import S12Share from './S12Share';
 import S13GestureGuide from './S13GestureGuide';
+import S14Comfort from './S14Comfort';
 
 /** Index = screen number - 1. */
 export const SCREENS: ComponentType[] = [
@@ -28,4 +29,5 @@ export const SCREENS: ComponentType[] = [
   S11ReviewSentence,
   S12Share,
   S13GestureGuide,
+  S14Comfort,
 ];

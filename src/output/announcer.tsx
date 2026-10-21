@@ -8,10 +8,11 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { speak } from './speech';
 
 /**
- * One call keeps the screen reader (aria-live) and, from Phase 3, speech in sync with what is on screen.
- * Phase 1 implements the aria-live half only.
+ * One call keeps the screen reader (aria-live) and speech in sync with what is on screen.
+ * `speak: false` keeps a message for the screen reader only (screen changes are not read aloud twice).
  */
 type Announce = (text: string, opts?: { speak?: boolean }) => void;
 const AnnounceContext = createContext<Announce>(() => {});
@@ -19,10 +20,11 @@ const AnnounceContext = createContext<Announce>(() => {});
 export function AnnouncerProvider({ children }: { children: ReactNode }) {
   const [text, setText] = useState('');
   const toggle = useRef(false);
-  const announce = useCallback<Announce>((t) => {
+  const announce = useCallback<Announce>((t, opts) => {
     // Alternate a zero-width space so repeating the same sentence is still announced.
     toggle.current = !toggle.current;
     setText(toggle.current ? t : `${t}\u200b`);
+    if (opts?.speak !== false) speak(t);
   }, []);
   const value = useMemo(() => announce, [announce]);
   return (

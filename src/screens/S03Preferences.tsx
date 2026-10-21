@@ -4,7 +4,7 @@ import { Hint } from '../ui/HintBar';
 import { Screen } from '../ui/Screen';
 import { Tile } from '../ui/Tile';
 import { useCtx } from '../state/MachineProvider';
-import { AVAILABLE_ALPHABETS, type Alphabet, type Display } from '../state/machine';
+import { AVAILABLE_ALPHABETS, type Alphabet } from '../state/machine';
 import common from './common.module.css';
 import styles from './S03Preferences.module.css';
 import { HandChip } from '../vision/bits';
@@ -14,14 +14,8 @@ const ALPHABETS: { key: Alphabet; title: string; sub: string }[] = [
   { key: 'english', title: 'English', sub: 'Fingerspelling' },
   { key: 'more', title: 'More…', sub: 'Other alphabets' },
 ];
-const DISPLAYS: { key: Display; title: string; sub: string }[] = [
-  { key: 'standard', title: 'Standard', sub: 'Normal size and colours' },
-  { key: 'large', title: 'Large text', sub: 'Bigger words everywhere' },
-  { key: 'contrast', title: 'High contrast', sub: 'Large text, strong colours' },
-];
-
 export default function S03Preferences() {
-  const { hand, alphabet, display } = useCtx();
+  const { hand, alphabet } = useCtx();
   return (
     <Screen
       steps={['active', 'todo', 'todo', 'todo']}
@@ -41,7 +35,7 @@ export default function S03Preferences() {
       }
     >
       <div className={common.center}>
-        <h1 className={common.h1}>Three quick choices</h1>
+        <h1 className={common.h1}>Two quick choices</h1>
         <p className={common.lede}>
           Point at a choice and hold still. The ring shows when it is chosen.
         </p>
@@ -93,22 +87,6 @@ export default function S03Preferences() {
               sub={a.sub}
               className={styles.small}
               dwell={{ type: 'CHOOSE_ALPHABET', alphabet: a.key }}
-            />
-          ))}
-        </ul>
-
-        <h2 className={common.h2} id="q-display">
-          How should the screen look?
-        </h2>
-        <ul className={common.row} aria-labelledby="q-display">
-          {DISPLAYS.map((d) => (
-            <Tile
-              key={d.key}
-              selected={display === d.key}
-              title={d.title}
-              sub={d.sub}
-              className={styles.small}
-              dwell={{ type: 'CHOOSE_DISPLAY', display: d.key }}
             />
           ))}
         </ul>

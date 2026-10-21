@@ -67,9 +67,16 @@ export function DevPanel({ goTo }: { goTo: (screen: number) => void }) {
         {b('Right hand', { type: 'CHOOSE_HAND', hand: 'right' })}
         {b('Arabic', { type: 'CHOOSE_ALPHABET', alphabet: 'arabic' })}
         {b('English', { type: 'CHOOSE_ALPHABET', alphabet: 'english' })}
-        {b('Standard', { type: 'CHOOSE_DISPLAY', display: 'standard' })}
-        {b('Large text', { type: 'CHOOSE_DISPLAY', display: 'large' })}
-        {b('High contrast', { type: 'CHOOSE_DISPLAY', display: 'contrast' })}
+        {b('Text normal', { type: 'CHOOSE_TEXT_SIZE', textSize: 'normal' })}
+        {b('Text large', { type: 'CHOOSE_TEXT_SIZE', textSize: 'large' })}
+        {b('Text extra large', { type: 'CHOOSE_TEXT_SIZE', textSize: 'xlarge' })}
+        {b('Contrast standard', { type: 'CHOOSE_CONTRAST', contrast: 'standard' })}
+        {b('Contrast high', { type: 'CHOOSE_CONTRAST', contrast: 'high' })}
+        {b('Hold auto', { type: 'CHOOSE_DWELL', dwell: 'auto' })}
+        {b('Hold slow', { type: 'CHOOSE_DWELL', dwell: 'slow' })}
+        {b('Hold fast', { type: 'CHOOSE_DWELL', dwell: 'fast' })}
+        {b('Voice on', { type: 'CHOOSE_VOICE', voice: true })}
+        {b('Voice off', { type: 'CHOOSE_VOICE', voice: false })}
         {(['Clinic', 'Shop', 'Work', 'Home'] as const).map((p) =>
           b(p, { type: 'CHOOSE_CONTEXT', place: p }),
         )}

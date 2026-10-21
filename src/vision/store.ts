@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Checks } from './checks';
+import { NO_ADVICE, type ContextAdvice } from './context';
 import type { VisionUI } from './controller';
 import type { HandFrame } from './types';
 
@@ -42,6 +43,8 @@ export interface VisionState {
   frame: HandFrame | null;
   ui: VisionUI | null;
   checks: Checks | null;
+  /** light / distance drift while the app is in use */
+  advice: ContextAdvice;
 }
 
 const initial: VisionState = {
@@ -56,6 +59,7 @@ const initial: VisionState = {
   frame: null,
   ui: null,
   checks: null,
+  advice: NO_ADVICE,
 };
 
 type Listener = () => void;

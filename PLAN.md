@@ -88,3 +88,7 @@ The course asks us to COMPARE TWO different interaction techniques and evaluate 
 - Course deadlines: Phase 1 week 4, Phase 2 week 6, Phase 3 week 13, Phase 4 week 14. What the course "Phase 2" requires is unconfirmed (Youssef asks the TA); it is not assumed to equal the phases above.
 - **DECIDED (Youssef): training in Python.** k-NN for static letters, $1 (dollarpy) for moving signs only. The browser app only consumes an exported model JSON. Tooling stops at the end of Phase 4; then it is handed over to Youssef and the team.
 - Still open: what the course's own Phase 2 (week 6) requires. Youssef is asking the TA; nothing is assumed.
+
+## Phase 3 status (branch feat/phase3-context-settings)
+Done: context sensing with tips, screen 14 comfort settings (text size, contrast, hold time, voice), adaptive-dwell display, speech synthesis, aria-live for tips. See docs/PHASE3.md and docs/DONE.md. Known gap: Extra large text overflows (KNOWN_ISSUES #3).
+Next: study mode (comparison with keyboard + mouse), then Phase 4.

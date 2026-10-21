@@ -4,6 +4,7 @@ import { MachineProvider, useSend } from '../state/MachineProvider';
 import { PATH_TO_SCREEN } from '../state/paths';
 import { DevPanel } from '../dev/DevPanel';
 import { VisionDebug } from '../dev/VisionDebug';
+import { ContextNotice } from '../vision/ContextNotice';
 import { PointerOverlay } from '../vision/PointerOverlay';
 import { StatusBanner } from '../vision/StatusBanner';
 import { VisionProvider } from '../vision/VisionProvider';
@@ -16,7 +17,7 @@ export const DEV = params.get('dev') === '1';
 function initialScreen(): number {
   if (!DEV) return 1;
   const n = Number(window.location.hash.replace('#', ''));
-  return n >= 1 && n <= 13 ? n : 1;
+  return n >= 1 && n <= 14 ? n : 1;
 }
 
 /** Replays the event path to a screen on mount (dev only). */
@@ -38,6 +39,7 @@ export function App() {
         <VisionProvider />
         <PointerOverlay />
         <StatusBanner />
+        <ContextNotice />
         {DEV && <DevPanel goTo={(screen) => setBoot((b) => ({ key: b.key + 1, screen }))} />}
         {DEV && <VisionDebug />}
       </MachineProvider>

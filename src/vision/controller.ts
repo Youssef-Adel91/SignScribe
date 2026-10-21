@@ -1,4 +1,4 @@
-import type { Ev, Hand } from '../state/machine';
+import type { DwellSetting, Ev, Hand } from '../state/machine';
 import type { Checks } from './checks';
 import { DwellEngine, type Target } from './dwell';
 import { GestureStabilizer, classify, type Stable } from './gestures';
@@ -35,6 +35,8 @@ export interface ControllerInput {
   needsHand: boolean;
   viewport: { w: number; h: number };
   checks: Checks | null;
+  /** hold-time setting from screen 14; absent = automatic */
+  dwell?: DwellSetting;
 }
 
 export interface HandView {
@@ -64,16 +66,20 @@ interface TrackedHand {
   side: Side;
 }
 
+/** a screen of the main flow (not the hand-lost overlay 8); 14 = comfort settings, between 03 and 04 */
+const isFlowScreen = (screen: number, from: number) =>
+  (screen >= from && screen <= 11 && screen !== 8) || screen === 14;
+
 /** What each command gesture does on each screen. null = nothing. */
 export function commandEvent(screen: number, label: GestureLabel): Ev | null {
   switch (label) {
     case 'up':
       if (screen === 12) return { type: 'FINISH' };
-      return screen >= 3 && screen <= 11 && screen !== 8 ? { type: 'YES' } : null;
+      return isFlowScreen(screen, 3) ? { type: 'YES' } : null;
     case 'down':
       if (screen === 12) return { type: 'EDIT' };
       if (screen === 13) return { type: 'NO' };
-      return screen >= 2 && screen <= 11 && screen !== 8 ? { type: 'NO' } : null;
+      return isFlowScreen(screen, 2) ? { type: 'NO' } : null;
     case 'open':
       if (screen === 6 || screen === 7) return { type: 'SPACE' };
       if (screen === 12) return { type: 'NEW_SENTENCE' };
@@ -165,6 +171,7 @@ export class GestureController {
       this.checksSince = null;
       this.checksFired = false;
     }
+    this.dwell.adaptive.setMode(inp.dwell ?? 'auto');
     const hands = this.track(frame, inp);
     const n = hands.length;
 

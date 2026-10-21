@@ -127,3 +127,36 @@ describe('AdaptiveDwell', () => {
     expect(e.adaptive.ms).toBe(900);
   });
 });
+
+describe('dwell setting from screen 14', () => {
+  it('fixed settings pin the hold time and ignore successes and near-misses', () => {
+    const a = new AdaptiveDwell();
+    a.setMode('slow');
+    expect(a.ms).toBe(1200);
+    for (let i = 0; i < 6; i++) a.success();
+    a.nearMiss();
+    expect(a.ms).toBe(1200);
+    a.setMode('fast');
+    expect(a.ms).toBe(600);
+  });
+  it('automatic after a fixed setting starts again from 800 and adapts', () => {
+    const a = new AdaptiveDwell();
+    a.setMode('slow');
+    a.setMode('auto');
+    expect(a.ms).toBe(800);
+    a.nearMiss();
+    expect(a.ms).toBe(900);
+  });
+  it('automatic keeps what it has learned when set again', () => {
+    const a = new AdaptiveDwell();
+    a.nearMiss();
+    a.setMode('auto');
+    expect(a.ms).toBe(900);
+  });
+  it('a fixed 1.2 s hold fires at 1.2 s, not at 0.8 s', () => {
+    const e = new DwellEngine();
+    e.adaptive.setMode('slow');
+    expect(run(e, on(T1), [T1], 0, 1000).fired).toBeNull();
+    expect(run(e, on(T1), [T1], 1100, 400).fired).not.toBeNull();
+  });
+});

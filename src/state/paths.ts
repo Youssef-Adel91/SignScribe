@@ -16,14 +16,16 @@ const confirm = (letter: string): Ev[] => [cand(letter), { type: 'LETTER_CONFIRM
 const SETUP: Ev[] = [
   { type: 'WAKE' },
   { type: 'CHECKS_PASSED' },
-  { type: 'YES' },
-  { type: 'YES' },
-  { type: 'YES' },
+  { type: 'YES' }, // 03 -> 14 comfort
+  { type: 'YES' }, // 14 -> 04 context
+  { type: 'YES' }, // 04 -> 05 method
+  { type: 'YES' }, // 05 -> 06 spell
 ];
 const toSpell: Ev[] = SETUP; // welcome -> ... -> 06 spell ready
 const toCards: Ev[] = [
   { type: 'WAKE' },
   { type: 'CHECKS_PASSED' },
+  { type: 'YES' },
   { type: 'YES' },
   { type: 'YES' },
   { type: 'CHOOSE_METHOD', method: 'card' },
@@ -40,8 +42,14 @@ export const PATH_TO_SCREEN: Record<number, Ev[]> = {
   1: [],
   2: [{ type: 'WAKE' }],
   3: [{ type: 'WAKE' }, { type: 'CHECKS_PASSED' }],
-  4: [{ type: 'WAKE' }, { type: 'CHECKS_PASSED' }, { type: 'YES' }],
-  5: [{ type: 'WAKE' }, { type: 'CHECKS_PASSED' }, { type: 'YES' }, { type: 'YES' }],
+  4: [{ type: 'WAKE' }, { type: 'CHECKS_PASSED' }, { type: 'YES' }, { type: 'YES' }],
+  5: [
+    { type: 'WAKE' },
+    { type: 'CHECKS_PASSED' },
+    { type: 'YES' },
+    { type: 'YES' },
+    { type: 'YES' },
+  ],
   6: toSpell,
   7: [...toSpell, ...confirm('H'), ...confirm('E'), cand('L')],
   8: [...toSpell, ...confirm('H'), ...confirm('E'), ...confirm('L'), { type: 'HAND_LOST' }],
@@ -62,4 +70,5 @@ export const PATH_TO_SCREEN: Record<number, Ev[]> = {
   11: toReview,
   12: [...toReview, { type: 'YES' }],
   13: [{ type: 'HELP_TOGGLE' }],
+  14: [{ type: 'WAKE' }, { type: 'CHECKS_PASSED' }, { type: 'YES' }],
 };

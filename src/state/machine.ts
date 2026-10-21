@@ -7,7 +7,10 @@ import type { Place } from '../nlp/words';
 
 export type Hand = 'left' | 'right';
 export type Alphabet = 'arabic' | 'english' | 'more';
-export type Display = 'standard' | 'large' | 'contrast';
+export type TextSize = 'normal' | 'large' | 'xlarge';
+export type Contrast = 'standard' | 'high';
+/** auto = adaptive hold time; the others are fixed (slow 1.2 s, normal 0.8 s, fast 0.6 s) */
+export type DwellSetting = 'auto' | 'slow' | 'normal' | 'fast';
 export type Method = 'spell' | 'card';
 export type Overlay = 'none' | 'handLost' | 'help';
 
@@ -34,7 +37,11 @@ export interface Suggestion {
 export interface Settings {
   hand: Hand;
   alphabet: Alphabet;
-  display: Display;
+  textSize: TextSize;
+  contrast: Contrast;
+  dwell: DwellSetting;
+  /** read screens, tips and the finished sentence aloud (speech synthesis) */
+  voice: boolean;
 }
 
 export interface Ctx extends Settings {
@@ -63,7 +70,10 @@ export type Ev =
   | { type: 'CHECKS_PASSED' }
   | { type: 'CHOOSE_HAND'; hand: Hand }
   | { type: 'CHOOSE_ALPHABET'; alphabet: Alphabet }
-  | { type: 'CHOOSE_DISPLAY'; display: Display }
+  | { type: 'CHOOSE_TEXT_SIZE'; textSize: TextSize }
+  | { type: 'CHOOSE_CONTRAST'; contrast: Contrast }
+  | { type: 'CHOOSE_DWELL'; dwell: DwellSetting }
+  | { type: 'CHOOSE_VOICE'; voice: boolean }
   | { type: 'CHOOSE_CONTEXT'; place: Place }
   | { type: 'CHOOSE_METHOD'; method: Method }
   | { type: 'LETTER_CANDIDATE'; candidate: Candidate }
@@ -88,7 +98,10 @@ export type Ev =
 export const DEFAULT_SETTINGS: Settings = {
   hand: 'right',
   alphabet: 'english',
-  display: 'standard',
+  textSize: 'normal',
+  contrast: 'standard',
+  dwell: 'auto',
+  voice: true,
 };
 
 /* ---------- pure helpers ---------- */
@@ -135,9 +148,14 @@ export const signScribeMachine = setup({
     setAlphabet: assign(({ event }) =>
       event.type === 'CHOOSE_ALPHABET' ? { alphabet: event.alphabet } : {},
     ),
-    setDisplay: assign(({ event }) =>
-      event.type === 'CHOOSE_DISPLAY' ? { display: event.display } : {},
+    setTextSize: assign(({ event }) =>
+      event.type === 'CHOOSE_TEXT_SIZE' ? { textSize: event.textSize } : {},
     ),
+    setContrast: assign(({ event }) =>
+      event.type === 'CHOOSE_CONTRAST' ? { contrast: event.contrast } : {},
+    ),
+    setDwell: assign(({ event }) => (event.type === 'CHOOSE_DWELL' ? { dwell: event.dwell } : {})),
+    setVoice: assign(({ event }) => (event.type === 'CHOOSE_VOICE' ? { voice: event.voice } : {})),
     setPlace: assign(({ event }) =>
       event.type === 'CHOOSE_CONTEXT' ? { place: event.place } : {},
     ),
@@ -285,16 +303,25 @@ export const signScribeMachine = setup({
       on: {
         CHOOSE_HAND: { guard: 'idle', actions: 'setHand' },
         CHOOSE_ALPHABET: { guard: and(['idle', 'alphabetAvailable']), actions: 'setAlphabet' },
-        CHOOSE_DISPLAY: { guard: 'idle', actions: 'setDisplay' },
-        YES: { guard: 'idle', target: 'context' },
+        YES: { guard: 'idle', target: 'comfort' },
         NO: { guard: 'idle', target: 'cameraCheck' },
+      },
+    },
+    /* 14 (no Figma frame): comfort settings, shown right after 03 */ comfort: {
+      on: {
+        CHOOSE_TEXT_SIZE: { guard: 'idle', actions: 'setTextSize' },
+        CHOOSE_CONTRAST: { guard: 'idle', actions: 'setContrast' },
+        CHOOSE_DWELL: { guard: 'idle', actions: 'setDwell' },
+        CHOOSE_VOICE: { guard: 'idle', actions: 'setVoice' },
+        YES: { guard: 'idle', target: 'context' },
+        NO: { guard: 'idle', target: 'preferences' },
       },
     },
     /* 04 */ context: {
       on: {
         CHOOSE_CONTEXT: { guard: 'idle', actions: 'setPlace' },
         YES: { guard: 'idle', target: 'method' },
-        NO: { guard: 'idle', target: 'preferences' },
+        NO: { guard: 'idle', target: 'comfort' },
       },
     },
     /* 05 */ method: {
@@ -437,7 +464,7 @@ export const signScribeMachine = setup({
 
 /* ---------- derived view ---------- */
 
-/** Screen number 1-13 for a snapshot: overlays win over the underlying state. */
+/** Screen number 1-14 for a snapshot: overlays win over the underlying state. */
 export function screenOf(value: unknown, ctx: Pick<Ctx, 'overlay'>): number {
   if (ctx.overlay === 'help') return 13;
   if (ctx.overlay === 'handLost') return 8;
@@ -451,6 +478,8 @@ export function screenOf(value: unknown, ctx: Pick<Ctx, 'overlay'>): number {
       return 2;
     case 'preferences':
       return 3;
+    case 'comfort':
+      return 14;
     case 'context':
       return 4;
     case 'method':
@@ -482,4 +511,5 @@ export const SCREEN_NAMES = [
   'Review sentence',
   'Share',
   'Gesture guide',
+  'Comfort settings',
 ] as const;

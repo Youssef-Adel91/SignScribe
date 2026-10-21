@@ -39,3 +39,16 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Two interaction techniques compared (satisfaction, engagement, usability, surveys) | study | not met | technique 2 undecided, see PLAN.md |
 | Study logger: same task in both modes, time + errors + post-task survey | study (moved earlier) | not met | |
 | Phase 2 gesture numbers measured on a real camera | 2 | needs my camera | `docs/PHASE2_CHECKLIST.md` |
+
+## Phase 3 (context, settings, speech)
+| Item | Phase | Status | Evidence |
+| --- | --- | --- | --- |
+| Settings: hand, text size, contrast, hold time, voice; applied at once, saved, old value migrated | 3 | verified here | `tests/settings.test.ts`, `tests/machine.test.ts` (14 comfort), `npm run e2e` (34 checks) |
+| Screen 14 sits between 03 and 04, back/forward, overlays work over it | 3 | verified here | machine tests, e2e |
+| Fixed hold times pin the dwell; automatic adapts | 3 | verified here | `tests/dwell.test.ts` |
+| Context sensor: debounce 3 s / 2 s, hysteresis, no hand keeps distance state | 3 | verified here (synthetic readings) | `tests/context.test.ts` |
+| Light/distance tips appear at the right moment on a real camera | 3 | needs my camera | tips on 06/07/09/10 |
+| Speech: off switch, no repeat, never throws | 3 | verified here (fake synth) | `tests/speech.test.ts` |
+| Speech is audible and understandable in the browser | 3 | needs my camera / speakers | |
+| No overflow at Normal and Large text on 14 screens x 3 sizes x 2 modes | 3 | verified here | `npm run layout` (84 combos each) |
+| No overflow at Extra large text | 3 | not met | docs/KNOWN_ISSUES.md #3 |
