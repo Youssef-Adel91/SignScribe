@@ -4,11 +4,14 @@ import { MachineProvider, useSend } from '../state/MachineProvider';
 import { PATH_TO_SCREEN } from '../state/paths';
 import { DevPanel } from '../dev/DevPanel';
 import { VisionDebug } from '../dev/VisionDebug';
+import { LetterNotice } from '../recognition/LetterNotice';
 import { ContextNotice } from '../vision/ContextNotice';
 import { PointerOverlay } from '../vision/PointerOverlay';
 import { StatusBanner } from '../vision/StatusBanner';
 import { VisionProvider } from '../vision/VisionProvider';
 import { ScreenHost } from './ScreenHost';
+import { CollectPanel } from '../collect/CollectPanel';
+import { WozPanel } from '../dev/WozPanel';
 import { StudyPanel } from '../study/StudyPanel';
 import { StudyProvider } from '../study/StudyProvider';
 
@@ -17,6 +20,10 @@ const params = new URLSearchParams(window.location.search);
 export const DEV = params.get('dev') === '1';
 /** Comparison study console (facilitator). Independent of ?dev=1. */
 export const STUDY = params.get('study') === '1';
+/** Data collection mode for the letter recogniser (researcher tool). */
+export const COLLECT = params.get('collect') === '1';
+/** Wizard-of-Oz letter entry for studies before a letter model exists. */
+export const WOZ = params.get('woz') === '1';
 
 function initialScreen(): number {
   if (!DEV) return 1;
@@ -40,11 +47,14 @@ function Body() {
       <MachineProvider key={boot.key}>
         {DEV && <Replay screen={boot.screen} />}
         {STUDY && <StudyPanel />}
+        {COLLECT && <CollectPanel />}
+        {WOZ && <WozPanel />}
         <ScreenHost />
         <VisionProvider />
         <PointerOverlay />
         <StatusBanner />
         <ContextNotice />
+        <LetterNotice />
         {DEV && <DevPanel goTo={(screen) => setBoot((b) => ({ key: b.key + 1, screen }))} />}
         {DEV && <VisionDebug />}
       </MachineProvider>

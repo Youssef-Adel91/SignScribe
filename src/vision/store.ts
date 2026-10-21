@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Checks } from './checks';
 import { NO_ADVICE, type ContextAdvice } from './context';
+import type { LetterUI } from '../recognition/letterController';
+import type { ModelStatus } from '../recognition/types';
 import type { VisionUI } from './controller';
 import type { HandFrame } from './types';
 
@@ -45,6 +47,14 @@ export interface VisionState {
   checks: Checks | null;
   /** light / distance drift while the app is in use */
   advice: ContextAdvice;
+  /** letter recognition: model state and what the recognizer sees now */
+  letters: {
+    status: ModelStatus;
+    message: string;
+    synthetic: boolean;
+    motionStatus: ModelStatus;
+    ui: LetterUI | null;
+  };
 }
 
 const initial: VisionState = {
@@ -60,6 +70,7 @@ const initial: VisionState = {
   ui: null,
   checks: null,
   advice: NO_ADVICE,
+  letters: { status: 'idle', message: '', synthetic: false, motionStatus: 'idle', ui: null },
 };
 
 type Listener = () => void;

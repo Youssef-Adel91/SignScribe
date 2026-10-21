@@ -13,6 +13,7 @@ import { useCtx } from '../state/MachineProvider';
 import styles from './S07SpellRecognizing.module.css';
 import { HandChip } from '../vision/bits';
 import { Demo } from '../vision/bits';
+import { LiveLetterRing } from '../recognition/LiveLetterRing';
 
 export default function S07SpellRecognizing() {
   const { hand, place, words, word, candidate } = useCtx();
@@ -64,6 +65,7 @@ export default function S07SpellRecognizing() {
                 </HoldRing>
               </div>
             </Demo>
+            <LiveLetterRing />
             <CamPill style={{ bottom: '11.3%', top: 'auto' }}>{caption}</CamPill>
           </CameraView>
         }

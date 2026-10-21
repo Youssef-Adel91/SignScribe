@@ -11,9 +11,17 @@ coverage
 playwright-report
 test-results
 # large local model caches (see README for download)
-public/models/
+public/models/*
+# trained letter / motion models are small JSON files the team shares (synthetic ones are rejected by a test)
+!public/models/*.json
+!public/models/README.md
 tools/**/__pycache__
 tools/train/data/
 tools/cards/dataset/
 tools/compare/out/
 tools/e2e/*.png
+
+# Python tooling
+__pycache__
+.venv
+ml/**/*.report.md.tmp

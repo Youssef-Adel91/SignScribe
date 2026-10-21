@@ -1,0 +1,111 @@
+.page {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  overflow: auto;
+  background: #fff;
+  color: #0f172a;
+  padding: 20px max(16px, 4vw);
+  font:
+    400 16px/1.4 Inter,
+    sans-serif;
+}
+.page h1 {
+  font-size: 26px;
+  margin: 0 0 8px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(320px, 1fr);
+  gap: 24px;
+}
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+.cam {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+}
+.status {
+  font-weight: 700;
+  font-size: 20px;
+  margin: 8px 0;
+}
+.f {
+  border: 1px solid #94a3b8;
+  border-radius: 10px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+}
+.f label {
+  display: block;
+  margin: 4px 0;
+}
+.f input,
+.f select {
+  font: inherit;
+  padding: 4px 8px;
+  border: 2px solid #475569;
+  border-radius: 6px;
+}
+.letters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.letters label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2px solid #94a3b8;
+  border-radius: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+  min-height: 44px;
+}
+.letters input {
+  position: absolute;
+  opacity: 0;
+}
+.letters span {
+  font-weight: 700;
+  font-size: 18px;
+}
+.letters small {
+  color: #475569;
+}
+.letters .on {
+  border-color: #0e7490;
+  background: #ecfeff;
+  outline: 2px solid #0e7490;
+}
+.page button {
+  font: inherit;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: 2px solid #0f172a;
+  background: #0f172a;
+  color: #fff;
+  cursor: pointer;
+}
+.page button:disabled {
+  background: #e2e8f0;
+  color: #475569;
+  border-color: #94a3b8;
+  cursor: not-allowed;
+}
+.hint {
+  color: #92400e;
+}
+.import {
+  display: inline-block;
+  border: 2px solid #0f172a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+}

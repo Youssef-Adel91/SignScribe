@@ -6,6 +6,8 @@ import { CameraError, openCamera, type OpenCamera } from './camera';
 import { ContextSensor } from './context';
 import { GestureController } from './controller';
 import { palmFraction } from './landmarks';
+import { LetterController } from '../recognition/letterController';
+import { loadModels, type LoadedModels } from '../recognition/models';
 import { createHandTracker, ModelMissingError, type HandTracker } from './hands';
 import { getTargets, setHot } from './targets';
 import { VISION_MODE as MODE, visionStore } from './store';
@@ -25,6 +27,21 @@ export function VisionProvider() {
     const controller = new GestureController(getTargets);
     const fps = new FpsMeter();
     const sensor = new ContextSensor();
+    let letters = new LetterController(null, null);
+    // letter models are optional files; the app works (with a clear notice) when they are absent
+    void loadModels().then((m: LoadedModels) => {
+      if (disposed) return;
+      letters = new LetterController(m.letters.recognizer, m.motion.recognizer);
+      visionStore.set({
+        letters: {
+          ...visionStore.state.letters,
+          status: m.letters.status,
+          message: m.letters.status === 'ready' ? '' : m.letters.message,
+          synthetic: m.letters.synthetic || m.motion.synthetic,
+          motionStatus: m.motion.status,
+        },
+      });
+    });
     let lastHot: string | null = null;
 
     const onFrame = (frame: HandFrame, inferMs: number) => {
@@ -41,7 +58,11 @@ export function VisionProvider() {
         viewport: { w: window.innerWidth, h: window.innerHeight },
         checks,
       });
-      for (const e of events) actor.send(e);
+      const lr = letters.step(frame, { screen, signingHand: snap.context.hand });
+      // a command given while a letter is held must not let that letter come straight back
+      if (events.some((e) => e.type === 'NO' || e.type === 'DELETE' || e.type === 'SPACE'))
+        letters.notifyCommand();
+      for (const e of [...events, ...lr.events]) actor.send(e);
       if (ui.dwell.id !== lastHot) {
         lastHot = ui.dwell.id;
         setHot(lastHot);
@@ -60,6 +81,7 @@ export function VisionProvider() {
         inferMs,
         fps: fps.tick(frame.t),
         advice: prev.message === advice.message && prev.light === advice.light ? prev : advice,
+        letters: { ...visionStore.state.letters, ui: lr.ui },
       });
     };
 

@@ -96,3 +96,7 @@ Next: study mode (comparison with keyboard + mouse), then Phase 4.
 ## Study mode status (branch feat/study-mode, stacked on Phase 3)
 Done: `?study=1` facilitator console, Latin-square plan, camera trials logged from machine events, keyboard + mouse task, surveys after each method and a comparison, CSV/JSON export. See docs/STUDY.md.
 Open: Phase 7 keeps adding polish (axe, performance); the final study report needs real participants.
+
+## Phase 4 status (branch feat/phase4-recognition, stacked on the study mode)
+Done: collection mode, dataset format, Python trainers (k-NN, $P), model JSON loader, replaceable recogniser interface, letter hold logic, Wizard-of-Oz panel, honest "no model" notice. See docs/PHASE4.md.
+STOP POINT reached as agreed: the model itself is for Youssef and the team. Handoff: docs/MODEL_HANDOFF.md. Phases 5-7 continue without waiting for the model.

@@ -64,3 +64,18 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Whole session in a browser: camera trial via gestures, give up, keyboard trial, surveys, CSV | study | verified here (synthetic hands) | `npm run e2e:study` |
 | Study run with real participants | study | not met | no data collected |
 | Camera method measured with letters or a real card | study | not met | needs Phase 4 / 5 |
+
+## Phase 4 (letter recognition tooling; no model)
+| Item | Phase | Status | Evidence |
+| --- | --- | --- | --- |
+| Dataset format documented and validated in Python and TypeScript | 4 | verified here | `docs/DATASET.md`, `ml/tests`, `tests/collect.test.ts` |
+| Collection mode: countdown, quality rules, refuse bad takes with a reason, undo, export / import | 4 | verified here (synthetic hands) | `tests/collect.test.ts`, `npm run e2e:collect` |
+| Collection mode works with a real camera and real hands | 4 | needs my camera | `/?collect=1` |
+| Features and $P identical in Python and TypeScript; our $P equals dollarpy | 4 | verified here | golden files, `npm run ml:test`, `tests/recognition.test.ts` |
+| A model written by Python gives the same letters and confidences in TypeScript | 4 | verified here | `ml/tests/golden_model.json` |
+| Trainers refuse synthetic data, write a report with the method, never hand-typed numbers | 4 | verified here | `ml/tests/test_pipeline.py` |
+| Letter hold / release / command-cancel / moving-sign logic | 4 | verified here (fake recognisers) | `tests/letters.test.ts` |
+| Honest notice when there is no / a broken / a synthetic model | 4 | verified here | `src/recognition/LetterNotice.tsx`, models guard test |
+| Letter recognition accuracy | 4 | not met | no model, no real data. Procedure: `docs/MODEL_HANDOFF.md` |
+| Moving-letter (J, Z) accuracy | 4 | not met | same |
+| Threshold values (`LETTER`) feel right | 4 | needs my camera | tune after a model exists |

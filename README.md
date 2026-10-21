@@ -25,6 +25,8 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
 | `/?dev=1#7`             | jump to screen 7                                                                                   |
 | `/?dev=1&vision=off`    | no camera at all (layout work, screenshots)                                                        |
 | `/?study=1`             | comparison study console (facilitator): camera vs keyboard + mouse, surveys, CSV export. See `docs/STUDY.md` |
+| `/?collect=1`           | data collection for the letter model (researcher tool). See `docs/MODEL_HANDOFF.md` |
+| `/?woz=1`               | Wizard of Oz: a facilitator types the letters (no model needed) |
 | `/?dev=1&vision=mock`   | no camera; `window.__signscribe.play(hands, ms)` feeds synthetic landmarks (used by `npm run e2e`) |
 
 ## Checks
@@ -32,6 +34,8 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
     npm run check      # typecheck, lint, unit tests, production build
     npm run e2e        # needs a build: whole flow driven by synthetic hands, no mouse or keyboard; camera error messages
     npm run layout     # needs a build: no scrolling or overflow on any screen at 1280x720, 1440x900, 1920x1080 (reports Normal, Large and Extra large text)
+    npm run e2e:collect # needs a build: collection mode and Wizard of Oz with synthetic hands
+    npm run ml:test    # Python: dataset, trainers, $P vs dollarpy (needs ml/requirements.txt)
     npm run e2e:study  # needs a build: a whole study session in the browser, then the CSV is checked
     npm run compare    # needs a build: each screen next to its Figma export (tools/compare/out/)
 
@@ -41,8 +45,10 @@ with a webcam. `localhost` counts as a secure origin, so no https is needed for 
     src/vision/    camera, MediaPipe, landmark features, gestures, pointer, dwell, zones, controller
     src/screens/   the 14 screens (S01 ... S13 from Figma, S14 comfort settings), driven by the machine
     src/ui/        shared components (HandGlyph, HoldRing, HintBar, CommandZone, CameraView ...)
+    src/recognition/ letters: k-NN, $P, model loader, hold logic    src/collect/  data collection mode
+    ml/            Python training tools (k-NN, $P), tests
     src/nlp/       word lists, edit distance, offline sentence builder
     src/dev/       developer panels, mounted only with ?dev=1
     tests/         unit tests (machine, gestures, controller, dwell, pointer, contrast, dictionary ...)
     tools/         models download, screenshot compare, e2e and layout checks
-    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, STUDY.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)
+    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, STUDY.md, PHASE4.md, DATASET.md, MODEL_FORMAT.md, MODEL_HANDOFF.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)
