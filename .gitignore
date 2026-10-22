@@ -26,3 +26,21 @@ tools/e2e/*.png
 __pycache__
 .venv
 ml/**/*.report.md.tmp
+
+# PARTICIPANT DATA: never commit it to this public repo (docs/STUDY.md, docs/DATASET.md)
+exports/
+docs/reports/
+takes/
+data/takes/
+collected-takes/
+cards-photos/
+*.takes.jsonl
+signscribe-takes-*.jsonl
+signscribe-study-*.json
+signscribe-trials-*.csv
+signscribe-scores-*.csv
+signscribe-survey-*.csv
+signscribe-comparison-*.csv
+signscribe-profile-*.csv
+signscribe-session-*.csv
+signscribe-perf-*.json

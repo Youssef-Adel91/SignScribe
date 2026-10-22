@@ -2,6 +2,8 @@
 
 Course requirement: compare two different interaction techniques and evaluate them on user satisfaction, engagement, usability and surveys.
 
+> **Never commit participant data to this repository (it is public).** That means the study exports (trials, survey, scores, profile, session, comparison, JSON), the recorded takes of hand landmarks, the card photographs and anything in `exports/`, `docs/reports/` or `takes/`. They are in `.gitignore` as a safety net, not as permission: keep them on an access-controlled drive, check `git status` before every commit, and if something was committed by mistake tell the team at once (deleting it in a later commit does not remove it from the history).
+
 ## Problem and target users (defined first, as Lab 3 asks)
 - **Problem:** writing a short message when speech or a keyboard is not an option. SignScribe lets a person build the message with hand signs and picture cards in front of a camera.
 - **Target users of the product:** people who communicate with signs (deaf or hard of hearing) and who need to write messages in everyday places (clinic, shop, work, home).

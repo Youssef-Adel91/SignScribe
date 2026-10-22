@@ -3,6 +3,8 @@
 Written by the collection mode (`/?collect=1`), read by `ml/`. **JSONL**: one JSON object per line, one **take** per object.
 A take is one short recording of one letter by one person: a few dozen frames of 21 hand landmarks. **No pictures are stored**, so a file contains no faces.
 
+> **Never commit participant data to this repository (it is public).** That means the study exports (trials, survey, scores, profile, session, comparison, JSON), the recorded takes of hand landmarks, the card photographs and anything in `exports/`, `docs/reports/` or `takes/`. They are in `.gitignore` as a safety net, not as permission: keep them on an access-controlled drive, check `git status` before every commit, and if something was committed by mistake tell the team at once (deleting it in a later commit does not remove it from the history).
+
 ```json
 {"v":1,"id":"6b0e…","label":"B","kind":"static","signer":"s01","session":"lamp-60cm","hand":"right",
  "width":1280,"height":720,"createdAt":"2026-10-21T20:00:00.000Z",
