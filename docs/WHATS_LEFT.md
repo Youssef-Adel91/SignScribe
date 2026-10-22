@@ -25,7 +25,7 @@ Until they exist the app says so on screen; the Wizard of Oz page (`/?woz=1`) le
 Put `ANTHROPIC_API_KEY` in `.env`, `npm run server`, open `/?server=ws://localhost:8787`, and read the `note` field of the answers: it says how often the safety rule rejected the model. Prompt, model name and quality are untested.
 
 ## 5. Other open decisions
-- Push / merge: the phases are stacked pull requests (#2 to the Phase 7 one), each based on the previous one. Merge them in order. Nothing is on `main`.
+- Merge: all seven phases were merged into `main` in one pull request (Phase 7 branch, which contains the whole stack). PRs #2 to #6 were closed as already included. New work: branch from `main` and open a PR.
 - Arabic and other alphabets: shown as "Coming soon"; each needs its own labels and model.
 - Real screen reader test (NVDA / VoiceOver): `npm run axe` finds rule violations only; it finds about a third of real problems.
 - Python versus browser for training: decided Python; the browser only reads exported JSON / ONNX.
