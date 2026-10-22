@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
 import { LIMITS, parseRequest, type ServerMessage } from '../src/nlp/protocol';
 import { loadConfig } from '../server/config';
-import { RateLimiter, handleMessage } from '../server/handler';
+import { RateLimiter, both, handleMessage } from '../server/handler';
 import { start, type Running } from '../server/index';
 import {
   AnthropicProvider,
@@ -395,5 +395,125 @@ describe('startup self-test (fake HTTP)', () => {
     });
     await s.close();
     expect(lines.join('\n')).not.toMatch(/WARNING/);
+  });
+});
+
+describe('limits for the whole server', () => {
+  it('both() counts every limiter and allows only when all allow', () => {
+    const a = new RateLimiter(2);
+    const b = new RateLimiter(1);
+    const l = both(a, b);
+    expect(l.allow(0)).toBe(true);
+    expect(l.allow(1)).toBe(false); // b is out, a still counted
+    expect(l.allow(2)).toBe(false); // a is out now too
+    expect(l.allow(20_000)).toBe(true); // new window for both
+  });
+
+  const ping = JSON.stringify({ id: 'p', type: 'ping' });
+  const wsOpen = (port: number) =>
+    new Promise<WebSocket>((resolve, reject) => {
+      const ws = new WebSocket(`ws://127.0.0.1:${port}`, { origin: 'http://localhost:5173' });
+      ws.on('open', () => resolve(ws));
+      ws.on('error', reject);
+    });
+  const wsOnce = (ws: WebSocket) =>
+    new Promise<{ closed?: number; msg?: ServerMessage }>((resolve) => {
+      ws.once('close', (code) => resolve({ closed: code }));
+      ws.once('message', (d) => resolve({ msg: JSON.parse(d.toString()) }));
+      ws.send(ping);
+    });
+
+  it('refuses connections over the cap (WebSocket and TCP share one cap)', async () => {
+    const srv = await start(
+      {
+        ...loadConfig({}),
+        provider: 'fake',
+        wsPort: 0,
+        tcpPort: 0,
+        origins: ['http://localhost:5173'],
+        maxConnections: 2,
+      },
+      () => {},
+    );
+    try {
+      const a = await wsOpen(srv.wsPort);
+      const b = await wsOpen(srv.wsPort);
+      const c = await wsOpen(srv.wsPort);
+      expect(await wsOnce(c)).toEqual({ closed: 1013 });
+      expect((await wsOnce(a)).msg).toMatchObject({ ok: true, type: 'pong' });
+      // the TCP door sees the same two open connections
+      const reply = await new Promise<string>((resolve) => {
+        const s = net.createConnection(srv.tcpPort, '127.0.0.1');
+        s.setEncoding('utf8');
+        s.on('data', (d: string) => resolve(d));
+      });
+      expect(JSON.parse(reply.trim())).toMatchObject({
+        ok: false,
+        error: 'rate_limited',
+        message: expect.stringMatching(/busy/),
+      });
+      a.close();
+      b.close();
+    } finally {
+      await srv.close();
+    }
+  });
+
+  it('a global rate limit stops many connections that each stay under their own limit', async () => {
+    const srv = await start(
+      {
+        ...loadConfig({}),
+        provider: 'fake',
+        wsPort: 0,
+        tcpPort: 0,
+        origins: ['http://localhost:5173'],
+        rateLimit: 100,
+        globalRateLimit: 3,
+      },
+      () => {},
+    );
+    try {
+      const socks = await Promise.all([
+        wsOpen(srv.wsPort),
+        wsOpen(srv.wsPort),
+        wsOpen(srv.wsPort),
+        wsOpen(srv.wsPort),
+        wsOpen(srv.wsPort),
+      ]);
+      const answers: ServerMessage[] = [];
+      for (const s of socks) answers.push((await wsOnce(s)).msg!);
+      expect(answers.filter((m) => m.ok)).toHaveLength(3);
+      expect(answers.filter((m) => !m.ok && m.error === 'rate_limited')).toHaveLength(2);
+      socks.forEach((s) => s.close());
+    } finally {
+      await srv.close();
+    }
+  });
+
+  it('shipped defaults have caps', () => {
+    const c = loadConfig({});
+    expect(c.maxConnections).toBeGreaterThan(0);
+    expect(c.globalRateLimit).toBeGreaterThan(c.rateLimit);
+    expect(loadConfig({ MAX_CONNECTIONS: '5', GLOBAL_RATE_LIMIT: '7' })).toMatchObject({
+      maxConnections: 5,
+      globalRateLimit: 7,
+    });
+  });
+
+  it('warns loudly when a key is set and the server is open to the network', async () => {
+    const lines: string[] = [];
+    const base = { ...loadConfig({ ANTHROPIC_API_KEY: 'k' }), wsPort: 0, tcpPort: 0 };
+    const ok = { selfTest: async () => ({ ok: true as const }) };
+    const s1 = await start({ ...base, host: '0.0.0.0' }, (l) => lines.push(l), ok);
+    await s1.close();
+    expect(lines.join('\n')).toMatch(/WARNING: HOST=0\.0\.0\.0 makes the server reachable/);
+    lines.length = 0;
+    const s2 = await start({ ...base, origins: ['*'] }, (l) => lines.push(l), ok);
+    await s2.close();
+    expect(lines.join('\n')).toMatch(/WARNING: ALLOWED_ORIGINS=\*/);
+    lines.length = 0;
+    const s3 = await start(base, (l) => lines.push(l), ok);
+    await s3.close();
+    expect(lines.join('\n')).not.toMatch(/HOST=|ALLOWED_ORIGINS=\*/);
   });
 });

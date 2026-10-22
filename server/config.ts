@@ -9,6 +9,10 @@ export interface Config {
   llmTimeoutMs: number;
   /** requests allowed per connection in a 10 s window */
   rateLimit: number;
+  /** requests allowed from ALL connections together in a 10 s window (protects the API budget) */
+  globalRateLimit: number;
+  /** WebSocket + TCP connections open at the same time; more are refused */
+  maxConnections: number;
   /** 'anthropic' (needs a key), 'offline' (rules only) or 'fake' (deterministic, for tests) */
   provider: 'anthropic' | 'offline' | 'fake';
 }
@@ -39,6 +43,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       .filter(Boolean),
     llmTimeoutMs: num(env.LLM_TIMEOUT_MS, 4000),
     rateLimit: num(env.RATE_LIMIT, 20),
+    globalRateLimit: num(env.GLOBAL_RATE_LIMIT, 100),
+    maxConnections: num(env.MAX_CONNECTIONS, 30),
     provider,
   };
 }

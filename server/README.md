@@ -8,6 +8,10 @@ Turns the words a person chose into one natural sentence. The app already writes
 
 **Start-up check:** with a key set, the server makes one real request when it starts and prints a loud `!!! WARNING` if the API answers 404 (model not found), 400, 401/403 (key refused), 429 or cannot be reached; `/health` then says `languageModel: failed: <kind>`. Without this check a wrong model name would only show up as sentences that are always the offline ones. The default model id is `claude-haiku-4-5-20251001`; set `SENTENCE_MODEL` to another id your key can use.
 
+**Do not expose it.** The server listens on `127.0.0.1`. **Never set `HOST=0.0.0.0` (or a public address) while `ANTHROPIC_API_KEY` is set**: anyone who can connect spends your API quota, and the plain TCP door has no origin check at all. Same for `ALLOWED_ORIGINS=*`, which is for tests only. The server prints a `!!! WARNING` at start for both. If it must be reachable from other computers, put it behind a proxy that authenticates callers and keep these limits low.
+
+**Limits** (all in `.env.example`): `RATE_LIMIT` messages per connection per 10 s (default 20, bad messages count), **`GLOBAL_RATE_LIMIT` messages from all connections together per 10 s (default 100)**, **`MAX_CONNECTIONS` open WebSocket + TCP connections together (default 30)**; over the cap a WebSocket is closed with code 1013 and a TCP client gets a `rate_limited` "server busy" line. Each message is also limited to 4096 bytes, and the language model call to 4 s.
+
 The key stays in the server process (`.env` is git-ignored); the browser never sees it. For a deployed build set `VITE_SENTENCE_URL=wss://…` at build time. The page address `?server=` is accepted **only for localhost**, so a link cannot send someone's words to a stranger's server. The comparison study (`?study=1`) never uses the server.
 
 ## Two doors, one service
