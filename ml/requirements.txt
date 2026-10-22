@@ -1,0 +1,10 @@
+numpy>=1.26
+# optional: only used by tests/test_dollar.py to check our $P port against the package used in the labs
+dollarpy>=0.1.1
+# development
+pytest>=8
+# optional: card tooling tests (make_fixture.py, check_onnx.py); training needs `pip install ultralytics` as well
+onnx
+onnxruntime
+# optional: lets the study-report tests cross-check our Wilcoxon test against scipy
+scipy

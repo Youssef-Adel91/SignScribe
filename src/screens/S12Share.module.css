@@ -1,0 +1,58 @@
+.main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-28) var(--s-48);
+}
+.card {
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: var(--s-28);
+  padding: var(--s-48) var(--s-60);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-24);
+  max-width: 100%;
+  text-align: center;
+  filter: drop-shadow(0 8px 12px rgba(15, 23, 42, 0.1));
+}
+.label {
+  font-size: var(--fs-16);
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--muted-2);
+}
+.sentence {
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.l {
+  font-size: max(72px, var(--fs-92));
+}
+.m {
+  font-size: max(64px, calc(var(--fs-92) * 0.8));
+}
+.s {
+  font-size: max(48px, calc(var(--fs-92) * 0.65));
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-10);
+  background: var(--blue-bg);
+  color: var(--blue-ink);
+  font-size: var(--fs-20);
+  font-weight: 600;
+  border-radius: 999px;
+  padding: var(--s-10) var(--s-24);
+}
+.pill svg {
+  color: var(--blue);
+}
+.foot {
+  font-size: var(--fs-16);
+  color: var(--muted-2);
+}

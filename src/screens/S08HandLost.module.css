@@ -1,0 +1,50 @@
+.dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 18, 32, 0.55);
+  z-index: 0;
+}
+.hand {
+  position: absolute;
+  left: 51.9%;
+  top: 55%;
+}
+.banner {
+  position: absolute;
+  z-index: 3;
+  left: 28.75%;
+  top: 15%;
+  width: 65%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-10);
+  padding: var(--s-26, 26px) var(--s-28);
+  text-align: center;
+  background: var(--amber-bg);
+  border: 3px solid var(--amber);
+  border-radius: var(--s-20);
+  color: var(--amber-ink);
+}
+.bt {
+  font-size: var(--fs-30);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.bs {
+  font-size: var(--fs-19);
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--amber-ink);
+}
+.paused {
+  margin-left: var(--s-14);
+  padding: var(--s-6) var(--s-12);
+  border-radius: 8px;
+  background: var(--amber-bg);
+  color: var(--amber-ink);
+  font-size: var(--fs-16);
+  font-weight: 700;
+  line-height: 1.3;
+}

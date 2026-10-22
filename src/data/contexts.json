@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "note": "Card packs per place. `classes` is the label list of the card detector (index = class id). Python (ml/cards) and the app both read this file.",
+  "classes": [
+    "Doctor",
+    "Pain",
+    "Medicine",
+    "Water",
+    "Help",
+    "Thank you",
+    "Price",
+    "Size",
+    "Pay",
+    "Bag",
+    "Meeting",
+    "Email",
+    "Break",
+    "Question",
+    "Food",
+    "Family"
+  ],
+  "places": {
+    "Clinic": [
+      {
+        "word": "Doctor",
+        "icon": "cross"
+      },
+      {
+        "word": "Pain",
+        "icon": "bolt"
+      },
+      {
+        "word": "Medicine",
+        "icon": "clip"
+      },
+      {
+        "word": "Water",
+        "icon": "drop"
+      },
+      {
+        "word": "Help",
+        "icon": "help"
+      },
+      {
+        "word": "Thank you",
+        "icon": "heart"
+      }
+    ],
+    "Shop": [
+      {
+        "word": "Price",
+        "icon": "bag"
+      },
+      {
+        "word": "Size",
+        "icon": "move"
+      },
+      {
+        "word": "Pay",
+        "icon": "doc"
+      },
+      {
+        "word": "Bag",
+        "icon": "bag"
+      },
+      {
+        "word": "Help",
+        "icon": "help"
+      },
+      {
+        "word": "Thank you",
+        "icon": "heart"
+      }
+    ],
+    "Work": [
+      {
+        "word": "Meeting",
+        "icon": "briefcase"
+      },
+      {
+        "word": "Email",
+        "icon": "doc"
+      },
+      {
+        "word": "Break",
+        "icon": "drop"
+      },
+      {
+        "word": "Question",
+        "icon": "help"
+      },
+      {
+        "word": "Help",
+        "icon": "help"
+      },
+      {
+        "word": "Thank you",
+        "icon": "heart"
+      }
+    ],
+    "Home": [
+      {
+        "word": "Water",
+        "icon": "drop"
+      },
+      {
+        "word": "Food",
+        "icon": "bag"
+      },
+      {
+        "word": "Medicine",
+        "icon": "clip"
+      },
+      {
+        "word": "Family",
+        "icon": "home"
+      },
+      {
+        "word": "Help",
+        "icon": "help"
+      },
+      {
+        "word": "Thank you",
+        "icon": "heart"
+      }
+    ]
+  }
+}

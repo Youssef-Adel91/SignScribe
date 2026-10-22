@@ -1,0 +1,31 @@
+{
+  "format": "signscribe-cards",
+  "version": 1,
+  "classes": [
+    "Doctor",
+    "Pain",
+    "Medicine",
+    "Water",
+    "Help",
+    "Thank you",
+    "Price",
+    "Size",
+    "Pay",
+    "Bag",
+    "Meeting",
+    "Email",
+    "Break",
+    "Question",
+    "Food",
+    "Family"
+  ],
+  "inputSize": 640,
+  "output": "yolov8",
+  "meta": {
+    "trainedAt": "2026-01-01T00:00:00+00:00",
+    "datasetSha256": "fixture",
+    "images": 0,
+    "synthetic": true,
+    "evaluation": null
+  }
+}

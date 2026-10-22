@@ -1,0 +1,77 @@
+.camera {
+  position: relative;
+  overflow: hidden;
+  container-type: inline-size;
+  background: var(--cam);
+  border-radius: var(--s-20);
+  color: #fff;
+}
+.person {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--cam-person);
+}
+.chip {
+  position: absolute;
+  z-index: 2;
+  left: 2%;
+  top: 2.67%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  padding: var(--s-8) var(--s-14);
+  border-radius: 999px;
+  background: var(--cam-pill);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+  white-space: nowrap;
+}
+.dot {
+  width: var(--s-8);
+  height: var(--s-8);
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+}
+.pill {
+  position: absolute;
+  z-index: 2;
+  transform: translateX(-50%);
+  left: 61.25%;
+  white-space: nowrap;
+  padding: var(--s-10) var(--s-18);
+  border-radius: var(--s-12);
+  background: var(--cam-pill);
+  font-size: max(16px, 2.1cqw);
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+}
+/* detection badge: white on #15803d = 5.0:1 */
+.green {
+  background: var(--green-badge);
+  border-radius: 6px;
+  padding: 4px 10px;
+  transform: none;
+  font-size: max(16px, 1.75cqw);
+}
+
+.video,
+.skeleton {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.video {
+  object-fit: cover;
+}
+.skeleton {
+  z-index: 1;
+  pointer-events: none;
+}

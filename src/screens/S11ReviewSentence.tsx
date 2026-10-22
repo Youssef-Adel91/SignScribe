@@ -1,83 +1,150 @@
-import { Asset, CamChip, Card, Chip, Hint, HintBar, InfoRow, Screen, TopBar, pressable } from '../ui/parts';
-import { useNav } from '../nav';
-import { useSession } from '../session';
+import { CamPill, CameraView } from '../ui/CameraView';
+import { Card } from '../ui/Card';
+import { Chip } from '../ui/Chip';
+import { HandGlyph } from '../ui/HandGlyph';
+import { Hint } from '../ui/HintBar';
+import { Icon } from '../ui/Icon';
+import { InfoList, InfoRow } from '../ui/InfoRow';
+import { Screen } from '../ui/Screen';
+import { useAnnounceOnChange } from '../output/announcer';
+import { useCtx } from '../state/MachineProvider';
+import styles from './S11ReviewSentence.module.css';
+import { HandChip } from '../vision/bits';
+import type { ReactNode } from 'react';
+import type { Ev } from '../state/machine';
+import { CommandRing, Demo } from '../vision/bits';
+import { useDwellTarget } from '../vision/targets';
+
+/** One of the two answer buttons: chosen by point-and-hold, like thumbs up / thumbs down. */
+function Action({
+  className,
+  event,
+  children,
+}: {
+  className: string;
+  event: Ev;
+  children: ReactNode;
+}) {
+  const ref = useDwellTarget(event);
+  return (
+    <li ref={ref} className={className}>
+      {children}
+    </li>
+  );
+}
 
 export default function S11ReviewSentence() {
-  const nav = useNav();
-  const { place } = useSession();
-  const phrase = (t: string, icon?: string) => (
-    <div key={t} className="bg-[#ccfbf1] content-stretch flex gap-[8px] items-center px-[18px] py-[10px] relative rounded-[12px] shrink-0">
-      {icon && <Asset id={icon} className="relative shrink-0 size-[20px]" />}
-      <p className="[word-break:break-word] font-['Inter:Bold'] font-bold leading-[34px] not-italic relative shrink-0 text-[#115e59] text-[26px] whitespace-nowrap">{t}</p>
-    </div>
+  const { place, words, sentence, sentenceSource } = useCtx();
+  useAnnounceOnChange(
+    sentence
+      ? `Suggested sentence: ${sentence}. Thumbs up to use it, thumbs down to try another.`
+      : null,
   );
   return (
-    <Screen name="11 Review sentence">
-      <TopBar steps={['done', 'done', 'active', 'todo']}>
-        <Chip kind="gray">Context: {place}</Chip>
-        <Chip kind="green">Hand detected</Chip>
-        <Chip kind="gray" onClick={nav.help}>Both hands up: Help</Chip>
-      </TopBar>
-      <div className="content-stretch flex flex-[1_0_0] gap-[36px] items-start min-h-px px-[48px] py-[36px] relative w-full" data-name="Body">
-        <div className="content-stretch flex flex-[1_0_0] flex-col gap-[16px] items-start min-w-px relative">
-          <p className="[word-break:break-word] font-['Inter:Semi_Bold'] font-semibold leading-[17px] not-italic relative shrink-0 text-[#64748b] text-[14px] tracking-[0.8px] whitespace-nowrap">YOUR WORDS</p>
-          <div className="content-stretch flex gap-[10px] items-center relative shrink-0">
-            {phrase('HELLO')}
-            {phrase('I')}
-            {phrase('NEED')}
-            {phrase('DOCTOR', '3:2080')}
-          </div>
-          <Asset id="3:2084" className="relative shrink-0 size-[30px]" />
-          <div className="bg-[#f0fdfa] border-4 border-[#0f766e] border-solid content-stretch flex flex-col gap-[17px] items-start px-[34px] py-[30px] relative rounded-[24px] shrink-0 w-full">
-            <div className="content-stretch flex gap-[8px] items-center relative shrink-0">
-              <Asset id="3:2088" className="relative shrink-0 size-[22px]" />
-              <p className="[word-break:break-word] font-['Inter:Bold'] font-bold leading-[17px] not-italic relative shrink-0 text-[#115e59] text-[14px] tracking-[0.8px] whitespace-nowrap">SUGGESTED SENTENCE</p>
-              <div className="bg-[#ccfbf1] content-stretch flex items-center px-[10px] py-[3px] relative rounded-[999px] shrink-0">
-                <p className="[word-break:break-word] font-['Inter:Semi_Bold'] font-semibold leading-[18px] not-italic relative shrink-0 text-[#115e59] text-[14px] whitespace-nowrap">{place} style</p>
-              </div>
-            </div>
-            <p className="[word-break:break-word] font-['Inter:Bold'] font-bold leading-[66px] not-italic relative shrink-0 text-[#0f172a] text-[56px] whitespace-nowrap">Hello, I need a doctor.</p>
-            <div className="content-stretch flex gap-[10px] items-center relative shrink-0">
-              <Asset id="3:2095" className="relative shrink-0 size-[22px]" />
-              <p className="[word-break:break-word] font-['Inter:Medium'] font-medium leading-[22px] not-italic relative shrink-0 text-[#334155] text-[17px] whitespace-nowrap">Nothing is shown to the other person until you say yes.</p>
-            </div>
-            <div className="h-[4px] relative shrink-0 w-px" />
-            <div className="content-stretch flex gap-[16px] items-center relative shrink-0">
-              <div className="bg-[#0f766e] border-2 border-[#0f766e] border-solid content-stretch flex gap-[12px] items-center pl-[16px] pr-[28px] py-[14px] relative rounded-[16px] shrink-0" {...pressable(nav.next)}>
-                <Asset id="3:2102" className="h-[60px] relative shrink-0 w-[46px]" />
-                <p className="[word-break:break-word] font-['Inter:Bold'] font-bold leading-[31px] not-italic relative shrink-0 text-[24px] text-white whitespace-nowrap">Yes, use it</p>
-              </div>
-              <div className="bg-white border-2 border-[#94a3b8] border-solid content-stretch flex gap-[12px] items-center pl-[16px] pr-[28px] py-[14px] relative rounded-[16px] shrink-0" {...pressable(() => nav.go(5))}>
-                <Asset id="3:2134" className="h-[60px] relative shrink-0 w-[46px]" />
-                <p className="[word-break:break-word] font-['Inter:Bold'] font-bold leading-[31px] not-italic relative shrink-0 text-[#0f172a] text-[24px] whitespace-nowrap">Try another</p>
-              </div>
-            </div>
-          </div>
+    <Screen
+      steps={['done', 'done', 'active', 'todo']}
+      chips={
+        <>
+          <Chip kind="gray">Context: {place}</Chip>
+          <HandChip />
+          <Chip kind="gray">Both hands up: Help</Chip>
+        </>
+      }
+      hints={
+        <>
+          <Hint gesture="up" label="Use it" suggested />
+          <Hint gesture="down" label="Try another" />
+          <Hint gesture="fist" label="Delete last word" />
+        </>
+      }
+    >
+      <div className={styles.body}>
+        <div className={styles.main}>
+          <h1 className="sr-only">Review your sentence</h1>
+          <section aria-label="Your words" className={styles.words}>
+            <h2 className={styles.label}>YOUR WORDS</h2>
+            <ul className={styles.chips}>
+              {words.map((w, i) => (
+                <li key={`${w}-${i}`} className={styles.chip}>
+                  {i === words.length - 1 && words.length > 1 && (
+                    <Icon name="doc" size="var(--s-24)" />
+                  )}
+                  {w}
+                </li>
+              ))}
+            </ul>
+          </section>
+          <Icon name="arrow" size="var(--s-40)" strokeWidth={3} className={styles.arrow} />
+          <section aria-label="Suggested sentence" className={styles.suggest}>
+            <p className={styles.kicker}>
+              <Icon name="sparkle" size="var(--s-24)" />
+              SUGGESTED SENTENCE
+              <span className={styles.style}>{place} style</span>
+            </p>
+            <p className={styles.sentence} data-source={sentenceSource}>
+              {sentence}
+            </p>
+            <p className={styles.source} data-testid="sentence-source">
+              {sentenceSource === 'server'
+                ? 'Written by the language model. The app checked it: only your words and small helper words.'
+                : 'Written by simple rules from your words.'}
+            </p>
+            <p className={styles.safe}>
+              <Icon name="shield" size="var(--s-24)" />
+              Nothing is shown to the other person until you say yes.
+            </p>
+            <ul className={styles.actions}>
+              <Action className={`${styles.action} ${styles.yes}`} event={{ type: 'YES' }}>
+                <HandGlyph
+                  gesture="up"
+                  height="max(40px, calc(var(--u) * 52))"
+                  stroke="#fff"
+                  label=""
+                />
+                Yes, use it
+              </Action>
+              <Action className={`${styles.action} ${styles.no}`} event={{ type: 'NO' }}>
+                <HandGlyph
+                  gesture="down"
+                  height="max(40px, calc(var(--u) * 52))"
+                  stroke="currentColor"
+                  label=""
+                />
+                Try another
+              </Action>
+            </ul>
+          </section>
         </div>
-        <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-[400px]">
-          <div className="bg-[#1e293b] h-[300px] overflow-clip relative rounded-[20px] shrink-0 w-full" data-name="Camera view">
-            <Asset id="3:2167" className="absolute h-[300px] left-0 top-0 w-[400px]" />
-            <CamChip />
-            <Asset id="3:2173" className="absolute h-[143px] left-[145px] top-[120px] w-[110px]" />
-            <div className="absolute left-[158px] size-[84px] top-[26px]">
-              <Asset id="3:2204" className="absolute inset-0" />
-              <div className="absolute content-stretch flex inset-0 items-center justify-center">
-                <Asset id="3:2208" className="relative shrink-0 size-[34px]" />
+        <div className={styles.side}>
+          <div className={styles.cam}>
+            <CameraView label="Camera preview. Thumbs up uses the sentence, thumbs down tries another.">
+              <Demo>
+                <HandGlyph
+                  gesture="up"
+                  height="22cqw"
+                  stroke="var(--teal-soft)"
+                  dot="#fff"
+                  label="Thumbs up detected"
+                  className={styles.hand}
+                />
+              </Demo>
+              <div className={styles.ring}>
+                <CommandRing label="up" fallback={0.75} />
               </div>
-            </div>
+              <CamPill style={{ left: '50%', bottom: '4%', top: 'auto' }}>
+                Thumbs up = use it
+              </CamPill>
+            </CameraView>
           </div>
           <Card title="HOW TO ANSWER">
-            <InfoRow icon="3:2214">Thumbs up: use this sentence.</InfoRow>
-            <InfoRow icon="3:2222">Thumbs down: try another wording.</InfoRow>
-            <InfoRow icon="3:2227">Need to add more? Show a card or spell a word.</InfoRow>
+            <InfoList>
+              <InfoRow icon="hand">Thumbs up: use this sentence.</InfoRow>
+              <InfoRow icon="refresh">Thumbs down: try another wording.</InfoRow>
+              <InfoRow icon="doc">Need to add more? Show a card or spell a word.</InfoRow>
+            </InfoList>
           </Card>
         </div>
       </div>
-      <HintBar>
-        <Hint icon="3:2233" label="Use it" active onClick={nav.next} />
-        <Hint icon="3:2265" label="Try another" onClick={() => nav.go(5)} />
-        <Hint icon="3:2297" label="Delete last word" onClick={nav.back} />
-      </HintBar>
     </Screen>
   );
 }

@@ -1,0 +1,13 @@
+.ring {
+  position: absolute;
+  left: 56.5%;
+  top: 11.7%;
+  width: 16%;
+  aspect-ratio: 1;
+}
+.letter {
+  font-size: max(32px, 7cqw);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}

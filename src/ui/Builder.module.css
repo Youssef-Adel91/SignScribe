@@ -1,0 +1,43 @@
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-36);
+  padding: var(--s-28) var(--s-48);
+}
+.cam {
+  flex: none;
+  width: calc(var(--u) * 800);
+  aspect-ratio: 4 / 3;
+  max-width: 58%;
+  position: relative;
+}
+.cam > :global(section) {
+  position: absolute;
+  inset: 0;
+}
+.side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-20);
+  justify-content: flex-start;
+  align-self: center;
+  max-height: 100%;
+}
+@media (max-width: 1100px) {
+  .body {
+    flex-direction: column;
+    overflow-y: auto;
+    align-items: stretch;
+  }
+  .cam {
+    max-width: 100%;
+    width: 100%;
+  }
+  .side {
+    align-self: stretch;
+  }
+}

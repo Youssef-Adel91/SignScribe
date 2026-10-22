@@ -1,0 +1,28 @@
+.banner {
+  position: fixed;
+  z-index: 900;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  max-width: min(90vw, 760px);
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: var(--cam-deep);
+  color: #ffffff;
+  font-size: var(--fs-16);
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+}
+.problem {
+  background: var(--amber-bg);
+  color: var(--amber-ink);
+  border: 3px solid var(--amber);
+}
+.tip {
+  top: auto;
+  bottom: 110px;
+  background: var(--amber-bg);
+  color: var(--amber-ink);
+  border: 3px solid var(--amber);
+}

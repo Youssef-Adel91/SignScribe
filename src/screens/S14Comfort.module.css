@@ -1,0 +1,17 @@
+.small {
+  width: calc(var(--u) * 230);
+  height: calc(var(--u) * 84);
+}
+@media (max-width: 1100px) {
+  .small {
+    width: calc(var(--u) * 210);
+  }
+}
+/* four questions on one screen without scrolling: tighter than the other screens */
+.tight {
+  gap: var(--s-6);
+  padding-block: var(--s-12);
+}
+.tight h2 {
+  margin-top: var(--s-6);
+}
