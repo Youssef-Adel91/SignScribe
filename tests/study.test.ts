@@ -62,10 +62,27 @@ describe('tasks', () => {
       }
     }
   });
-  it('no message is used in both sets', () => {
-    const a = TASK_SETS.A.map((t) => t.words.join(' '));
-    const b = TASK_SETS.B.map((t) => t.words.join(' '));
-    expect(a.filter((x) => b.includes(x))).toEqual([]);
+  it('the two sets share no word at all', () => {
+    const words = (id: 'A' | 'B') => new Set(TASK_SETS[id].flatMap((t) => t.words));
+    const shared = [...words('A')].filter((w) => words('B').has(w));
+    expect(shared).toEqual([]);
+  });
+  it('no word repeats inside a set either', () => {
+    for (const set of Object.values(TASK_SETS)) {
+      const all = set.flatMap((t) => t.words);
+      expect(new Set(all).size).toBe(all.length);
+    }
+  });
+  it('letter counts are matched task by task (within 1 letter) and in total (within 2)', () => {
+    const len = (t: (typeof TASK_SETS)['A'][number]) => t.words.join('').length;
+    TASK_SETS.A.forEach((a, i) =>
+      expect(
+        Math.abs(len(a) - len(TASK_SETS.B[i])),
+        `${a.id} vs ${TASK_SETS.B[i].id}`,
+      ).toBeLessThanOrEqual(1),
+    );
+    const total = (set: (typeof TASK_SETS)['A']) => set.reduce((s, t) => s + len(t), 0);
+    expect(Math.abs(total(TASK_SETS.A) - total(TASK_SETS.B))).toBeLessThanOrEqual(2);
   });
   it('success needs every target word as a whole word', () => {
     const t = TASK_SETS.A[0];
