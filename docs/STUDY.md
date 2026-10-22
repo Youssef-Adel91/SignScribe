@@ -9,6 +9,32 @@ Course requirement: compare two different interaction techniques and evaluate th
 - **Target users of the product:** people who communicate with signs (deaf or hard of hearing) and who need to write messages in everyday places (clinic, shop, work, home).
 - **Participants of this study:** MSA students and acquaintances of the team. They are NOT the target users, so results say something about the interaction techniques for first-time users, not about signers. This limit must be written in the report.
 
+## Participant information sheet
+Give this to every participant (or read it out) before the session. Fill in the two places marked `<…>`.
+
+> **SignScribe: writing a message with hand signs or with a keyboard**
+>
+> **What this is.** A university course project (<course, university>) comparing two ways of writing a short message: a camera that follows your hand, and a keyboard and mouse. We are testing the *program*, not you. There are no right or wrong answers. You must be 18 or older.
+>
+> **What you will do (about <20-30> minutes).** Answer a few questions about yourself, write three short messages with one method and answer a questionnaire, then do the same with the other method and answer a last questionnaire.
+>
+> **What is recorded.** Your *participant number* (not your name); your answers to the background questions (age group, writing hand, how much sign language you know, experience with gesture interfaces, comfort with keyboard and mouse); for every message the time it took, the mistakes and corrections, how many sentences you were shown, the final sentence, and whether you gave up; your questionnaire answers; and, once per session, technical details of the computer (browser, screen size, number of processor cores, the app version) plus, for the camera method, how fast the camera and hand tracking ran.
+>
+> **What is NOT recorded.** Your name, your face, any picture or video, or sound. The camera picture is processed inside the browser on this computer and is not saved or sent anywhere. Only the numbers that describe your hand are used, while you are using the program, and they are not stored in the study.
+>
+> **Words and the internet.** In this study the program works offline: your words are *not* sent to any server. (Outside the study, if the sentence server is switched on with an API key, the words you choose and the place are sent to the Anthropic API to write a nicer sentence; this is off for study sessions. Some browsers also read text aloud with an online voice, which can send the text to the browser's maker: before the first task the facilitator sets the app's voice to Silent.)
+>
+> **Where the data goes.** It is saved in the browser of the facilitator's computer until it is exported to a file, which is kept on <access-controlled storage> and used only for this course project and its report. The report shows summaries, never one person's answers. Data are kept until <date> and then deleted.
+>
+> **You can stop at any time**, without giving a reason and without any consequence: say "stop" to the facilitator, or just stop, or close the window. The facilitator ends your session ("Participant gave up") and nothing you did is kept against you. **To have your data deleted**, give the facilitator your participant number during the session or contact <name and email> afterwards, before <date>.
+>
+> **Questions?** <name and email of a team member and of the course instructor>.
+
+Notes for the team:
+- Check with the course instructor or TA whether the course needs an ethics review for a study with people, and keep the signed or ticked consent record with the participant number.
+- The sheet is written for the study as it is built. If you turn on the sentence server, record cameras, store takes, or change what is exported, change the sheet first.
+- Collection mode (`/?collect=1`) is a separate activity: it stores hand-landmark numbers. Tell those participants what is recorded (numbers describing the hand, no pictures; signer code instead of a name), and apply the same rules about 18+ and stopping.
+
 ## Design
 - **Technique 1:** camera hand signs (this app). **Technique 2:** keyboard and mouse (`KeyboardTask`).
 - **Within-subject:** every participant uses both. **Order counterbalanced** with a Latin square over 4 participants (`planFor`, `src/study/design.ts`): the first mode and the task set both alternate, so each mode is first for half of the people and each task set is used with each mode equally often. Use a multiple of 4 participants.
@@ -27,9 +53,10 @@ After both methods: 3 questions (easier, more enjoyable, would choose), answers 
 The analysis script flags surveys where all 23 answers are identical, or where a reverse-worded item contradicts the positive items about the same thing by 3 points or more. Flagged surveys are listed, not hidden; `--exclude-flagged` leaves them out of the survey table. **Decide the rule before you read the results.**
 
 ## Before the first task (Phase 7)
-After "Start session" the participant answers five background questions (age group, writing hand, sign language, experience with gesture interfaces, comfort with keyboard and mouse) and the facilitator ticks the consent line (what the study is, that data are anonymous: a number, no name, no pictures; that they can stop). Nothing starts without both. Each session also records, once, the computer it ran on (browser, screen, cores) and the settings (text size, contrast, hold time, voice, signing hand) and **which build** of the app (git commit), so results can be traced to the code.
+After "Start session" the participant answers five background questions (age group, writing hand, sign language, experience with gesture interfaces, comfort with keyboard and mouse) and the facilitator ticks the consent line (the participant is 18 or older, has read or heard the information sheet below, agrees, knows the data are anonymous, and can stop at any time). There is no age option below 18 because under-18s must not take part. Nothing starts without both. Each session also records, once, the computer it ran on (browser, screen, cores) and the settings (text size, contrast, hold time, voice, signing hand) and **which build** of the app (git commit), so results can be traced to the code.
 
 ## How to run a session
+0. Hand out the information sheet above. Before the first task choose **Silent** for the voice on screen 14 (comfort settings): some browsers read text aloud with an online voice. Check that the browser is not signed in to a personal account and that no screen recorder is running.
 1. `npm run build && npm run preview` (or `npm run dev`), open `/?study=1` (add `&dev=1` only for developers). Allow the camera. The Study console is at the bottom left.
 2. Type the participant number, Start session. The console says which method comes first.
 3. Camera block: before the first task let the participant do the wake-up, camera check and comfort screens (not logged). "Start task" restarts the app at the context screen with their settings kept; the trial ends when the sentence is confirmed (screen 12) or you press "Participant gave up".

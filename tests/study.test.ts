@@ -21,7 +21,7 @@ import {
   type TrialLog,
 } from '../src/study/log';
 import { initialState, studyReducer, type Action, type StudyState } from '../src/study/flow';
-import { PROFILE, profileComplete, type SessionMeta } from '../src/study/profile';
+import { CONSENT_TEXT, PROFILE, profileComplete, type SessionMeta } from '../src/study/profile';
 import { profileCsv, scoresCsv, sessionCsv } from '../src/study/log';
 import { WORDS } from '../src/nlp/words';
 import { CARD_PACKS } from '../src/screens/cardPack';
@@ -309,6 +309,13 @@ describe('profile and session records', () => {
     const kbm = PROFILE.find((q) => q.id === 'kbm')!;
     expect(kbm.options[2].label).toMatch(/neither/i);
     expect(PROFILE.find((q) => q.id === 'age')!.options.some((o) => o.value === 'na')).toBe(true);
+  });
+  it('there is no age option below 18, and the consent line says participants are 18 or older', () => {
+    const age = PROFILE.find((q) => q.id === 'age')!;
+    expect(age.options.map((o) => o.value)).not.toContain('u18');
+    expect(age.options.map((o) => o.label).join(' ')).not.toMatch(/under|below|<\s*18/i);
+    expect(CONSENT_TEXT).toMatch(/18 or older/);
+    expect(CONSENT_TEXT).toMatch(/stop at any time/);
   });
   it('an answer must be one of the offered options', () => {
     const ok = Object.fromEntries(PROFILE.map((q) => [q.id, q.options[0].value]));
