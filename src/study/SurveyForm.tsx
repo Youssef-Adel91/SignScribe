@@ -3,6 +3,7 @@ import { MODE_LABEL, type Mode } from './design';
 import {
   COMPARISON,
   ITEMS,
+  SUS_ITEMS,
   LIKERT,
   comparisonOptions,
   isComplete,
@@ -12,10 +13,42 @@ import {
 import { Overlay } from '../ui/Overlay';
 import styles from './Study.module.css';
 
+function Statement({
+  id,
+  text,
+  value,
+  onPick,
+}: {
+  id: string;
+  text: string;
+  value: number | undefined;
+  onPick: (v: 1 | 2 | 3 | 4 | 5) => void;
+}) {
+  return (
+    <fieldset className={styles.q}>
+      <legend>{text}</legend>
+      <div className={styles.scale} role="radiogroup">
+        {LIKERT.map((l) => (
+          <label key={l.value}>
+            <input
+              type="radio"
+              name={id}
+              value={l.value}
+              checked={value === l.value}
+              onChange={() => onPick(l.value)}
+            />
+            <span>{l.label}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 /** After each method: the same closed questions, the same five balanced choices, a neutral middle. */
 export function SurveyForm({ mode, onSubmit }: { mode: Mode; onSubmit: (a: Answers) => void }) {
   const [a, setA] = useState<Partial<Answers>>({});
-  const left = ITEMS.filter((i) => a[i.id] === undefined).length;
+  const left = [...ITEMS, ...SUS_ITEMS].filter((i) => a[i.id] === undefined).length;
   return (
     <Overlay>
       <main className={styles.page}>
@@ -31,23 +64,27 @@ export function SurveyForm({ mode, onSubmit }: { mode: Mode; onSubmit: (a: Answe
             fits you best. There are no right or wrong answers.
           </p>
           {ITEMS.map((i) => (
-            <fieldset key={i.id} className={styles.q}>
-              <legend>{i.text}</legend>
-              <div className={styles.scale} role="radiogroup">
-                {LIKERT.map((l) => (
-                  <label key={l.value}>
-                    <input
-                      type="radio"
-                      name={i.id}
-                      value={l.value}
-                      checked={a[i.id] === l.value}
-                      onChange={() => setA({ ...a, [i.id]: l.value })}
-                    />
-                    <span>{l.label}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            <Statement
+              key={i.id}
+              id={i.id}
+              text={i.text}
+              value={a[i.id]}
+              onPick={(v) => setA({ ...a, [i.id]: v })}
+            />
+          ))}
+          <h2>Ten more statements</h2>
+          <p>
+            These are asked for every method. &ldquo;The system&rdquo; means the way of writing you
+            just used.
+          </p>
+          {SUS_ITEMS.map((i) => (
+            <Statement
+              key={i.id}
+              id={i.id}
+              text={i.text}
+              value={a[i.id]}
+              onPick={(v) => setA({ ...a, [i.id]: v })}
+            />
           ))}
           <button type="submit" disabled={left > 0}>
             {left > 0 ? `${left} question${left === 1 ? '' : 's'} left` : 'Send answers'}

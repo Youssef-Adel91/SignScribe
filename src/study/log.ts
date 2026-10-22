@@ -1,5 +1,5 @@
 import type { Mode, TaskSetId } from './design';
-import { ITEMS, scores, type Answers, type Preference } from './survey';
+import { ITEMS, SUS_ITEMS, scores, susScore, type Answers, type Preference } from './survey';
 import { PROFILE, type ProfileAnswers, type SessionMeta } from './profile';
 
 export interface TrialLog {
@@ -125,9 +125,21 @@ export function trialsCsv(d: StudyData): string {
 }
 
 export function surveyCsv(d: StudyData): string {
-  const head = ['participant', 'block', 'mode', ...ITEMS.map((i) => i.id)];
+  const head = [
+    'participant',
+    'block',
+    'mode',
+    ...ITEMS.map((i) => i.id),
+    ...SUS_ITEMS.map((i) => i.id),
+  ];
   const lines = d.surveys.map((s) =>
-    row([s.participant, s.block, s.mode, ...ITEMS.map((i) => s.answers[i.id] ?? '')]),
+    row([
+      s.participant,
+      s.block,
+      s.mode,
+      ...ITEMS.map((i) => s.answers[i.id] ?? ''),
+      ...SUS_ITEMS.map((i) => s.answers[i.id] ?? ''),
+    ]),
   );
   return [row(head), ...lines].join('\n') + '\n';
 }
@@ -180,7 +192,7 @@ export function sessionCsv(d: StudyData): string {
   return [row(head), ...lines].join('\n') + '\n';
 }
 
-/** one row per participant and method: the mean answer (1..5) per dimension, ready for a paired test */
+/** one row per participant and method: the mean answer (1..5, reverse items flipped) per dimension and the SUS score (0..100), ready for a paired test */
 export function scoresCsv(d: StudyData): string {
   const lines = d.surveys.map((s) => {
     const sc = scores(s.answers);
@@ -192,11 +204,12 @@ export function scoresCsv(d: StudyData): string {
       f(sc.satisfaction),
       f(sc.engagement),
       f(sc.usability),
+      susScore(s.answers)?.toFixed(1) ?? '',
     ]);
   });
   return (
     [
-      row(['participant', 'block', 'mode', 'satisfaction', 'engagement', 'usability']),
+      row(['participant', 'block', 'mode', 'satisfaction', 'engagement', 'usability', 'sus']),
       ...lines,
     ].join('\n') + '\n'
   );

@@ -3,6 +3,9 @@ import { TASK_SETS, isSuccess, planFor } from '../src/study/design';
 import {
   COMPARISON,
   ITEMS,
+  SUS_ITEMS,
+  oriented,
+  susScore,
   LIKERT,
   comparisonOptions,
   isComplete,
@@ -22,6 +25,10 @@ import { PROFILE, profileComplete, type SessionMeta } from '../src/study/profile
 import { profileCsv, scoresCsv, sessionCsv } from '../src/study/log';
 import { WORDS } from '../src/nlp/words';
 import { CARD_PACKS } from '../src/screens/cardPack';
+
+/** every survey item (custom + SUS) answered with the same value */
+const fill = (v: 1 | 2 | 3 | 4 | 5): Answers =>
+  Object.fromEntries([...ITEMS, ...SUS_ITEMS].map((i) => [i.id, v])) as Answers;
 
 describe('counterbalancing', () => {
   const plans = [0, 1, 2, 3].map(planFor);
@@ -133,10 +140,14 @@ describe('survey follows the Lab 3 rules', () => {
     expect(COMPARISON).toHaveLength(3);
   });
   it('scores average each dimension and tolerate missing answers', () => {
-    const a = Object.fromEntries(ITEMS.map((i) => [i.id, 4])) as Answers;
+    const a = fill(4);
     expect(isComplete(a)).toBe(true);
-    expect(scores(a)).toEqual({ satisfaction: 4, engagement: 4, usability: 4 });
+    // the two reverse-worded items are flipped: with every answer 4 they count as 2
+    expect(scores(a).usability).toBe(4);
+    expect(scores(a).satisfaction).toBeCloseTo((4 + 4 + 2) / 3, 9);
+    expect(scores(a).engagement).toBeCloseTo((4 + 4 + 2) / 3, 9);
     expect(scores({ sat1: 5, sat2: 3 }).satisfaction).toBe(4);
+    expect(scores({ sat1: 5, sat3: 1 }).satisfaction).toBe(5); // 1 on the reverse item = very satisfied
     expect(scores({}).usability).toBeNull();
     expect(isComplete({ sat1: 5 })).toBe(false);
   });
@@ -175,13 +186,13 @@ describe('log', () => {
     expect(lines[1]).toContain('"Say ""hi"", doctor"');
   });
   it('survey CSV has one column per item', () => {
-    const answers = Object.fromEntries(ITEMS.map((i) => [i.id, 3])) as Answers;
+    const answers = fill(3);
     const d = {
       ...emptyData(),
       surveys: [{ participant: 1, block: 0 as const, mode: 'camera' as const, answers }],
     };
     const [h, r] = surveyCsv(d).trim().split('\n');
-    expect(h.split(',')).toHaveLength(3 + ITEMS.length);
+    expect(h.split(',')).toHaveLength(3 + ITEMS.length + SUS_ITEMS.length);
     expect(
       r
         .split(',')
@@ -235,7 +246,7 @@ describe('session flow', () => {
     at: '2026-01-01T00:00:00.000Z',
   });
   const run = (s: StudyState, ...a: Action[]) => a.reduce(studyReducer, s);
-  const answers = Object.fromEntries(ITEMS.map((i) => [i.id, 3])) as Answers;
+  const answers = fill(3);
   const doBlock = (s: StudyState) =>
     run(
       s,
@@ -341,7 +352,7 @@ describe('profile and session records', () => {
         participant: 3,
         block: 0 as const,
         mode: 'camera' as const,
-        answers: Object.fromEntries(ITEMS.map((i) => [i.id, 4])) as Answers,
+        answers: fill(4),
       },
     ],
   });
@@ -353,8 +364,9 @@ describe('profile and session records', () => {
   });
   it('scores CSV has the mean per dimension for each participant and method', () => {
     const [h, r] = scoresCsv(data()).trim().split('\n');
-    expect(h).toBe('participant,block,mode,satisfaction,engagement,usability');
-    expect(r).toBe('3,0,camera,4.000,4.000,4.000');
+    expect(h).toBe('participant,block,mode,satisfaction,engagement,usability,sus');
+    // every answer 4: reverse items count 2; SUS = (5 x 3 + 5 x 1) x 2.5
+    expect(r).toBe('3,0,camera,3.333,3.333,4.000,50.0');
   });
   it('trial CSV carries camera numbers only when they were measured', () => {
     const lines = trialsCsv({
@@ -369,5 +381,51 @@ describe('profile and session records', () => {
     expect(lines[0]).toContain('camera_fps,model_ms_mean,delegate');
     expect(lines[1]).toContain('27.46,12.35,GPU');
     expect(lines[2]).toMatch(/,,,"Doctor/);
+  });
+});
+
+describe('System Usability Scale and reverse-worded items', () => {
+  it('has the ten published statements, odd ones positive and even ones negative', () => {
+    expect(SUS_ITEMS).toHaveLength(10);
+    SUS_ITEMS.forEach((it, i) => expect(it.positive, it.id).toBe(i % 2 === 0));
+    expect(SUS_ITEMS[0].text).toBe('I think that I would like to use this system frequently.');
+    expect(SUS_ITEMS[9].text).toMatch(/learn a lot of things/);
+  });
+  it('scores 0 to 100: best possible 100, worst 0, all neutral 50', () => {
+    const answers = (pos: 1 | 5, neg: 1 | 5) =>
+      Object.fromEntries(SUS_ITEMS.map((i) => [i.id, i.positive ? pos : neg])) as Answers;
+    expect(susScore(answers(5, 1))).toBe(100);
+    expect(susScore(answers(1, 5))).toBe(0);
+    expect(susScore(fill(3))).toBe(50);
+  });
+  it("matches a worked example from Brooke's scoring rule", () => {
+    // answers 4,2,4,1,5,2,5,1,4,2: odd (x-1): 3+3+4+4+3 = 17; even (5-x): 3+4+3+4+3 = 17; (17+17) x 2.5 = 85
+    const vals = [4, 2, 4, 1, 5, 2, 5, 1, 4, 2];
+    const a = Object.fromEntries(SUS_ITEMS.map((it, i) => [it.id, vals[i]])) as Answers;
+    expect(susScore(a)).toBe(85);
+  });
+  it('is not computed from a partial answer', () => {
+    expect(susScore({ sus1: 5 })).toBeNull();
+    expect(susScore({})).toBeNull();
+  });
+  it('the survey is complete only with the custom items AND all ten SUS statements', () => {
+    const full = fill(3);
+    expect(isComplete(full)).toBe(true);
+    const noSus = { ...full } as Partial<Answers>;
+    delete noSus.sus7;
+    expect(isComplete(noSus)).toBe(false);
+  });
+  it('there are exactly two reverse-worded custom items, one per dimension they measure, away from each other', () => {
+    const rev = ITEMS.filter((i) => i.reverse);
+    expect(rev.map((i) => i.dimension).sort()).toEqual(['engagement', 'satisfaction']);
+    expect(oriented(rev[0], 1)).toBe(5);
+    expect(oriented({}, 1)).toBe(1);
+    const at = rev.map((r) => ITEMS.indexOf(r));
+    expect(Math.abs(at[0] - at[1])).toBeGreaterThan(2);
+    for (const r of rev) expect(r.text).not.toMatch(/\bnot\b|n't/i); // worded negatively without a double negative
+  });
+  it('wording is the same for both methods: no item names a method', () => {
+    for (const t of [...ITEMS.map((i) => i.text), ...SUS_ITEMS.map((i) => i.text)])
+      expect(t).not.toMatch(/camera|keyboard|mouse|hand|sign/i);
   });
 });

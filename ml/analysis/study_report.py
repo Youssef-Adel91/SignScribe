@@ -19,6 +19,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 DIMENSIONS = ["satisfaction", "engagement", "usability"]
+# the two reverse-worded items (a high answer = LOW satisfaction / engagement) and the items they are checked against
+REVERSE_CHECKS = [("sat3", ["sat1", "sat2"]), ("eng3", ["eng1", "eng2"])]
+INCONSISTENT_BY = 3  # points apart on the 1..5 scale
 EXACT_UP_TO = 25
 
 
@@ -139,9 +142,31 @@ def paired_row(label, pairs, unit="", digits=2):
     return f"| {label} | {len(pairs)} | {med(xs)} | {med(ys)} | {p} ({t['method']}) | {t['r']:+.2f} | {t['n']} |"
 
 
-def build_report(dir_: Path) -> str:
+def answer_quality(survey_rows):
+    """Surveys that look careless: every answer the same (straight-lining), or a reverse-worded item that
+    contradicts the positively worded items about the same thing by 3 points or more."""
+    flags = {}
+    for r in survey_rows:
+        key = (r["participant"], r["mode"])
+        values = {k: int(v) for k, v in r.items() if k not in ("participant", "block", "mode") and v not in ("", None)}
+        why = []
+        if len(values) >= 10 and len(set(values.values())) == 1:
+            why.append("all answers identical")
+        for rev, pos in REVERSE_CHECKS:
+            if rev in values and all(p in values for p in pos):
+                flipped = 6 - values[rev]
+                if abs(flipped - statistics.mean(values[p] for p in pos)) >= INCONSISTENT_BY:
+                    why.append(f"{rev} contradicts {'/'.join(pos)}")
+        if why:
+            flags[key] = why
+    return flags
+
+
+def build_report(dir_: Path, exclude_flagged: bool = False) -> str:
     trials = read_csv(find(dir_, "trials"))
     scores = read_csv(find(dir_, "scores"))
+    survey = read_csv(find(dir_, "survey"))
+    flagged = answer_quality(survey)
     comps = read_csv(find(dir_, "comparison"))
     profiles = read_csv(find(dir_, "profile"))
     sessions = read_csv(find(dir_, "session"))
@@ -197,12 +222,23 @@ def build_report(dir_: Path) -> str:
         for r in scores:
             by[r["participant"]][r["mode"]] = r
         both = [p for p in complete if {"camera", "keyboard"} <= set(by.get(p, {}))]
-        out += ["", "## Survey (mean of the items of each dimension, 1 = strongly disagree, 5 = strongly agree)", "",
-                "| dimension | pairs | camera | keyboard | p | r | n used |", "| --- | --- | --- | --- | --- | --- | --- |"]
+        if exclude_flagged:
+            both = [p for p in both if (p, "camera") not in flagged and (p, "keyboard") not in flagged]
+        out += ["", "## Survey", "",
+                "Dimensions: mean of the items of each dimension, 1 = strongly disagree, 5 = strongly agree; the two reverse-worded items are flipped first. SUS: System Usability Scale, 0 to 100 (Brooke, 1996).", "",
+                "| measure | pairs | camera | keyboard | p | r | n used |", "| --- | --- | --- | --- | --- | --- | --- |"]
         for d in DIMENSIONS:
             pairs = [(f(by[p]["camera"][d]), f(by[p]["keyboard"][d])) for p in both]
             pairs = [(a, b) for a, b in pairs if a is not None and b is not None]
             out.append(paired_row(d, pairs, "", 2))
+        if any("sus" in by[p]["camera"] for p in both):
+            pairs = [(f(by[p]["camera"].get("sus")), f(by[p]["keyboard"].get("sus"))) for p in both]
+            pairs = [(a, b) for a, b in pairs if a is not None and b is not None]
+            out.append(paired_row("SUS (0-100)", pairs, "", 1))
+        out += ["", ("Surveys with careless-looking answers were EXCLUDED from this table (--exclude-flagged)." if exclude_flagged else "All surveys are included in this table (use --exclude-flagged to leave out the ones listed below).")]
+        if flagged:
+            out += ["", "### Answers that look careless", ""] + [f"- participant {p}, {m}: {'; '.join(w)}" for (p, m), w in sorted(flagged.items())]
+            out += ["", "A flag is a reason to look at the survey, not proof. Decide before reading the results whether flagged surveys are excluded, and say which you chose."]
     # direct comparison
     if comps:
         out += ["", "## Direct comparison (asked once, after both methods)", "", "| question | camera | no difference | keyboard | sign test p (camera vs keyboard) |", "| --- | --- | --- | --- | --- |"]
@@ -233,8 +269,9 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dir", required=True, type=Path, help="folder with the exported CSV files")
     ap.add_argument("--out", type=Path, help="write the Markdown here (default: print)")
+    ap.add_argument("--exclude-flagged", action="store_true", help="leave surveys that look careless out of the survey table")
     a = ap.parse_args(argv)
-    report = build_report(a.dir)
+    report = build_report(a.dir, a.exclude_flagged)
     if a.out:
         a.out.parent.mkdir(parents=True, exist_ok=True)
         a.out.write_text(report, encoding="utf-8")

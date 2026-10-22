@@ -119,3 +119,10 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Cost of our own code per frame | 7 | measurable here, not quoted | `npm run bench` |
 | One command runs every check | 7 | verified here | `npm run verify` |
 | What is left and what only I can do | 7 | done | `docs/WHATS_LEFT.md` |
+
+## Survey update (review fixes)
+| Item | Phase | Status | Evidence |
+| --- | --- | --- | --- |
+| SUS (10 statements, published wording) scored 0-100, shown in the survey and exported in the scores CSV; two reverse-worded items flipped before averaging; identical wording for both methods | 7 | verified here (scoring against a hand-worked example; no statement names a method) | `tests/study.test.ts` |
+| Analysis: SUS row, careless-answer flags (identical answers, contradicting reverse items), `--exclude-flagged` | 7 | verified here (made-up exports) | `npm run ml:test` |
+| SUS results on real participants | 7 | not met | no study run yet |

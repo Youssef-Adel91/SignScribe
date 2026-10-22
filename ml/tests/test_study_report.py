@@ -86,20 +86,32 @@ def write(path, header, rows):
         w.writerows(rows)
 
 
+SURVEY_ITEMS = ["sat1", "sat2", "sat3", "eng1", "eng2", "eng3", "nav1", "fam1", "con1", "err1", "fee1", "vis1", "eff1"] + [f"sus{i}" for i in range(1, 11)]
+SURVEY_HEAD = ["participant", "block", "mode"] + SURVEY_ITEMS
+
+
+def survey_row(p, block, mode, values=None):
+    """a plausible survey: positive items 4, reverse items 2 (=4 flipped), varied a little by participant"""
+    base = {"sat3": 2, "eng3": 2}
+    return [p, block, mode] + [(values or {}).get(k, base.get(k, 3 + (i + p) % 3)) for i, k in enumerate(SURVEY_ITEMS)]
+
+
 def make_exports(d: Path, participants=8, agent="Mozilla/5.0 Chrome/120", version="abc"):
-    trials, scores, comps, profile, session = [], [], [], [], []
+    trials, scores, comps, profile, session, survey = [], [], [], [], [], []
     for p in range(participants):
         order = ["camera", "keyboard"] if p % 2 == 0 else ["keyboard", "camera"]
         for block, mode in enumerate(order):
             for k in range(3):
                 secs = (40 if mode == "camera" else 20) + k + p % 3
                 trials.append([p, block, mode, "A" if block == 0 else "B", f"T{k}", "2026-01-01T00:00:00Z", int(secs * 1000), 1, 1, 0, 0, 0, 1, "true", "done", "27.5" if mode == "camera" else "", "12.0" if mode == "camera" else "", "GPU" if mode == "camera" else "", "x"])
-            scores.append([p, block, mode, 3.5 if mode == "camera" else 4.0, 4.0, 3.0 + (p % 2)])
+            survey.append(survey_row(p, block, mode))
+            scores.append([p, block, mode, 3.5 if mode == "camera" else 4.0, 4.0, 3.0 + (p % 2), (60 + p if mode == "camera" else 75 + p)])
         comps.append([p, "camera" if p % 3 == 0 else "keyboard", "same", "keyboard"])
         profile.append([p, "t", "18-24", "right", "none", "never", "4"])
         session.append([p, "t", version, agent, "1x1", 4, "normal", "standard", "auto", "true", "right"])
     write(d / "signscribe-trials-2026-01-01.csv", ["participant", "block", "mode", "task_set", "task", "started_at", "duration_ms", "errors", "corrections", "rejections", "backs", "hand_lost", "attempts", "success", "ended_by", "camera_fps", "model_ms_mean", "delegate", "final_text"], trials)
-    write(d / "signscribe-scores-2026-01-01.csv", ["participant", "block", "mode", "satisfaction", "engagement", "usability"], scores)
+    write(d / "signscribe-scores-2026-01-01.csv", ["participant", "block", "mode", "satisfaction", "engagement", "usability", "sus"], scores)
+    write(d / "signscribe-survey-2026-01-01.csv", SURVEY_HEAD, survey)
     write(d / "signscribe-comparison-2026-01-01.csv", ["participant", "cmp_easier", "cmp_enjoy", "cmp_choose"], comps)
     write(d / "signscribe-profile-2026-01-01.csv", ["participant", "consent_at", "age", "writing_hand", "sign_language", "gesture_ui", "kbm"], profile)
     write(d / "signscribe-session-2026-01-01.csv", ["participant", "started_at", "app_version", "user_agent", "screen", "cores", "text_size", "contrast", "hold_time", "voice", "signing_hand"], session)
@@ -146,5 +158,53 @@ def test_empty_folder_says_so(tmp_path):
 def test_scores_csv_from_the_browser_is_what_the_report_reads(tmp_path):
     """the header the TypeScript exporter writes (src/study/log.ts) is the one this script reads"""
     ts = (Path(__file__).parents[2] / "src/study/log.ts").read_text()
-    for col in ["participant", "block", "mode", "duration_ms", "errors", "attempts", "success", "ended_by", "camera_fps", "model_ms_mean", "satisfaction", "engagement", "usability", "cmp_easier", "cmp_enjoy", "cmp_choose", "user_agent", "app_version"]:
+    for col in ["participant", "block", "mode", "duration_ms", "errors", "attempts", "success", "ended_by", "camera_fps", "model_ms_mean", "satisfaction", "engagement", "usability", "sus", "cmp_easier", "cmp_enjoy", "cmp_choose", "user_agent", "app_version"]:
         assert f"'{col}'" in ts, col
+
+
+def test_sus_row_and_answer_quality_flags(tmp_path):
+    make_exports(tmp_path)
+    r = sr.build_report(tmp_path)
+    assert "SUS (0-100)" in r and "System Usability Scale" in r
+    assert "reverse-worded items are flipped" in r
+
+
+def write_survey(d, rows):
+    write(d / "signscribe-survey-2026-01-01.csv", SURVEY_HEAD, rows)
+
+
+def test_straight_lining_and_contradicting_reverse_items_are_flagged_not_hidden(tmp_path):
+    make_exports(tmp_path, participants=8)
+    rows = []
+    for p in range(8):
+        for block, mode in enumerate(["camera", "keyboard"] if p % 2 == 0 else ["keyboard", "camera"]):
+            rows.append(survey_row(p, block, mode))
+    rows[0] = [rows[0][0], rows[0][1], rows[0][2]] + [3] * len(SURVEY_ITEMS)  # straight-liner
+    sat = {"sat1": 5, "sat2": 5, "sat3": 5}  # very satisfied but also very frustrated
+    rows[1] = survey_row(rows[1][0], rows[1][1], rows[1][2], sat)
+    write_survey(tmp_path, rows)
+    r = sr.build_report(tmp_path)
+    assert "Answers that look careless" in r
+    assert f"participant {rows[0][0]}, {rows[0][2]}: all answers identical" in r
+    assert "sat3 contradicts sat1/sat2" in r
+    assert "All surveys are included" in r
+
+
+def test_exclude_flagged_changes_the_pair_count_and_says_so(tmp_path):
+    make_exports(tmp_path, participants=8)
+    rows = []
+    for p in range(8):
+        for block, mode in enumerate(["camera", "keyboard"] if p % 2 == 0 else ["keyboard", "camera"]):
+            rows.append(survey_row(p, block, mode))
+    rows[0] = [rows[0][0], rows[0][1], rows[0][2]] + [3] * len(SURVEY_ITEMS)
+    write_survey(tmp_path, rows)
+    r_all = sr.build_report(tmp_path)
+    r_ex = sr.build_report(tmp_path, exclude_flagged=True)
+    pairs = lambda r: [l for l in r.splitlines() if l.startswith("| usability")][0].split("|")[2].strip()
+    assert pairs(r_all) == "8" and pairs(r_ex) == "7"
+    assert "were EXCLUDED" in r_ex
+
+
+def test_no_flags_when_answers_are_consistent(tmp_path):
+    make_exports(tmp_path)
+    assert "look careless" not in sr.build_report(tmp_path)
