@@ -6,6 +6,8 @@ Turns the words a person chose into one natural sentence. The app already writes
     npm run server              # WebSocket :8787 and plain TCP :8788, on 127.0.0.1
     npm run dev                 # then open  http://localhost:5173/?server=ws://localhost:8787
 
+**Start-up check:** with a key set, the server makes one real request when it starts and prints a loud `!!! WARNING` if the API answers 404 (model not found), 400, 401/403 (key refused), 429 or cannot be reached; `/health` then says `languageModel: failed: <kind>`. Without this check a wrong model name would only show up as sentences that are always the offline ones. The default model id is `claude-haiku-4-5-20251001`; set `SENTENCE_MODEL` to another id your key can use.
+
 The key stays in the server process (`.env` is git-ignored); the browser never sees it. For a deployed build set `VITE_SENTENCE_URL=wss://…` at build time. The page address `?server=` is accepted **only for localhost**, so a link cannot send someone's words to a stranger's server. The comparison study (`?study=1`) never uses the server.
 
 ## Two doors, one service
@@ -40,4 +42,4 @@ If the model's sentence breaks it, is slow (4 s), fails, or repeats a sentence t
 ## Verified, and not
 
 Verified here: protocol parsing, the rule on many cases (including the offline builder for every card pack), the service's fallbacks with a fake model, the Anthropic request format with a fake HTTP client, real WebSocket and real TCP sockets, origin refusal, rate limiting, the app with a real server, a server that is down and a hostile one (`npm run e2e:server`).
-**Not verified: the real language model.** No call to the Anthropic API was made (no key in the build environment): the model name in `.env.example` and the prompt are untested against the live API, and the quality of its sentences is unknown. Try it with a key, then read `note` on the answers for how often the rule rejects it.
+**Not verified: the real language model.** No call to the Anthropic API was made (no key in the build environment): the start-up check is tested with a fake HTTP client only, and the model name in `.env.example` and the prompt are untested against the live API, and the quality of its sentences is unknown. Try it with a key, then read `note` on the answers for how often the rule rejects it.

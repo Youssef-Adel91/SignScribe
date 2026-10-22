@@ -6,6 +6,7 @@ import { loadConfig, type Config } from './config.ts';
 import { RateLimiter, handleMessage } from './handler.ts';
 import { AnthropicProvider, FakeProvider, type SentenceProvider } from './llm.ts';
 import { SentenceService } from './sentences.ts';
+import { selfTest, type SelfTest } from './selftest.ts';
 
 export function makeProvider(c: Config): SentenceProvider | null {
   if (c.provider === 'anthropic') return new AnthropicProvider(c.apiKey, c.model);
@@ -27,7 +28,18 @@ export interface Running {
 export async function start(
   config: Config = loadConfig(),
   log: (line: string) => void = (l) => console.log(l),
+  deps: { selfTest?: () => Promise<SelfTest> } = {},
 ): Promise<Running> {
+  // with a key, ask the API once now: a wrong model name or key must be loud, not a silent fallback
+  let llm: SelfTest | null = null;
+  if (config.provider === 'anthropic') {
+    llm = await (deps.selfTest ?? (() => selfTest(config.apiKey, config.model)))();
+    if (llm.ok) log(`language model check: ok (${config.model})`);
+    else {
+      log(`!!! WARNING: the language model does not work (${llm.kind}): ${llm.message}`);
+      log('!!! Every sentence will come from the offline rules until this is fixed.');
+    }
+  }
   const service = new SentenceService({
     provider: makeProvider(config),
     timeoutMs: config.llmTimeoutMs,
@@ -38,7 +50,13 @@ export async function start(
   const http = createServer((req, res) => {
     if (req.url === '/health') {
       res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, provider: config.provider }));
+      res.end(
+        JSON.stringify({
+          ok: true,
+          provider: config.provider,
+          languageModel: llm === null ? 'not used' : llm.ok ? 'ok' : `failed: ${llm.kind}`,
+        }),
+      );
     } else {
       res.writeHead(404).end();
     }
