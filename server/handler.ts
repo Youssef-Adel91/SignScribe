@@ -21,11 +21,26 @@ export class RateLimiter {
   }
 }
 
+export interface Limiter {
+  allow(now: number): boolean;
+}
+
+/** A message is allowed only when every limiter allows it; all of them are counted (no short-circuit). */
+export function both(a: Limiter, b: Limiter): Limiter {
+  return {
+    allow(now) {
+      const x = a.allow(now);
+      const y = b.allow(now);
+      return x && y;
+    },
+  };
+}
+
 /** One message in, one message out. The same function serves WebSocket frames and TCP lines. */
 export async function handleMessage(
   text: string,
   service: SentenceService,
-  limiter: RateLimiter,
+  limiter: Limiter,
   now = Date.now(),
 ): Promise<ServerMessage> {
   const parsed = parseRequest(text);

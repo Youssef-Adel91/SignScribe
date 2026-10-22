@@ -106,3 +106,23 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | App uses the server sentence only if it passes the rule (again in browser and machine), ignores stale / hostile / far-away servers; study mode ignores it | 6 | verified here | `tests/sentenceClient.test.ts`, `npm run e2e:server` |
 | The language model itself: sentences are good, prompt works with the live API, model name valid | 6 | not met | no API key here; try with a key |
 | Latency of the real model | 6 | not met | not measured |
+
+## Phase 7 (final study logger, accessibility audit, performance tooling)
+| Item | Phase | Status | Evidence |
+| --- | --- | --- | --- |
+| Study: background questions and consent before the first task; session record (device, settings, build); camera speed per trial; CSV for scores, profile and session | 7 | verified here | `tests/study.test.ts`, `npm run e2e:study` |
+| Study: analysis script (paired Wilcoxon exact + normal, effect size, sign test, warnings for few participants / mixed builds / headless data) | 7 | verified here (made-up exports; p-values against brute force and scipy) | `npm run ml:test` |
+| Axe (WCAG 2.0/2.1 A and AA + best practices): no violation on 14 screens x 3 display settings, live mode, study pages, collection page, card sheet | 7 | verified here | `npm run axe` (62 pages / states). Found and fixed: heading order on screens 6 to 10, landmarks and hidden app under full-page forms, scrollable card sheet |
+| Real screen reader (NVDA / VoiceOver) | 7 | needs my screen reader | automated rules find only part of the problems |
+| Performance recording tool (`/?perf=1`): fps, worst second, stalls, model time, own-code time, long tasks, environment; mock recordings labelled | 7 | verified here (summary maths) | `tests/perf.test.ts` |
+| fps, latency, model time of the real pipeline | 7 | **needs my camera** | `docs/PERF.md`. No such number exists yet |
+| Cost of our own code per frame | 7 | measurable here, not quoted | `npm run bench` |
+| One command runs every check | 7 | verified here | `npm run verify` |
+| What is left and what only I can do | 7 | done | `docs/WHATS_LEFT.md` |
+
+## Survey update (review fixes)
+| Item | Phase | Status | Evidence |
+| --- | --- | --- | --- |
+| SUS (10 statements, published wording) scored 0-100, shown in the survey and exported in the scores CSV; two reverse-worded items flipped before averaging; identical wording for both methods | 7 | verified here (scoring against a hand-worked example; no statement names a method) | `tests/study.test.ts` |
+| Analysis: SUS row, careless-answer flags (identical answers, contradicting reverse items), `--exclude-flagged` | 7 | verified here (made-up exports) | `npm run ml:test` |
+| SUS results on real participants | 7 | not met | no study run yet |

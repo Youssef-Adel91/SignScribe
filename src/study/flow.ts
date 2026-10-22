@@ -1,6 +1,7 @@
 import { planFor, type Plan } from './design';
 import type { Answers, Preference } from './survey';
 import { emptyData, type ComparisonLog, type StudyData, type TrialLog } from './log';
+import type { ProfileAnswers, SessionMeta } from './profile';
 
 /**
  * Where a participant is in the session. Pure, so the whole protocol is testable:
@@ -8,6 +9,7 @@ import { emptyData, type ComparisonLog, type StudyData, type TrialLog } from './
  */
 export type Phase =
   | { kind: 'setup' }
+  | { kind: 'profile' }
   | { kind: 'ready'; block: 0 | 1; task: number }
   | { kind: 'running'; block: 0 | 1; task: number; startedAt: number }
   | { kind: 'survey'; block: 0 | 1 }
@@ -24,6 +26,7 @@ export const TASKS_PER_BLOCK = 3;
 
 export type Action =
   | { type: 'START'; participant: number }
+  | { type: 'PROFILE'; answers: ProfileAnswers; session: SessionMeta; at: string }
   | { type: 'BEGIN'; now: number }
   | {
       type: 'END';
@@ -43,7 +46,22 @@ export function studyReducer(s: StudyState, a: Action): StudyState {
   const { plan, phase } = s;
   switch (a.type) {
     case 'START':
-      return { ...s, plan: planFor(a.participant), phase: { kind: 'ready', block: 0, task: 0 } };
+      return { ...s, plan: planFor(a.participant), phase: { kind: 'profile' } };
+    case 'PROFILE': {
+      if (phase.kind !== 'profile' || !plan) return s;
+      return {
+        ...s,
+        phase: { kind: 'ready', block: 0, task: 0 },
+        data: {
+          ...s.data,
+          profiles: [
+            ...s.data.profiles,
+            { participant: plan.participant, answers: a.answers, consent: true, at: a.at },
+          ],
+          sessions: [...s.data.sessions, a.session],
+        },
+      };
+    }
     case 'BEGIN':
       if (phase.kind !== 'ready') return s;
       return {

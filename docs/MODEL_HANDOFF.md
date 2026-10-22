@@ -59,7 +59,7 @@ How to read it:
 `LETTER` in `src/recognition/letterController.ts`: `minConfidence`, `confirmConfidence`, `stableMs`, `holdMs`, `releaseMs` and the motion constants. They are first guesses. The report gives per-letter precision; use it. When a letter misfires, write a test that reproduces it in `tests/letters.test.ts` first, then change the value, and note it in `docs/KNOWN_ISSUES.md`.
 
 ## Step 6: record what you measured
-Put the report in `docs/` (for example `docs/reports/2026-xx-xx-letters.md`) and update `docs/DONE.md`: letter recognition becomes "verified" only for the numbers in that report, with its method.
+Keep the report where the team can read it (the `.report.md` next to the model is fine; it holds counts and percentages only, no takes) and do not put participant data in the repo (`docs/DATASET.md`). Update `docs/DONE.md`: letter recognition becomes "verified" only for the numbers in that report, with its method.
 
 ## Things not to do
 - Do not report a number from a run on generated data (the report is stamped SYNTHETIC and the model carries `"synthetic": true`).

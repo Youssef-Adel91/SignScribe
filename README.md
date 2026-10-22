@@ -4,9 +4,7 @@ A camera-controlled interface that turns hand signs into written sentences. No k
 once it is running: you raise a hand to start, point and hold to choose, and use thumbs, a fist and an
 open palm for yes / no / delete / space.
 
-Status: Phase 3 of 7 (Phase 2 camera layer plus context tips, comfort settings, speech). Earlier: Phase 2 of 7 (see `CLAUDE.md` for the working rules; camera, hand tracking, gestures, pointer, dwell). Letter recognition and picture-card
-detection are NOT built yet. See `PLAN.md` for the phases and `docs/DONE.md` for what is proven and what still
-needs a real camera.
+Status: all 7 phases are built: camera and gestures, comfort settings and speech, a comparison study (camera vs keyboard and mouse), letter and picture-card tooling, a sentence server, an accessibility audit and performance tools. **Not done yet:** trained letter and card models, a test on a real camera, a study with people, a try with the live language model. See `docs/WHATS_LEFT.md`, `PLAN.md`, and `docs/DONE.md` for what is proven and what still needs a real camera.
 
 ## Run it
 
@@ -33,15 +31,20 @@ Without it the app writes sentences with simple offline rules. With it, a langua
 | `/?study=1`             | comparison study console (facilitator): camera vs keyboard + mouse, surveys, CSV export. See `docs/STUDY.md` |
 | `/?collect=1`           | data collection for the letter model (researcher tool). See `docs/MODEL_HANDOFF.md` |
 | `/?woz=1`               | Wizard of Oz: a facilitator types the letters (no model needed) |
+| `/?perf=1`              | record 30 s of fps / model time / stalls on the real camera (`docs/PERF.md`) |
 | `/?server=ws://localhost:8787` | use the sentence server (localhost only) |
 | `/?cards=print`         | printable sheet of the picture cards |
 | `/?dev=1&vision=mock`   | no camera; `window.__signscribe.play(hands, ms)` feeds synthetic landmarks (used by `npm run e2e`) |
 
 ## Checks
 
+    npm run verify     # runs every check below and prints one table (needs `npm run models` once)
+
     npm run check      # typecheck, lint, unit tests, production build
     npm run e2e        # needs a build: whole flow driven by synthetic hands, no mouse or keyboard; camera error messages
     npm run layout     # needs a build: no scrolling or overflow on any screen at 1280x720, 1440x900, 1920x1080 (reports Normal, Large and Extra large text)
+    npm run axe        # needs a build: axe-core (WCAG A / AA) on 62 pages and states
+    npm run bench      # CPU time of our own code per frame (no camera)
     npm run e2e:server # needs a build: the app with a real sentence server, a dead one and a hostile one
     npm run e2e:cards  # needs `npm run models` and a build: card path incl. ONNX Runtime Web with a test-only model
     npm run e2e:collect # needs a build: collection mode and Wizard of Oz with synthetic hands
@@ -61,7 +64,8 @@ Without it the app writes sentences with simple offline rules. With it, a langua
     src/data/      contexts.json (card packs + detector classes)
     server/        sentence server (Node, WebSocket + TCP), see server/README.md
     src/nlp/       word lists, safety rule, protocol, sentence client, edit distance, offline sentence builder
+    src/perf/      performance recording (?perf=1)
     src/dev/       developer panels, mounted only with ?dev=1
     tests/         unit tests (machine, gestures, controller, dwell, pointer, contrast, dictionary ...)
     tools/         models download, screenshot compare, e2e and layout checks
-    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, STUDY.md, PHASE4.md, DATASET.md, MODEL_FORMAT.md, MODEL_HANDOFF.md, CARDS.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)
+    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, STUDY.md, PHASE4.md, DATASET.md, MODEL_FORMAT.md, MODEL_HANDOFF.md, CARDS.md, PERF.md, WHATS_LEFT.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)

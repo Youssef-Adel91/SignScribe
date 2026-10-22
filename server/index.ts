@@ -3,9 +3,10 @@ import { createServer as createTcp } from 'node:net';
 import { WebSocketServer } from 'ws';
 import { LIMITS } from '../src/nlp/protocol.ts';
 import { loadConfig, type Config } from './config.ts';
-import { RateLimiter, handleMessage } from './handler.ts';
+import { RateLimiter, both, handleMessage } from './handler.ts';
 import { AnthropicProvider, FakeProvider, type SentenceProvider } from './llm.ts';
 import { SentenceService } from './sentences.ts';
+import { selfTest, type SelfTest } from './selftest.ts';
 
 export function makeProvider(c: Config): SentenceProvider | null {
   if (c.provider === 'anthropic') return new AnthropicProvider(c.apiKey, c.model);
@@ -27,7 +28,18 @@ export interface Running {
 export async function start(
   config: Config = loadConfig(),
   log: (line: string) => void = (l) => console.log(l),
+  deps: { selfTest?: () => Promise<SelfTest> } = {},
 ): Promise<Running> {
+  // with a key, ask the API once now: a wrong model name or key must be loud, not a silent fallback
+  let llm: SelfTest | null = null;
+  if (config.provider === 'anthropic') {
+    llm = await (deps.selfTest ?? (() => selfTest(config.apiKey, config.model)))();
+    if (llm.ok) log(`language model check: ok (${config.model})`);
+    else {
+      log(`!!! WARNING: the language model does not work (${llm.kind}): ${llm.message}`);
+      log('!!! Every sentence will come from the offline rules until this is fixed.');
+    }
+  }
   const service = new SentenceService({
     provider: makeProvider(config),
     timeoutMs: config.llmTimeoutMs,
@@ -38,11 +50,21 @@ export async function start(
   const http = createServer((req, res) => {
     if (req.url === '/health') {
       res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, provider: config.provider }));
+      res.end(
+        JSON.stringify({
+          ok: true,
+          provider: config.provider,
+          languageModel: llm === null ? 'not used' : llm.ok ? 'ok' : `failed: ${llm.kind}`,
+        }),
+      );
     } else {
       res.writeHead(404).end();
     }
   });
+  // limits for the whole server: one busy or hostile client must not use up the API budget or the sockets
+  const globalLimiter = new RateLimiter(config.globalRateLimit);
+  const sockets = new Set<import('node:net').Socket>();
+  const open = () => wss.clients.size + sockets.size;
   const wss = new WebSocketServer({
     server: http,
     maxPayload: LIMITS.maxMessage,
@@ -50,7 +72,11 @@ export async function start(
       config.origins.includes('*') || (!!origin && config.origins.includes(origin)),
   });
   wss.on('connection', (socket) => {
-    const limiter = new RateLimiter(config.rateLimit);
+    if (open() > config.maxConnections) {
+      socket.close(1013, 'server busy'); // 1013: try again later
+      return;
+    }
+    const limiter = both(new RateLimiter(config.rateLimit), globalLimiter);
     socket.on('message', (data) => {
       void handleMessage(data.toString(), service, limiter).then(
         (out) => socket.readyState === socket.OPEN && socket.send(JSON.stringify(out)),
@@ -60,11 +86,21 @@ export async function start(
   });
 
   // ---- plain TCP, one JSON message per line
-  const sockets = new Set<import('node:net').Socket>();
   const tcp = createTcp((socket) => {
+    if (open() >= config.maxConnections) {
+      socket.end(
+        JSON.stringify({
+          id: '',
+          ok: false,
+          error: 'rate_limited',
+          message: 'server busy, try again later',
+        }) + '\n',
+      );
+      return;
+    }
     sockets.add(socket);
     socket.setEncoding('utf8');
-    const limiter = new RateLimiter(config.rateLimit);
+    const limiter = both(new RateLimiter(config.rateLimit), globalLimiter);
     let buf = '';
     socket.on('data', (chunk: string) => {
       buf += chunk;
@@ -93,6 +129,15 @@ export async function start(
   await new Promise<void>((r) => tcp.listen(config.tcpPort, config.host, r));
   const wsPort = (http.address() as import('node:net').AddressInfo).port;
   const tcpPort = (tcp.address() as import('node:net').AddressInfo).port;
+  const loopback = ['127.0.0.1', '::1', 'localhost'].includes(config.host);
+  if (!loopback && config.provider === 'anthropic')
+    log(
+      `!!! WARNING: HOST=${config.host} makes the server reachable from the network while it holds your API key. Anyone who can connect spends your quota. Use 127.0.0.1, or put it behind a proxy that checks who is calling (server/README.md).`,
+    );
+  if (config.origins.includes('*') && config.provider === 'anthropic')
+    log(
+      '!!! WARNING: ALLOWED_ORIGINS=* lets any web page use your API key through this server (and the plain TCP socket has no origin check at all).',
+    );
   log(
     `sentence server: WebSocket ws://${config.host}:${wsPort}, TCP ${config.host}:${tcpPort}, provider ${config.provider}`,
   );

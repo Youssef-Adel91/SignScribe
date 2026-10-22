@@ -7,7 +7,8 @@ Nothing below has been measured yet. Fill the tables on a real laptop webcam; do
 2. Note: laptop model, camera, room light (day / lamp / dim), distance to the screen, left- or right-handed signer.
 3. Keep the **Vision debug** panel visible. It shows fps, inference ms, gesture + confidence, pointer, dwell, checks.
 
-## A. Speed (look at the panel for 30 s with one hand in view)
+## A. Speed
+Best: open `/?perf=1`, press **Record 30 s**, use the app, export the JSON (see `docs/PERF.md`) and paste the summary below. Quick alternative: look at the Vision debug panel for 30 s with one hand in view.
 | Item | Value | Note |
 | --- | --- | --- |
 | camera fps | | |

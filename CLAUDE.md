@@ -4,14 +4,15 @@ HCI Fall 2026 course project (MSA). Camera-based interface that turns hand signs
 Owner: Youssef. Talk to him in Egyptian Arabic (plain, student style). Code, commits and docs stay in English.
 
 ## Status
-Phase 3 of 7 done on a branch (see PLAN.md): camera, MediaPipe hand tracking, rule-based gestures, pointer, dwell, command zone.
-Built on branches: context/settings/TTS (3), study mode, letter-recognition TOOLING (4, no model: handoff in docs/MODEL_HANDOFF.md). Cards (5): pipeline built, NO detector trained (docs/CARDS.md). Sentence server (6) built, never tried with the live API (no key). NOT built: final study polish/axe/perf (7).
+All 7 phases are built and were merged into `main` (Youssef asked for it, 2026-10-22) from the stacked branches (see PLAN.md). Base: camera, MediaPipe hand tracking, rule-based gestures, pointer, dwell, command zone. Then: context/settings/TTS (3), study mode, letter-recognition TOOLING (4, no model: handoff in docs/MODEL_HANDOFF.md). Cards (5): pipeline built, NO detector trained (docs/CARDS.md). Sentence server (6) built, never tried with the live API (no key). Phase 7 built (final study logger, axe, perf tools). All phases built; what is left needs a camera, people and trained models: docs/WHATS_LEFT.md.
 Youssef decided (overrides the earlier wait): build the whole platform first (Phase 3 -> study mode -> 4 -> 5 -> 6 -> 7), then fix bugs from camera testing. Order, one branch + PR per phase, `npm run check` green.
 Camera bugs go in docs/KNOWN_ISSUES.md; do not fix them unless they block the phase being built. After Phase 4 write docs/MODEL_HANDOFF.md, then continue with 5-7 without waiting for the model.
 
 ## Commands
     npm ci
     npm run server     # sentence server (.env from .env.example)
+    npm run verify     # every automatic check in one table
+    npm run axe | bench | e2e:server   # accessibility audit / cost of own code / sentence server
     npm run models     # copies MediaPipe wasm + downloads hand_landmarker.task into public/models
     npm run dev        # http://localhost:5173 (?dev=1 for dev panels; vision=off | vision=mock)
     npm run check      # typecheck + lint + unit tests (see npm run check) + production build. Keep green on every commit
@@ -35,7 +36,7 @@ Design: Figma file key 11g6ZDeS8xInkvy58p7yMO ("HCI Project"), page "Screens" ha
 - Never state an accuracy, fps or latency number unless measured on a real camera with real hands. Synthetic landmarks only prove logic. In docs/DONE.md use: "verified here / needs my camera / not met".
 - Gesture thresholds are heuristics. When Youssef reports a misfire: write a test that reproduces it, adjust, and note it in docs/PHASE2.md.
 - Do NOT vibe-code the sign-recognition model. Build tooling only (collection mode, dataset format, training scripts, k-NN baseline) up to the end of Phase 4, then stop and hand over to Youssef and the team.
-- `npm run check` green on every commit. Small commits, clear messages. Work on branches and open PRs; never push to main (the earlier question about pushing to main is still unanswered; keep branches + PRs).
+- `npm run check` green on every commit. Small commits, clear messages. Work on branches and open PRs; do not push straight to main. (Youssef asked once for everything to be merged into main and that was done through a pull request; any further merge to main also needs his ask.)
 - Documentation is part of the work: update README, PLAN.md and docs/DONE.md with every change.
 - Every primary action needs a gesture equivalent, immediate feedback and error recovery.
 

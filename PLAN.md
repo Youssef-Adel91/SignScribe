@@ -106,3 +106,6 @@ Done: card list as data (`src/data/contexts.json`), YOLOv8 decoding, SORT tracke
 
 ## Phase 6 status (branch feat/phase6-sentence-server, stacked on Phase 5)
 Done: sentence server (WebSocket for the app + plain TCP lab-style socket, JSON protocol, rate limit, origin list), Anthropic client behind a provider interface, shared safety rule, offline fallback, app bridge (offline first, server sentence swapped in only when valid), `.env.example`, docs in server/README.md. Fixed on the way: the offline builder dropped a chosen "Hello" in two of three wordings. Not tried against the live API (no key here).
+
+## Phase 7 status (branch feat/phase7-polish, stacked on Phase 6)
+Done: study logger final (profile + consent, session record, camera speed per trial, more exports, Python analysis script), axe audit with fixes, performance recording tool and benchmark, `npm run verify`, `docs/WHATS_LEFT.md`. All seven phases are built; what remains needs a real camera, real people and trained models (docs/WHATS_LEFT.md).

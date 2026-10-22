@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { offlineSentence } from '../nlp/sentence';
 import type { Place } from '../nlp/words';
 import { isSuccess, type Task } from './design';
+import { Overlay } from '../ui/Overlay';
 import styles from './Study.module.css';
 
 export interface KeyboardResult {
@@ -42,73 +43,84 @@ export function KeyboardTask({
         );
 
   return (
-    <div className={styles.page} data-testid="keyboard-task">
-      <h1>Write a message</h1>
-      <p className={styles.prompt}>
-        Task: you are at the <strong>{task.place}</strong>. Your message has two words:{' '}
-        <strong>{task.words.join(' and ').toLowerCase()}</strong>.
-      </p>
+    <Overlay>
+      <main className={styles.page} data-testid="keyboard-task">
+        <h1>Write a message</h1>
+        <p className={styles.prompt}>
+          Task: you are at the <strong>{task.place}</strong>. Your message has two words:{' '}
+          <strong>{task.words.join(' and ').toLowerCase()}</strong>.
+        </p>
 
-      <fieldset className={styles.q}>
-        <legend>1. Where are you?</legend>
-        <div className={styles.scale}>
-          {PLACES.map((p) => (
-            <label key={p}>
-              <input type="radio" name="place" checked={place === p} onChange={() => setPlace(p)} />
-              <span>{p}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+        <fieldset className={styles.q}>
+          <legend>1. Where are you?</legend>
+          <div className={styles.scale}>
+            {PLACES.map((p) => (
+              <label key={p}>
+                <input
+                  type="radio"
+                  name="place"
+                  checked={place === p}
+                  onChange={() => setPlace(p)}
+                />
+                <span>{p}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
-      <label className={styles.q}>
-        <span>2. Type the words of your message</span>
-        <input
-          type="text"
-          value={text}
-          autoComplete="off"
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Backspace' || e.key === 'Delete') corrections.current++;
-          }}
-        />
-      </label>
-
-      {attempt === null ? (
-        <button type="button" disabled={!place || words.length === 0} onClick={() => setAttempt(0)}>
-          Show sentence
-        </button>
-      ) : (
-        <section className={styles.q} aria-live="polite">
-          <p className={styles.sentence}>{sentence}</p>
-          <button
-            type="button"
-            onClick={() =>
-              onDone({
-                corrections: corrections.current,
-                rejections: rejections.current,
-                attempts: rejections.current + 1,
-                finalText: sentence,
-                success: isSuccess(task, sentence) && place === task.place,
-              })
-            }
-          >
-            Use this sentence
-          </button>{' '}
-          <button
-            type="button"
-            onClick={() => {
-              rejections.current++;
-              setAttempt(attempt + 1);
+        <label className={styles.q}>
+          <span>2. Type the words of your message</span>
+          <input
+            type="text"
+            value={text}
+            autoComplete="off"
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Backspace' || e.key === 'Delete') corrections.current++;
             }}
+          />
+        </label>
+
+        {attempt === null ? (
+          <button
+            type="button"
+            disabled={!place || words.length === 0}
+            onClick={() => setAttempt(0)}
           >
-            Try another
-          </button>{' '}
-          <button type="button" onClick={() => setAttempt(null)}>
-            Change the words
+            Show sentence
           </button>
-        </section>
-      )}
-    </div>
+        ) : (
+          <section className={styles.q} aria-live="polite">
+            <p className={styles.sentence}>{sentence}</p>
+            <button
+              type="button"
+              onClick={() =>
+                onDone({
+                  corrections: corrections.current,
+                  rejections: rejections.current,
+                  attempts: rejections.current + 1,
+                  finalText: sentence,
+                  success: isSuccess(task, sentence) && place === task.place,
+                })
+              }
+            >
+              Use this sentence
+            </button>{' '}
+            <button
+              type="button"
+              onClick={() => {
+                rejections.current++;
+                setAttempt(attempt + 1);
+              }}
+            >
+              Try another
+            </button>{' '}
+            <button type="button" onClick={() => setAttempt(null)}>
+              Change the words
+            </button>
+          </section>
+        )}
+      </main>
+    </Overlay>
   );
 }

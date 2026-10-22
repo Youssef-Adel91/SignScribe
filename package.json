@@ -22,7 +22,10 @@
     "ml:test": "cd ml && python3 -m pytest -q",
     "e2e:cards": "node tools/e2e/cards.mjs",
     "server": "node --env-file-if-exists=.env server/index.ts",
-    "e2e:server": "node tools/e2e/server.mjs"
+    "e2e:server": "node tools/e2e/server.mjs",
+    "axe": "node tools/e2e/axe.mjs",
+    "bench": "vitest bench --run",
+    "verify": "node tools/verify-all.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.1.0",
@@ -40,6 +43,7 @@
     "@types/react-dom": "^18.3.1",
     "@types/ws": "8.18.2",
     "@vitejs/plugin-react": "^4.3.4",
+    "axe-core": "4.11.0",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^17.13.0",

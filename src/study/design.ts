@@ -12,9 +12,11 @@ export interface Task {
 }
 
 /**
- * Two task sets of equal size so that nobody writes the same message twice (no learning effect).
- * Every word is in the context word list AND in the picture-card pack of its place, so both
- * techniques can produce it. Difficulty is matched roughly, by letter count: A = 10, 8, 13; B = 13, 7, 8.
+ * Two task sets of equal size that share NO word (not just no whole message), so nobody meets a word
+ * again in the second method: no learning effect from the first. Every word is in the context word
+ * list AND in the picture-card pack of its place, so both techniques can produce it. Difficulty is
+ * matched by letter count, task by task: A = 10, 8, 13 and B = 10, 7, 12 (every pair within 1 letter,
+ * totals 31 and 29).
  * Letter counts are only a proxy (typing and signing cost differently), see docs/STUDY.md.
  */
 export const TASK_SETS: Record<TaskSetId, readonly Task[]> = {
@@ -24,9 +26,9 @@ export const TASK_SETS: Record<TaskSetId, readonly Task[]> = {
     { id: 'A3', place: 'Home', words: ['WATER', 'MEDICINE'] },
   ],
   B: [
-    { id: 'B1', place: 'Clinic', words: ['MEDICINE', 'WATER'] },
+    { id: 'B1', place: 'Home', words: ['FOOD', 'FAMILY'] },
     { id: 'B2', place: 'Shop', words: ['SIZE', 'PAY'] },
-    { id: 'B3', place: 'Home', words: ['FOOD', 'HELP'] },
+    { id: 'B3', place: 'Work', words: ['MEETING', 'BREAK'] },
   ],
 };
 

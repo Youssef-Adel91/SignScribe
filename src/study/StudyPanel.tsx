@@ -2,12 +2,25 @@ import { useEffect, useRef, useState } from 'react';
 import { useCtx, useScreenNumber, useSend } from '../state/MachineProvider';
 import { MODE_LABEL, TASK_SETS, isSuccess, type Task } from './design';
 import { TASKS_PER_BLOCK } from './flow';
-import { comparisonCsv, summarize, surveyCsv, trialsCsv, type StudyData } from './log';
+import {
+  comparisonCsv,
+  profileCsv,
+  scoresCsv,
+  sessionCsv,
+  summarize,
+  surveyCsv,
+  trialsCsv,
+  type StudyData,
+} from './log';
 import { download } from './download';
 import { KeyboardTask } from './KeyboardTask';
 import { ComparisonForm, SurveyForm } from './SurveyForm';
 import { useStudy } from './StudyProvider';
-import { useTrialRecorder } from './useTrialRecorder';
+import { NO_CAMERA_STATS, useCameraStats, useTrialRecorder } from './useTrialRecorder';
+import { ProfileForm } from './ProfileForm';
+import type { SessionMeta } from './profile';
+import { useCtx as useSettings } from '../state/MachineProvider';
+import { Outside } from '../ui/Overlay';
 import styles from './Study.module.css';
 
 const fmtMs = (ms: number | null) => (ms === null ? 'n/a' : `${(ms / 1000).toFixed(1)} s`);
@@ -34,6 +47,24 @@ function Exports({ data }: { data: StudyData }) {
         onClick={() => download(`signscribe-comparison-${stamp}.csv`, comparisonCsv(data))}
       >
         Comparison CSV
+      </button>
+      <button
+        type="button"
+        onClick={() => download(`signscribe-scores-${stamp}.csv`, scoresCsv(data))}
+      >
+        Scores CSV
+      </button>
+      <button
+        type="button"
+        onClick={() => download(`signscribe-profile-${stamp}.csv`, profileCsv(data))}
+      >
+        Profile CSV
+      </button>
+      <button
+        type="button"
+        onClick={() => download(`signscribe-session-${stamp}.csv`, sessionCsv(data))}
+      >
+        Session CSV
       </button>
       <button
         type="button"
@@ -70,6 +101,8 @@ export function StudyPanel() {
   const block = phase && 'block' in phase ? plan?.blocks[phase.block] : undefined;
   const cameraRunning = running && block?.mode === 'camera';
   const rec = useTrialRecorder(cameraRunning);
+  const camStats = useCameraStats(cameraRunning);
+  const settings = useSettings();
 
   useEffect(() => {
     if (!running) return;
@@ -107,9 +140,10 @@ export function StudyPanel() {
         success: isSuccess(task, sentence),
         endedBy: 'done',
         finalText: sentence,
+        ...camStats(),
       },
     });
-  }, [study, phase, cameraRunning, screen, task, sentence, rec]);
+  }, [study, phase, cameraRunning, screen, task, sentence, rec, camStats]);
 
   if (!study) return null;
   const { state, dispatch } = study;
@@ -125,10 +159,34 @@ export function StudyPanel() {
         success: false,
         endedBy: 'gaveup',
         finalText: sentence,
+        ...(block?.mode === 'camera' ? camStats() : NO_CAMERA_STATS),
       },
     });
   };
 
+  if (phase?.kind === 'profile' && plan) {
+    const meta = (): SessionMeta => ({
+      participant: plan.participant,
+      startedAt: Date.now(),
+      appVersion: import.meta.env.VITE_APP_VERSION ?? 'unknown',
+      userAgent: navigator.userAgent,
+      screen: `${window.screen.width}x${window.screen.height}`,
+      cores: navigator.hardwareConcurrency ?? null,
+      textSize: settings.textSize,
+      contrast: settings.contrast,
+      dwell: settings.dwell,
+      voice: settings.voice,
+      signingHand: settings.hand,
+    });
+    return (
+      <ProfileForm
+        participant={plan.participant}
+        onSubmit={(answers) =>
+          dispatch({ type: 'PROFILE', answers, session: meta(), at: new Date().toISOString() })
+        }
+      />
+    );
+  }
   if (phase?.kind === 'survey' && plan)
     return (
       <SurveyForm
@@ -164,103 +222,115 @@ export function StudyPanel() {
                 success: r.success,
                 endedBy: 'done',
                 finalText: r.finalText,
+                ...NO_CAMERA_STATS,
               },
             })
           }
         />
       )}
-      <aside className={styles.panel} aria-label="Study console" data-testid="study-panel">
-        <h2>Study console</h2>
-        {phase?.kind === 'setup' && (
-          <>
-            <label>
-              Participant number{' '}
-              <input
-                type="number"
-                min={0}
-                value={participant}
-                onChange={(e) => setParticipant(e.target.value)}
-                style={{ width: 70 }}
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => dispatch({ type: 'START', participant: Number(participant) || 0 })}
-            >
-              Start session
-            </button>
-            <p>
-              Trials logged so far: {state.data.trials.length}. Participants with a survey:{' '}
-              {new Set(state.data.surveys.map((s) => s.participant)).size}.
-            </p>
-            <Exports data={state.data} />
-          </>
-        )}
-        {plan && phase && (phase.kind === 'ready' || phase.kind === 'running') && block && task && (
-          <>
-            <p>
-              Participant {plan.participant}: block {phase.block + 1} of 2,{' '}
-              <strong>{MODE_LABEL[block.mode]}</strong>, task {phase.task + 1} of {TASKS_PER_BLOCK}
-            </p>
-            <div className={styles.task}>
-              Place: <strong>{task.place}</strong>, words: <strong>{task.words.join(', ')}</strong>
-            </div>
-            {phase.kind === 'ready' && (
+      <Outside>
+        <aside className={styles.panel} aria-label="Study console" data-testid="study-panel">
+          <h2>Study console</h2>
+          {phase?.kind === 'setup' && (
+            <>
+              <label>
+                Participant number{' '}
+                <input
+                  type="number"
+                  min={0}
+                  value={participant}
+                  onChange={(e) => setParticipant(e.target.value)}
+                  style={{ width: 70 }}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => dispatch({ type: 'START', participant: Number(participant) || 0 })}
+              >
+                Start session
+              </button>
+              <p>
+                Trials logged so far: {state.data.trials.length}. Participants with a survey:{' '}
+                {new Set(state.data.surveys.map((s) => s.participant)).size}.
+              </p>
+              <Exports data={state.data} />
+            </>
+          )}
+          {plan &&
+            phase &&
+            (phase.kind === 'ready' || phase.kind === 'running') &&
+            block &&
+            task && (
               <>
                 <p>
-                  {block.mode === 'camera'
-                    ? 'Camera: the app restarts at the context screen (04). Setup and settings are kept.'
-                    : 'Keyboard: a plain form opens over the app.'}
+                  Participant {plan.participant}: block {phase.block + 1} of 2,{' '}
+                  <strong>{MODE_LABEL[block.mode]}</strong>, task {phase.task + 1} of{' '}
+                  {TASKS_PER_BLOCK}
                 </p>
-                <button type="button" onClick={() => dispatch({ type: 'BEGIN', now: Date.now() })}>
-                  Start task
-                </button>
+                <div className={styles.task}>
+                  Place: <strong>{task.place}</strong>, words:{' '}
+                  <strong>{task.words.join(', ')}</strong>
+                </div>
+                {phase.kind === 'ready' && (
+                  <>
+                    <p>
+                      {block.mode === 'camera'
+                        ? 'Camera: the app restarts at the context screen (04). Setup and settings are kept.'
+                        : 'Keyboard: a plain form opens over the app.'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => dispatch({ type: 'BEGIN', now: Date.now() })}
+                    >
+                      Start task
+                    </button>
+                  </>
+                )}
+                {phase.kind === 'running' && (
+                  <>
+                    <p>Time: {fmtMs(now - phase.startedAt)}</p>
+                    <button type="button" onClick={giveUp}>
+                      Participant gave up
+                    </button>
+                  </>
+                )}
               </>
             )}
-            {phase.kind === 'running' && (
-              <>
-                <p>Time: {fmtMs(now - phase.startedAt)}</p>
-                <button type="button" onClick={giveUp}>
-                  Participant gave up
-                </button>
-              </>
-            )}
-          </>
-        )}
-        {phase?.kind === 'done' && (
-          <>
-            <p>Session finished. Thank the participant.</p>
-            <table>
-              <thead>
-                <tr>
-                  <th>Mode</th>
-                  <th>n</th>
-                  <th>OK</th>
-                  <th>Time</th>
-                  <th>Errors</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summarize(state.data).map((m) => (
-                  <tr key={m.mode}>
-                    <td>{m.mode}</td>
-                    <td>{m.trials}</td>
-                    <td>
-                      {m.successRate === null ? 'n/a' : `${Math.round(m.successRate * 100)}%`}
-                    </td>
-                    <td>{fmtMs(m.meanDurationMs)}</td>
-                    <td>{fmt(m.meanErrors)}</td>
+          {phase?.kind === 'done' && (
+            <>
+              <p>Session finished. Thank the participant.</p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mode</th>
+                    <th>n</th>
+                    <th>OK</th>
+                    <th>Time</th>
+                    <th>Errors</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            <Exports data={state.data} />
-            <button type="button" onClick={() => dispatch({ type: 'RESET' })}>
-              Next participant
-            </button>
-          </>
-        )}
-      </aside>
+                </thead>
+                <tbody>
+                  {summarize(state.data).map((m) => (
+                    <tr key={m.mode}>
+                      <td>{m.mode}</td>
+                      <td>{m.trials}</td>
+                      <td>
+                        {m.successRate === null ? 'n/a' : `${Math.round(m.successRate * 100)}%`}
+                      </td>
+                      <td>{fmtMs(m.meanDurationMs)}</td>
+                      <td>{fmt(m.meanErrors)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <Exports data={state.data} />
+              <button type="button" onClick={() => dispatch({ type: 'RESET' })}>
+                Next participant
+              </button>
+            </>
+          )}
+        </aside>
+      </Outside>
       {cameraRunning && task && (
         <div
           className={styles.task}

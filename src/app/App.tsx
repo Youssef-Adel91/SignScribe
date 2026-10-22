@@ -6,6 +6,7 @@ import { DevPanel } from '../dev/DevPanel';
 import { VisionDebug } from '../dev/VisionDebug';
 import { SentenceBridge } from '../nlp/SentenceBridge';
 import { WsSentenceClient, resolveSentenceUrl } from '../nlp/sentenceClient';
+import { PerfPanel } from '../perf/PerfPanel';
 import { CardSheet } from '../cards/CardSheet';
 import { CardNotice } from '../cards/CardNotice';
 import { LetterNotice } from '../recognition/LetterNotice';
@@ -30,6 +31,8 @@ export const COLLECT = params.get('collect') === '1';
 export const WOZ = params.get('woz') === '1';
 /** Printable sheet of the picture cards. */
 export const CARD_SHEET = params.get('cards') === 'print';
+/** Performance recording panel (measures fps, model time and stalls on the real camera). */
+export const PERF = params.get('perf') === '1';
 /**
  * Sentence server (Phase 6). Off unless an address is given: the build's VITE_SENTENCE_URL, or `?server=ws://localhost:8787`
  * for development. The comparison study always uses the offline rules so both methods get the same sentences.
@@ -66,6 +69,7 @@ function Body() {
         {STUDY && <StudyPanel />}
         {COLLECT && <CollectPanel />}
         {WOZ && <WozPanel />}
+        {PERF && <PerfPanel />}
         {sentenceClient && <SentenceBridge client={sentenceClient} />}
         {CARD_SHEET && <CardSheet />}
         <ScreenHost />

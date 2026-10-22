@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
 import { LIMITS, parseRequest, type ServerMessage } from '../src/nlp/protocol';
 import { loadConfig } from '../server/config';
-import { RateLimiter, handleMessage } from '../server/handler';
+import { RateLimiter, both, handleMessage } from '../server/handler';
 import { start, type Running } from '../server/index';
 import {
   AnthropicProvider,
@@ -14,6 +14,7 @@ import {
   type SentenceProvider,
 } from '../server/llm';
 import { SentenceService } from '../server/sentences';
+import { selfTest } from '../server/selftest';
 
 const req = (over: Record<string, unknown> = {}) =>
   JSON.stringify({
@@ -186,7 +187,7 @@ describe('AnthropicProvider (fake HTTP)', () => {
   it('sends the key only in the header, a strict system prompt, and the words', async () => {
     const p = new AnthropicProvider(
       'sk-test',
-      'claude-haiku-5-5',
+      'claude-haiku-4-5-20251001',
       f(200, { content: [{ type: 'text', text: '"I need a doctor, please help."' }] }),
     );
     expect(await p.propose(r, new AbortController().signal)).toBe('I need a doctor, please help.');
@@ -197,7 +198,7 @@ describe('AnthropicProvider (fake HTTP)', () => {
     expect(String(call.body.system)).toMatch(/Do NOT add facts/);
     expect(JSON.stringify(call.body.messages)).toContain('DOCTOR, HELP');
     expect(JSON.stringify(call.body.messages)).toContain('Doctor help.'); // avoid
-    expect(call.body.model).toBe('claude-haiku-5-5');
+    expect(call.body.model).toBe('claude-haiku-4-5-20251001');
   });
   it('turns an HTTP error or a reply without text into an error (so the service falls back)', async () => {
     await expect(
@@ -314,5 +315,205 @@ describe('server over a real WebSocket and a real TCP socket', () => {
       });
       expect(s).toMatch(/doctor/);
     }
+  });
+});
+
+describe('startup self-test (fake HTTP)', () => {
+  const answer =
+    (status: number, body: unknown = {}): Fetch =>
+    async () => ({ ok: status < 400, status, json: async () => body });
+  it('passes when the API answers', async () =>
+    expect(await selfTest('k', 'm', answer(200))).toEqual({ ok: true }));
+  it.each([
+    [404, 'model', /model "m" was not found/],
+    [400, 'request', /refused the request/],
+    [401, 'auth', /key was refused/],
+    [403, 'auth', /key was refused/],
+    [429, 'limit', /rate limit/],
+    [500, 'server', /had a problem/],
+  ])('HTTP %i is reported as %s, with advice', async (status, kind, re) => {
+    const r = await selfTest('k', 'm', answer(status, { error: { message: 'details here' } }));
+    expect(r).toMatchObject({ ok: false, kind });
+    if (!r.ok) {
+      expect(r.message).toMatch(re);
+      expect(r.message).toContain('details here');
+    }
+  });
+  it('a network failure and a timeout are reported', async () => {
+    const down: Fetch = async () => {
+      throw new Error('getaddrinfo ENOTFOUND');
+    };
+    expect(await selfTest('k', 'm', down)).toMatchObject({
+      ok: false,
+      kind: 'network',
+      message: expect.stringContaining('ENOTFOUND'),
+    });
+    const slow: Fetch = (_u, init) =>
+      new Promise((_r, rej) =>
+        init.signal.addEventListener('abort', () => rej(new Error('aborted'))),
+      );
+    expect(await selfTest('k', 'm', slow, 30)).toMatchObject({
+      ok: false,
+      kind: 'network',
+      message: expect.stringContaining('no answer'),
+    });
+  });
+  it('never puts the key in the message', async () => {
+    const r = await selfTest('sk-secret', 'm', answer(401, { error: { message: 'bad key' } }));
+    expect(JSON.stringify(r)).not.toContain('sk-secret');
+  });
+  it('the server prints a loud warning at start when the check fails, and says so on /health', async () => {
+    const lines: string[] = [];
+    const s = await start(
+      { ...loadConfig({ ANTHROPIC_API_KEY: 'k' }), wsPort: 0, tcpPort: 0 },
+      (l) => lines.push(l),
+      {
+        selfTest: async () => ({
+          ok: false,
+          kind: 'model',
+          message: 'HTTP 404: the model "x" was not found.',
+        }),
+      },
+    );
+    try {
+      expect(lines.join('\n')).toMatch(/WARNING: the language model does not work \(model\)/);
+      expect(lines.join('\n')).toMatch(/offline rules until this is fixed/);
+      const h = (await (await fetch(`http://127.0.0.1:${s.wsPort}/health`)).json()) as {
+        languageModel: string;
+      };
+      expect(h.languageModel).toBe('failed: model');
+    } finally {
+      await s.close();
+    }
+  });
+  it('no self-test and no warning without a key', async () => {
+    const lines: string[] = [];
+    const s = await start({ ...loadConfig({}), wsPort: 0, tcpPort: 0 }, (l) => lines.push(l), {
+      selfTest: async () => {
+        throw new Error('must not run');
+      },
+    });
+    await s.close();
+    expect(lines.join('\n')).not.toMatch(/WARNING/);
+  });
+});
+
+describe('limits for the whole server', () => {
+  it('both() counts every limiter and allows only when all allow', () => {
+    const a = new RateLimiter(2);
+    const b = new RateLimiter(1);
+    const l = both(a, b);
+    expect(l.allow(0)).toBe(true);
+    expect(l.allow(1)).toBe(false); // b is out, a still counted
+    expect(l.allow(2)).toBe(false); // a is out now too
+    expect(l.allow(20_000)).toBe(true); // new window for both
+  });
+
+  const ping = JSON.stringify({ id: 'p', type: 'ping' });
+  const wsOpen = (port: number) =>
+    new Promise<WebSocket>((resolve, reject) => {
+      const ws = new WebSocket(`ws://127.0.0.1:${port}`, { origin: 'http://localhost:5173' });
+      ws.on('open', () => resolve(ws));
+      ws.on('error', reject);
+    });
+  const wsOnce = (ws: WebSocket) =>
+    new Promise<{ closed?: number; msg?: ServerMessage }>((resolve) => {
+      ws.once('close', (code) => resolve({ closed: code }));
+      ws.once('message', (d) => resolve({ msg: JSON.parse(d.toString()) }));
+      ws.send(ping);
+    });
+
+  it('refuses connections over the cap (WebSocket and TCP share one cap)', async () => {
+    const srv = await start(
+      {
+        ...loadConfig({}),
+        provider: 'fake',
+        wsPort: 0,
+        tcpPort: 0,
+        origins: ['http://localhost:5173'],
+        maxConnections: 2,
+      },
+      () => {},
+    );
+    try {
+      const a = await wsOpen(srv.wsPort);
+      const b = await wsOpen(srv.wsPort);
+      const c = await wsOpen(srv.wsPort);
+      expect(await wsOnce(c)).toEqual({ closed: 1013 });
+      expect((await wsOnce(a)).msg).toMatchObject({ ok: true, type: 'pong' });
+      // the TCP door sees the same two open connections
+      const reply = await new Promise<string>((resolve) => {
+        const s = net.createConnection(srv.tcpPort, '127.0.0.1');
+        s.setEncoding('utf8');
+        s.on('data', (d: string) => resolve(d));
+      });
+      expect(JSON.parse(reply.trim())).toMatchObject({
+        ok: false,
+        error: 'rate_limited',
+        message: expect.stringMatching(/busy/),
+      });
+      a.close();
+      b.close();
+    } finally {
+      await srv.close();
+    }
+  });
+
+  it('a global rate limit stops many connections that each stay under their own limit', async () => {
+    const srv = await start(
+      {
+        ...loadConfig({}),
+        provider: 'fake',
+        wsPort: 0,
+        tcpPort: 0,
+        origins: ['http://localhost:5173'],
+        rateLimit: 100,
+        globalRateLimit: 3,
+      },
+      () => {},
+    );
+    try {
+      const socks = await Promise.all([
+        wsOpen(srv.wsPort),
+        wsOpen(srv.wsPort),
+        wsOpen(srv.wsPort),
+        wsOpen(srv.wsPort),
+        wsOpen(srv.wsPort),
+      ]);
+      const answers: ServerMessage[] = [];
+      for (const s of socks) answers.push((await wsOnce(s)).msg!);
+      expect(answers.filter((m) => m.ok)).toHaveLength(3);
+      expect(answers.filter((m) => !m.ok && m.error === 'rate_limited')).toHaveLength(2);
+      socks.forEach((s) => s.close());
+    } finally {
+      await srv.close();
+    }
+  });
+
+  it('shipped defaults have caps', () => {
+    const c = loadConfig({});
+    expect(c.maxConnections).toBeGreaterThan(0);
+    expect(c.globalRateLimit).toBeGreaterThan(c.rateLimit);
+    expect(loadConfig({ MAX_CONNECTIONS: '5', GLOBAL_RATE_LIMIT: '7' })).toMatchObject({
+      maxConnections: 5,
+      globalRateLimit: 7,
+    });
+  });
+
+  it('warns loudly when a key is set and the server is open to the network', async () => {
+    const lines: string[] = [];
+    const base = { ...loadConfig({ ANTHROPIC_API_KEY: 'k' }), wsPort: 0, tcpPort: 0 };
+    const ok = { selfTest: async () => ({ ok: true as const }) };
+    const s1 = await start({ ...base, host: '0.0.0.0' }, (l) => lines.push(l), ok);
+    await s1.close();
+    expect(lines.join('\n')).toMatch(/WARNING: HOST=0\.0\.0\.0 makes the server reachable/);
+    lines.length = 0;
+    const s2 = await start({ ...base, origins: ['*'] }, (l) => lines.push(l), ok);
+    await s2.close();
+    expect(lines.join('\n')).toMatch(/WARNING: ALLOWED_ORIGINS=\*/);
+    lines.length = 0;
+    const s3 = await start(base, (l) => lines.push(l), ok);
+    await s3.close();
+    expect(lines.join('\n')).not.toMatch(/HOST=|ALLOWED_ORIGINS=\*/);
   });
 });

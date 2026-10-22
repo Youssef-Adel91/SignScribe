@@ -24,6 +24,8 @@ export interface Item {
   heuristic?: Heuristic;
   /** the method is named in the question by the form ("this method") so wording is identical for both */
   text: string;
+  /** worded the opposite way: a high answer means LOW satisfaction / engagement. Scored as 6 minus the answer */
+  reverse?: true;
 }
 
 export const ITEMS: readonly Item[] = [
@@ -44,6 +46,12 @@ export const ITEMS: readonly Item[] = [
   },
   { id: 'eng2', dimension: 'engagement', text: 'I found using this method interesting.' },
   {
+    id: 'sat3',
+    dimension: 'satisfaction',
+    reverse: true,
+    text: 'I felt frustrated while I wrote the messages with this method.',
+  },
+  {
     id: 'nav1',
     dimension: 'usability',
     heuristic: 'navigation',
@@ -54,6 +62,12 @@ export const ITEMS: readonly Item[] = [
     dimension: 'usability',
     heuristic: 'familiarity',
     text: 'This method felt familiar to me.',
+  },
+  {
+    id: 'eng3',
+    dimension: 'engagement',
+    reverse: true,
+    text: 'My attention drifted away from the task while I used this method.',
   },
   {
     id: 'con1',
@@ -87,12 +101,59 @@ export const ITEMS: readonly Item[] = [
   },
 ];
 
+/**
+ * System Usability Scale (Brooke, 1996): ten statements, odd ones positive, even ones negative, scored
+ * 0 to 100. The wording is the published wording, unchanged, and is the same for both methods (the
+ * form tells the participant that "the system" means the way of writing they just used).
+ */
+export interface SusItem {
+  id: string;
+  text: string;
+  positive: boolean;
+}
+export const SUS_ITEMS: readonly SusItem[] = [
+  { id: 'sus1', positive: true, text: 'I think that I would like to use this system frequently.' },
+  { id: 'sus2', positive: false, text: 'I found the system unnecessarily complex.' },
+  { id: 'sus3', positive: true, text: 'I thought the system was easy to use.' },
+  {
+    id: 'sus4',
+    positive: false,
+    text: 'I think that I would need the support of a technical person to be able to use this system.',
+  },
+  {
+    id: 'sus5',
+    positive: true,
+    text: 'I found the various functions in this system were well integrated.',
+  },
+  {
+    id: 'sus6',
+    positive: false,
+    text: 'I thought there was too much inconsistency in this system.',
+  },
+  {
+    id: 'sus7',
+    positive: true,
+    text: 'I would imagine that most people would learn to use this system very quickly.',
+  },
+  { id: 'sus8', positive: false, text: 'I found the system very cumbersome to use.' },
+  { id: 'sus9', positive: true, text: 'I felt very confident using the system.' },
+  {
+    id: 'sus10',
+    positive: false,
+    text: 'I needed to learn a lot of things before I could get going with this system.',
+  },
+];
+
 export type Answers = Record<string, 1 | 2 | 3 | 4 | 5>;
 
 export const isComplete = (a: Partial<Answers>): a is Answers =>
-  ITEMS.every((i) => a[i.id] !== undefined);
+  ITEMS.every((i) => a[i.id] !== undefined) && SUS_ITEMS.every((i) => a[i.id] !== undefined);
 
-/** average per dimension (1..5); null when a dimension has no answers */
+/** the answer as a "higher is better" number: reverse-worded items are flipped */
+export const oriented = (i: Pick<Item, 'reverse'>, answer: number): number =>
+  i.reverse ? 6 - answer : answer;
+
+/** average per dimension (1..5, higher is better); null when a dimension has no answers */
 export function scores(a: Partial<Answers>): Record<Dimension, number | null> {
   const out: Record<Dimension, number | null> = {
     satisfaction: null,
@@ -100,12 +161,23 @@ export function scores(a: Partial<Answers>): Record<Dimension, number | null> {
     usability: null,
   };
   for (const d of Object.keys(out) as Dimension[]) {
-    const v = ITEMS.filter((i) => i.dimension === d && a[i.id] !== undefined).map(
-      (i) => a[i.id] as number,
+    const v = ITEMS.filter((i) => i.dimension === d && a[i.id] !== undefined).map((i) =>
+      oriented(i, a[i.id] as number),
     );
     out[d] = v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
   }
   return out;
+}
+
+/** SUS score 0..100, or null unless all ten statements are answered (a partial score would be wrong) */
+export function susScore(a: Partial<Answers>): number | null {
+  let sum = 0;
+  for (const i of SUS_ITEMS) {
+    const x = a[i.id];
+    if (x === undefined) return null;
+    sum += i.positive ? x - 1 : 5 - x;
+  }
+  return sum * 2.5;
 }
 
 /** Questions asked once, after both methods. Three choices with a neutral middle. */
