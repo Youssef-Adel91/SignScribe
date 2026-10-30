@@ -22,7 +22,7 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | One-Euro pointer smooths jitter and follows fast moves | 2 | verified here (synthetic noise) | `tests/pointer.test.ts`; how it FEELS needs your camera |
 | Dwell engine: fires after the hold, once, cancels, flicker grace, 96 px hit area, adaptive time | 2 | verified here | `tests/dwell.test.ts` |
 | Controller: wake 2 s, help 1 s, thumbs, fist, palm, zone rules for right and left-handed signers, hand lost / back, setup checks, no double fire across screens | 2 | verified here | `tests/controller.test.ts` (38 tests) |
-| Whole flow 01 -> 12 -> 01 with no mouse and no keyboard (mouse click and keys proven to do nothing) | 2 | verified here (synthetic landmarks) | `npm run e2e` (31 checks) |
+| Whole flow 01 -> 12 -> 01 with no mouse and no keyboard (mouse click and keys proven to do nothing) | 2 | verified here (synthetic landmarks) | `npm run e2e` (43 checks) |
 | Fake camera opens, its picture is shown, a missing model gives a clear message, refused permission and no camera give clear messages | 2 | verified here | `npm run e2e` |
 | MediaPipe HandLandmarker runs on a real webcam; fps and inference ms | 2 | **needs your camera** | `npm run models`, then read "camera fps" and "inference ms" in the Vision debug panel |
 | Distance, light and command-zone thresholds feel right | 2 | **needs your camera** | constants in `src/vision/checks.ts`, `zones.ts`, `controller.ts` |
@@ -126,3 +126,12 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | SUS (10 statements, published wording) scored 0-100, shown in the survey and exported in the scores CSV; two reverse-worded items flipped before averaging; identical wording for both methods | 7 | verified here (scoring against a hand-worked example; no statement names a method) | `tests/study.test.ts` |
 | Analysis: SUS row, careless-answer flags (identical answers, contradicting reverse items), `--exclude-flagged` | 7 | verified here (made-up exports) | `npm run ml:test` |
 | SUS results on real participants | 7 | not met | no study run yet |
+
+## Flow-audit blockers (branch fix/flow-blockers)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Every `var(--s-N)` used is defined (icons on 04, 05, 08 no longer fill their box; "We lost your hand" is visible) | verified here | `tests/tokens.test.ts`, `npm run compare` 04/05/08 |
+| Screen 11: "Add a card" / "Spell more" by point-and-hold, words kept, back to 11 | verified here (synthetic hand) | `npm run e2e` |
+| Screen 08: only "Bring your hand back" is offered; after 10 s of camera time the screen says what to check | verified here (synthetic frames) | `npm run e2e` |
+| Hand-lost screen has a second way out | not met | every exit needs a hand (gesture-only app) |
+

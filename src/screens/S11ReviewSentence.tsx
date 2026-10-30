@@ -33,6 +33,24 @@ function Action({
   );
 }
 
+/** "add more": back to picture cards or spelling with the words kept, chosen by point-and-hold */
+function AddMore() {
+  const cards = useDwellTarget({ type: 'CHOOSE_METHOD', method: 'card' });
+  const spell = useDwellTarget({ type: 'CHOOSE_METHOD', method: 'spell' });
+  return (
+    <ul className={styles.more} aria-label="Add more words">
+      <li ref={cards} className={styles.moreItem}>
+        <Icon name="doc" size="var(--s-24)" />
+        Add a card
+      </li>
+      <li ref={spell} className={styles.moreItem}>
+        <Icon name="hand" size="var(--s-24)" />
+        Spell more
+      </li>
+    </ul>
+  );
+}
+
 export default function S11ReviewSentence() {
   const { place, words, sentence, sentenceSource } = useCtx();
   useAnnounceOnChange(
@@ -55,6 +73,7 @@ export default function S11ReviewSentence() {
           <Hint gesture="up" label="Use it" suggested />
           <Hint gesture="down" label="Try another" />
           <Hint gesture="fist" label="Delete last word" />
+          <Hint gesture="point" label="Point and hold: add more" />
         </>
       }
     >
@@ -140,8 +159,9 @@ export default function S11ReviewSentence() {
             <InfoList>
               <InfoRow icon="hand">Thumbs up: use this sentence.</InfoRow>
               <InfoRow icon="refresh">Thumbs down: try another wording.</InfoRow>
-              <InfoRow icon="doc">Need to add more? Show a card or spell a word.</InfoRow>
+              <InfoRow icon="doc">Need to add more? Point and hold:</InfoRow>
             </InfoList>
+            <AddMore />
           </Card>
         </div>
       </div>

@@ -1,5 +1,7 @@
 # Flow audit: Figma vs built app
 
+> **Status (branch fix/flow-blockers):** the three blockers are fixed: **F1** (size tokens `--s-44`, `--s-72` defined, with a test that every `var(--s-N)` is defined), **F2** (screen 11 now has "Add a card" and "Spell more" point-and-hold targets that keep the words) and **F6** (screen 08 offers one hint, "Bring your hand back", and says what to check after 10 s without a hand; there is still no second way out because every exit needs a hand). Correction: F1 is **not** the cause of console issue #4 (the `<svg>` width errors are still printed, because the attribute itself is invalid). Everything else below is still open.
+
 Date: 2026-10-22. Branch `docs/flow-audit`. **Audit only: no application code was changed.**
 Figma file `11g6ZDeS8xInkvy58p7yMO`, page "Screens" (13 frames) and page "Flow" (intended order).
 
