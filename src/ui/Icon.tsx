@@ -20,8 +20,10 @@ export function Icon({ name, size = 24, label, className, strokeWidth }: Props) 
   return (
     <svg
       viewBox={`0 0 ${def.vb} ${def.vb}`}
-      width={px}
-      height={px}
+      // Only a plain number goes into the width/height attributes: an SVG attribute cannot hold var(--s-22), the browser
+      // prints an error for it. A CSS value such as var(--s-22) is applied by `style` below (which is what sizes the icon).
+      width={typeof size === 'number' ? size : undefined}
+      height={typeof size === 'number' ? size : undefined}
       fill="none"
       stroke="currentColor"
       strokeWidth={strokeWidth ?? def.sw}

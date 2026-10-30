@@ -53,6 +53,10 @@ try {
     const page = await ctx.newPage();
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e)));
+    const svgErrors = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error' && /<svg>/.test(m.text())) svgErrors.push(m.text().slice(0, 100));
+    });
     await page.goto(`${base}?dev=1&vision=mock`);
     await page.waitForFunction(() => window.__signscribe !== undefined);
     const screen = () =>
@@ -244,6 +248,11 @@ try {
     await play([{ pose: 'thumbsUp' }], 900);
     check('thumbs up on 12 = Finish: 12 -> 01 (session reset)', await waitScreen(1));
 
+    check(
+      'no <svg> attribute errors in the console in the whole run',
+      svgErrors.length === 0,
+      [...new Set(svgErrors)].join(' ; '),
+    );
     check('no page errors in the whole run', errors.length === 0, errors.join(' ; ').slice(0, 200));
     await page.screenshot({ path: resolve(root, 'tools/e2e/last-run-mock.png') });
     await ctx.close();
