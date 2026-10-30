@@ -374,10 +374,10 @@ def test_templates_with_pose_roundtrip_and_older_files_still_load(tmp_path):
 def test_simulation_uses_the_pose_by_default_and_says_so(capsys):
     assert classify_live.main(["--simulate", "J", "Z", "--synthetic-templates", "--fast", "--no-send"]) == 0
     out = capsys.readouterr().out
-    assert "a simulated arm" in out and "recognised J" in out and "recognised Z" in out
+    assert "a simulated body" in out and "recognised J" in out and "recognised Z" in out
     assert classify_live.main(["--simulate", "J", "--synthetic-templates", "--fast", "--no-send", "--no-pose"]) == 0
     out = capsys.readouterr().out
-    assert "simulated arm" not in out and "recognised J" in out
+    assert "simulated body" not in out and "recognised J" in out
 
 
 def test_other_pose_parts_can_be_chosen(capsys):

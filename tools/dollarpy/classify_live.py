@@ -105,7 +105,7 @@ def main(argv=None) -> int:
         if a.synthetic_templates:
             letters = sorted(set(a.simulate or SHAPES))
             templates = synthetic_templates(letters, pose_keys=sim_keys)
-            print("*** SYNTHETIC TEMPLATES: generated shapes" + (" and a simulated arm" if sim_keys else "") + ", not a person's movement ***")
+            print("*** SYNTHETIC TEMPLATES: generated shapes" + (" and a simulated body" if sim_keys else "") + ", not a person's movement ***")
             raw = {"pose_parts": list(a.pose_parts) if sim_keys else []}
         else:
             templates, raw = load_templates(a.templates)
