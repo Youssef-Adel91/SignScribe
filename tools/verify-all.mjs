@@ -38,6 +38,11 @@ const steps = [
     cmd: ['npm', ['run', 'e2e:context'], { env: { ...process.env, PYTHON: python } }],
   },
   {
+    name: 'demo-all in FAKE mode (server, scanner, dollarpy, web)',
+    cmd: ['npm', ['run', 'demo', '--', '--check', '--python', python]],
+    skip: hasDollarpy ? null : 'needs dollarpy: pip install -r tools/dollarpy/requirements.txt',
+  },
+  {
     name: 'Python tools (tools/dollarpy)',
     cmd: [python, ['-m', 'pytest', '-q', 'tools/dollarpy']],
     skip:
