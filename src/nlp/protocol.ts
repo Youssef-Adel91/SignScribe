@@ -83,6 +83,38 @@ export interface Failure {
 }
 export type ServerMessage = SuggestOk | PongOk | PresenceOk | Failure;
 
+/** pushed by the server to every connected app (no id: nobody asked for it) when the Bluetooth presence changes */
+export interface ContextPush {
+  type: 'context';
+  userId: string | null;
+  place: PlaceName | null;
+  demo: boolean;
+}
+
+/** strict check of a pushed message, in the browser: anything that does not fit is ignored */
+export function parseContextPush(text: string): ContextPush | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!raw || typeof raw !== 'object' || (raw as { type?: unknown }).type !== 'context')
+    return null;
+  const o = raw as Record<string, unknown>;
+  const userId = o.userId ?? null;
+  const place = o.place ?? null;
+  if (userId !== null && (typeof userId !== 'string' || !PRESENCE.userIdPattern.test(userId)))
+    return null;
+  if (place !== null && !PLACES.includes(place as PlaceName)) return null;
+  return {
+    type: 'context',
+    userId: userId as string | null,
+    place: place as PlaceName | null,
+    demo: o.demo === true,
+  };
+}
+
 export type Parsed = { ok: true; msg: ClientMessage } | { ok: false; id: string; message: string };
 
 /** strict parsing of untrusted input: anything that does not fit is refused with a plain reason */

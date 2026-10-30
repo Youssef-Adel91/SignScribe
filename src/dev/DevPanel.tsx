@@ -1,3 +1,4 @@
+import { loadProfile } from '../state/profiles';
 import { useState } from 'react';
 import { SCREEN_NAMES, type Ev } from '../state/machine';
 import { useCtx, useScreenNumber, useSend } from '../state/MachineProvider';
@@ -82,6 +83,30 @@ export function DevPanel({ goTo }: { goTo: (screen: number) => void }) {
         )}
         {b('Spell', { type: 'CHOOSE_METHOD', method: 'spell' })}
         {b('Picture cards', { type: 'CHOOSE_METHOD', method: 'card' })}
+      </fieldset>
+      <fieldset>
+        <legend>Bluetooth context (simulated)</legend>
+        {b('Detect youssef · Clinic', {
+          type: 'CONTEXT_DETECTED',
+          userId: 'youssef',
+          place: 'Clinic',
+          demo: true,
+          profile: loadProfile('youssef'),
+        })}
+        {b('Detect sara · Shop', {
+          type: 'CONTEXT_DETECTED',
+          userId: 'sara',
+          place: 'Shop',
+          demo: true,
+          profile: loadProfile('sara'),
+        })}
+        {b('Detect Work beacon only', {
+          type: 'CONTEXT_DETECTED',
+          userId: null,
+          place: 'Work',
+          demo: true,
+        })}
+        {b('Nothing detected', { type: 'CONTEXT_CLEARED' })}
       </fieldset>
       <fieldset>
         <legend>Letters ({ctx.word || 'empty'})</legend>

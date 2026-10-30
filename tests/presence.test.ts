@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import net from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { WebSocket } from 'ws';
 import { PRESENCE, parseRequest, type PresenceRequest } from '../src/nlp/protocol';
 import { loadConfig } from '../server/config';
 import { RateLimiter, handleMessage } from '../server/handler';
@@ -215,5 +216,86 @@ describe('the server runs under plain Node', () => {
       );
       expect(out.trim(), f).toBe('ok');
     }
+  });
+});
+
+describe('PresenceStore: listeners and expiry', () => {
+  it('tells listeners about changes, not about repeats, and when a presence expires', () => {
+    const s = new PresenceStore(1000, 100);
+    const seen: (string | null)[] = [];
+    const stop = s.subscribe((p) => seen.push(p.userId));
+    s.accept(ok(), 0);
+    s.accept(ok({ rssi: -70 }), 100); // same person and place
+    s.accept(ok({ userId: 'sara' }), 200);
+    s.tick(500);
+    s.tick(1300); // 1100 ms after the last message: expired
+    s.tick(1400); // already gone: no second notice
+    expect(seen).toEqual(['youssef', 'sara', null]);
+    stop();
+    s.accept(ok(), 2000);
+    expect(seen).toHaveLength(3);
+  });
+  it('a "nobody" message is a change only when someone was there', () => {
+    const s = new PresenceStore(1000, 100);
+    const seen: unknown[] = [];
+    s.subscribe((p) => seen.push(p.userId));
+    s.accept(ok({ userId: null, place: null, rssi: null }), 0);
+    s.accept(ok(), 10);
+    s.accept(ok({ userId: null, place: null, rssi: null, demo: true }), 20);
+    expect(seen).toEqual(['youssef', null]);
+  });
+});
+
+describe('the server pushes context to every connected app', () => {
+  let srv: Running;
+  beforeAll(async () => {
+    srv = await start(
+      {
+        ...loadConfig({}),
+        provider: 'fake',
+        wsPort: 0,
+        tcpPort: 0,
+        origins: ['http://localhost:5173'],
+      },
+      () => {},
+    );
+  });
+  afterAll(async () => srv.close());
+  const open = (origin = 'http://localhost:5173') =>
+    new Promise<{ ws: WebSocket; msgs: unknown[] }>((resolve, reject) => {
+      const ws = new WebSocket(`ws://127.0.0.1:${srv.wsPort}`, { origin });
+      const msgs: unknown[] = [];
+      ws.on('message', (d) => msgs.push(JSON.parse(d.toString())));
+      ws.on('open', () => resolve({ ws, msgs }));
+      ws.on('error', reject);
+    });
+  const tcp = (line: string) =>
+    new Promise<void>((resolve) => {
+      const s = net.createConnection(srv.tcpPort, '127.0.0.1');
+      s.on('data', () => {
+        s.end();
+        resolve();
+      });
+      s.write(line + '\n');
+    });
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  it('a presence sent over TCP reaches an app on the WebSocket; a late app gets the current one at once', async () => {
+    const early = await open();
+    await tcp(msg({ id: 'a', userId: 'sara', place: 'Shop', demo: true }));
+    await wait(100);
+    expect(early.msgs).toEqual([{ type: 'context', userId: 'sara', place: 'Shop', demo: true }]);
+    const late = await open();
+    await wait(100);
+    expect(late.msgs).toEqual([{ type: 'context', userId: 'sara', place: 'Shop', demo: true }]);
+    await tcp(msg({ id: 'b', userId: null, place: null, rssi: null }));
+    await wait(100);
+    expect(early.msgs.at(-1)).toEqual({ type: 'context', userId: null, place: null, demo: false });
+    expect(late.msgs.at(-1)).toEqual({ type: 'context', userId: null, place: null, demo: false });
+    early.ws.close();
+    late.ws.close();
+  });
+  it('an app from an origin that is not allowed hears nothing', async () => {
+    await expect(open('http://evil.example')).rejects.toThrow();
   });
 });

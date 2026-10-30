@@ -96,7 +96,11 @@ const tcpLines = (payload, n) =>
   );
   const ok = answers.find((a) => a.id === 'p1');
   const bad = answers.find((a) => a.id === 'p2');
-  check('presence over TCP is acknowledged', ok.ok === true && ok.type === 'presence', JSON.stringify(ok));
+  check(
+    'presence over TCP is acknowledged',
+    ok.ok === true && ok.type === 'presence',
+    JSON.stringify(ok),
+  );
   check(
     'a presence with a device address is refused',
     bad.ok === false && bad.error === 'bad_request' && !JSON.stringify(bad).includes('AA:BB'),

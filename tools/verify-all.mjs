@@ -33,6 +33,10 @@ const steps = [
     skip: hasPytest ? null : 'pytest not found: pip install -r ml/requirements.txt, set PYTHON=…',
   },
   {
+    name: 'Bluetooth context, scanner (FAKE) to app',
+    cmd: ['npm', ['run', 'e2e:context'], { env: { ...process.env, PYTHON: python } }],
+  },
+  {
     name: 'Python tools (tools/bluetooth)',
     cmd: [python, ['-m', 'pytest', '-q', 'tools/bluetooth']],
     skip: hasPytest ? null : 'pytest not found: pip install -r tools/bluetooth/requirements.txt',

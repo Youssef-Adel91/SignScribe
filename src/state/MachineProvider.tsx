@@ -3,6 +3,7 @@ import { createActorContext } from '@xstate/react';
 import { screenOf, signScribeMachine, type Ctx, type Ev } from './machine';
 import { setSpeechEnabled } from '../output/speech';
 import { loadSettings, saveSettings } from './settings';
+import { saveProfile } from './profiles';
 
 export const Machine = createActorContext(signScribeMachine);
 
@@ -18,12 +19,15 @@ function Persist() {
   const { hand, alphabet, textSize, contrast, dwell, voice } = Machine.useSelector(
     (s) => s.context,
   );
+  const person = Machine.useSelector((s) => s.context.detected?.userId ?? null);
   useEffect(() => {
-    saveSettings({ hand, alphabet, textSize, contrast, dwell, voice });
+    // while Bluetooth recognises a person their settings are saved under their id; otherwise as always
+    if (person) saveProfile(person, { hand, alphabet, textSize, contrast, dwell, voice });
+    else saveSettings({ hand, alphabet, textSize, contrast, dwell, voice });
     document.documentElement.dataset.textSize = textSize;
     document.documentElement.dataset.contrast = contrast;
     setSpeechEnabled(voice);
-  }, [hand, alphabet, textSize, contrast, dwell, voice]);
+  }, [hand, alphabet, textSize, contrast, dwell, voice, person]);
   return null;
 }
 
