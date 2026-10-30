@@ -1,4 +1,5 @@
 import { parseRequest, type ServerMessage } from '../src/nlp/protocol.ts';
+import type { PresenceStore } from './presence.ts';
 import type { SentenceService } from './sentences.ts';
 
 /** a fixed window rate limiter, one per connection */
@@ -42,6 +43,7 @@ export async function handleMessage(
   service: SentenceService,
   limiter: Limiter,
   now = Date.now(),
+  extras: { presence?: PresenceStore } = {},
 ): Promise<ServerMessage> {
   const parsed = parseRequest(text);
   const id = parsed.ok ? parsed.msg.id : parsed.id;
@@ -59,6 +61,18 @@ export async function handleMessage(
   }
   const msg = parsed.msg;
   if (msg.type === 'ping') return { id: msg.id, ok: true, type: 'pong' };
+  if (msg.type === 'presence') {
+    if (!extras.presence)
+      return { id: msg.id, ok: false, error: 'bad_request', message: 'presence is not enabled' };
+    if (!extras.presence.accept(msg, now))
+      return {
+        id: msg.id,
+        ok: false,
+        error: 'rate_limited',
+        message: 'too many presence messages, slow down',
+      };
+    return { id: msg.id, ok: true, type: 'presence' };
+  }
   try {
     return await service.suggest(msg);
   } catch {

@@ -80,6 +80,15 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Moving-letter (J, Z) accuracy | 4 | not met | same |
 | Threshold values (`LETTER`) feel right | 4 | needs my camera | tune after a model exists |
 
+## Bluetooth presence (branch feat/ble-presence)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Scanner config, matching of address / name / prefix to UserID and place, smoothing, heartbeat, back-off | verified here (fake scans) | `tools/bluetooth/test_ble.py` |
+| `presence` message: strict fields, validation, own rate limit, memory-only store with 15 s expiry | verified here (real TCP socket) | `tests/presence.test.ts` |
+| A device address or name never reaches a log line, a message, or the server | verified here | `tools/bluetooth/test_ble.py`, `tests/presence.test.ts` |
+| Bleak scan on a real adapter with real devices | needs real hardware | `python tools/bluetooth/scan.py -v` |
+| FAKE device for demos, labelled in the banner and in every message | verified here | `scan.py --fake` |
+
 ## Phase 5 (picture cards; no detector)
 | Item | Phase | Status | Evidence |
 | --- | --- | --- | --- |

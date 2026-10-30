@@ -30,7 +30,29 @@ export interface PingRequest {
   id: string;
   type: 'ping';
 }
-export type ClientMessage = SuggestRequest | PingRequest;
+
+/** what the Bluetooth scanner reports (tools/bluetooth/scan.py): who is near and where, never a device address */
+export const PRESENCE = {
+  /** a user id is a short label from the scanner's config file, never a name or an address */
+  userIdPattern: /^[A-Za-z0-9_-]{1,32}$/,
+  minRssi: -127,
+  maxRssi: 0,
+  /** the only fields a presence message may carry: anything else (an address, a name) is refused, not stored */
+  fields: ['id', 'type', 'userId', 'place', 'rssi', 'demo'],
+} as const;
+export interface PresenceRequest {
+  id: string;
+  type: 'presence';
+  /** null = no known person found */
+  userId: string | null;
+  /** null = no known place found */
+  place: PlaceName | null;
+  /** signal strength in dBm of the device that gave userId (or the place, when there is no user); null when nothing was found */
+  rssi: number | null;
+  /** true when the device is simulated (scan.py --fake): the app says so */
+  demo: boolean;
+}
+export type ClientMessage = SuggestRequest | PingRequest | PresenceRequest;
 
 export type Source = 'llm' | 'offline';
 
@@ -48,13 +70,18 @@ export interface PongOk {
   ok: true;
   type: 'pong';
 }
+export interface PresenceOk {
+  id: string;
+  ok: true;
+  type: 'presence';
+}
 export interface Failure {
   id: string;
   ok: false;
   error: 'bad_request' | 'too_large' | 'rate_limited' | 'server_error';
   message: string;
 }
-export type ServerMessage = SuggestOk | PongOk | Failure;
+export type ServerMessage = SuggestOk | PongOk | PresenceOk | Failure;
 
 export type Parsed = { ok: true; msg: ClientMessage } | { ok: false; id: string; message: string };
 
@@ -73,7 +100,9 @@ export function parseRequest(text: string): Parsed {
   const id = typeof o.id === 'string' && o.id.length <= 64 ? o.id : '';
   if (!id) return { ok: false, id: '', message: "'id' must be a string of at most 64 characters" };
   if (o.type === 'ping') return { ok: true, msg: { id, type: 'ping' } };
-  if (o.type !== 'suggest') return { ok: false, id, message: "'type' must be 'suggest' or 'ping'" };
+  if (o.type === 'presence') return parsePresence(o, id);
+  if (o.type !== 'suggest')
+    return { ok: false, id, message: "'type' must be 'suggest', 'presence' or 'ping'" };
   const words = o.words;
   if (!Array.isArray(words) || words.length < 1 || words.length > LIMITS.maxWords)
     return { ok: false, id, message: `'words' must be 1 to ${LIMITS.maxWords} words` };
@@ -121,6 +150,46 @@ export function parseRequest(text: string): Parsed {
       place: o.place as PlaceName,
       attempt: attempt as number,
       ...(avoid ? { avoid } : {}),
+    },
+  };
+}
+
+function parsePresence(o: Record<string, unknown>, id: string): Parsed {
+  const bad = (message: string): Parsed => ({ ok: false, id, message });
+  // a closed list of fields: a device address or name must not slip into the server's memory or logs
+  const extra = Object.keys(o).find((k) => !(PRESENCE.fields as readonly string[]).includes(k));
+  if (extra !== undefined)
+    return bad(
+      `unknown field '${extra.slice(0, 20)}' (device addresses and names must not be sent)`,
+    );
+  const userId = o.userId ?? null;
+  if (userId !== null && (typeof userId !== 'string' || !PRESENCE.userIdPattern.test(userId)))
+    return bad("'userId' must be null or 1 to 32 letters, digits, '-' or '_'");
+  const place = o.place ?? null;
+  if (place !== null && !PLACES.includes(place as PlaceName))
+    return bad(`'place' must be null or one of ${PLACES.join(', ')}`);
+  const rssi = o.rssi ?? null;
+  if (userId === null && place === null) {
+    if (rssi !== null) return bad("'rssi' must be null when nothing was found");
+  } else if (
+    !Number.isInteger(rssi) ||
+    (rssi as number) < PRESENCE.minRssi ||
+    (rssi as number) > PRESENCE.maxRssi
+  )
+    return bad(
+      `'rssi' must be a whole number of dBm from ${PRESENCE.minRssi} to ${PRESENCE.maxRssi}`,
+    );
+  if (o.demo !== undefined && typeof o.demo !== 'boolean')
+    return bad("'demo' must be true or false");
+  return {
+    ok: true,
+    msg: {
+      id,
+      type: 'presence',
+      userId: userId as string | null,
+      place: place as PlaceName | null,
+      rssi: rssi as number | null,
+      demo: o.demo === true,
     },
   };
 }
