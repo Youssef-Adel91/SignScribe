@@ -91,7 +91,8 @@ def main(argv=None) -> int:
     ap.add_argument("--camera", type=int, default=0)
     ap.add_argument("--model", help="hand_landmarker.task (default: public/models)")
     ap.add_argument("--pose", action=argparse.BooleanOptionalAction, default=True, help="use the body (MediaPipe Pose) next to the hand when the templates have it (default on; --no-pose for the fingertip alone)")
-    ap.add_argument("--pose-parts", nargs="+", default=list(DEFAULT_POSE_PARTS), choices=list(POSE_PARTS), help="pose landmarks for --simulate / --synthetic-templates (real templates carry their own list)")
+    ap.add_argument("--pose-parts", nargs="+", default=list(DEFAULT_POSE_PARTS), choices=list(POSE_PARTS), help="pose landmarks for --simulate / --synthetic-templates (real templates carry their own list); default: all twelve of Lab 5")
+    ap.add_argument("--pose-min-visibility", type=float, default=0.0, help="drop the pose of a frame when a landmark is less visible than this (default 0: use every landmark as MediaPipe gives it, like Lab 5)")
     ap.add_argument("--pose-model", help="pose_landmarker_lite.task (default: public/models)")
     ap.add_argument("--no-window", action="store_true")
     ap.add_argument("--simulate", nargs="+", metavar="LETTER", help=f"DEMO: feed generated paths instead of a webcam ({', '.join(SHAPES)})")
@@ -129,7 +130,7 @@ def main(argv=None) -> int:
         tracker = HandTracker(a.model or DEFAULT_MODEL)
         # the body is tracked only when the templates were recorded with it (otherwise the fingertip alone is compared)
         have_keys = pose_keys(raw.get("pose_parts") or []) if a.pose else []
-        pose_tracker = PoseTracker(have_keys, a.pose_model or DEFAULT_POSE_MODEL) if have_keys else None
+        pose_tracker = PoseTracker(have_keys, a.pose_model or DEFAULT_POSE_MODEL, min_visibility=a.pose_min_visibility) if have_keys else None
         if a.pose and not have_keys:
             print("these templates have no pose (recorded with --no-pose): comparing the fingertip alone")
         cap = cv2.VideoCapture(a.camera)

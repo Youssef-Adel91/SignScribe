@@ -2,7 +2,7 @@
 
 Course Phase II row "Track human skeleton using MediaPipe and classify the movement using DollarPy". A Python demo like Lab 5: **MediaPipe** tracks the hand's skeleton (21 landmarks) from the webcam, the path of the **index fingertip** is cut into one movement, and the **`dollarpy`** package (`Recognizer`, `Template`, `Point`) classifies it as a moving letter (ASL J and Z; the moving letters of the active alphabet in `config/alphabets/*.json`). The recognised letter is sent to the sentence server over its TCP socket and the web app offers it on the spelling screen.
 
-It tracks the **hand skeleton** (MediaPipe Hand Landmarker, 21 landmarks) and, by default, the **body skeleton** next to it (MediaPipe Pose Landmarker: shoulders, elbows and wrists), like Lab 5. The pose is optional: `--no-pose` uses the fingertip alone.
+It tracks the **hand skeleton** (MediaPipe Hand Landmarker, 21 landmarks) and, by default, the **body skeleton** next to it (MediaPipe Pose Landmarker: the twelve landmarks Lab 5 uses), like Lab 5. The pose is optional: `--no-pose` uses the fingertip alone.
 
 ## Run it
     pip install -r tools/dollarpy/requirements.txt         # dollarpy, mediapipe, opencv
@@ -13,7 +13,7 @@ It tracks the **hand skeleton** (MediaPipe Hand Landmarker, 21 landmarks) and, b
     python tools/dollarpy/classify_live.py                 # 3. classify live from the webcam
     npm run dev                                            # 4. open http://localhost:5173/?server=ws://localhost:8787 and go to the spelling screen
 
-Stand so that your shoulders, elbows and wrists are in the picture (a webcam at a desk usually shows this; hips usually are not). Without the body in the picture, or with `--no-pose`, only the fingertip is used.
+Stand or sit so that your upper body is in the picture. The hips are usually outside a desk webcam's picture: MediaPipe then estimates them (see `--pose-min-visibility`). With `--no-pose`, only the fingertip is used.
 
 Recording: for each letter the prompt "Draw J (take 2/5)" and a 3 s countdown, then draw the letter in the air with your index finger; the take ends when your finger slows down. Keys: `q` quit, `s` skip the letter. Templates go to `tools/dollarpy/templates.json` (git-ignored: it is a person's movement data). Use `--letters J Z --per-letter 6 --alphabet asl --camera 1 --no-window` to change things.
 
@@ -22,14 +22,17 @@ Classifying: with templates that were recorded with pose the program also tracks
 In the web app (`?server=ws://localhost:8787`, localhost only): on the spelling screens a card "dollarpy: J, Point and hold here to add it" appears for 8 s. The letter is written into the message only when the person points at the card and holds, like any other choice. Letters that are not in the active alphabet are ignored.
 
 ## The pose, and what goes into the template points
+This follows the Lab 5 notebook: the points come from MediaPipe **Pose** landmarks 11 and 12 (shoulders), 13 and 14 (elbows), 15 and 16 (wrists), 17 and 18 (pinky), 19 and 20 (index) and 23 and 24 (hips), **x and y only**. **Each landmark is one stroke** (`Point(x, y, stroke_id)`) and its **whole trajectory over the movement** is that stroke (one point per camera frame, nothing thinned out); then `Template(label, points)` and `Recognizer(templates).recognize(points)` as in the lab. The one addition: the **index fingertip of the hand** (MediaPipe Hand Landmarker) is one extra stroke, id 1, the pose landmarks are ids 2 to 13.
+
 | Flag | Meaning |
 | ---- | ------- |
-| `--pose` / `--no-pose` | on by default. `--no-pose`: only the index fingertip path is recorded and compared |
-| `--pose-parts shoulders elbows wrists` | the default. Others from Lab 5's list: `pinky index hips` (hips are rarely in a desk webcam's picture) |
+| `--pose` / `--no-pose` | on by default. `--no-pose`: only the index fingertip path is recorded and compared (one stroke) |
+| `--pose-parts shoulders elbows wrists pinky index hips` | the default is all twelve landmarks above; name fewer to use fewer |
+| `--pose-min-visibility 0.5` | default 0: every landmark is used as MediaPipe gives it, like Lab 5 (MediaPipe estimates a landmark that is outside the picture, for example the hips of someone at a desk). A value above 0 drops the pose of a frame when a landmark is less visible than that |
 | `--pose-model PATH` | default `public/models/pose_landmarker_lite.task` (downloaded by `npm run models`; the web app does not use it) |
 
-How the points are built (`dollar_logic.to_cloud`): the fingertip path is **one stroke of 32 points**, and each pose landmark (left and right of each chosen part) is **its own stroke of 4 points**, all evenly spaced in time, so a point cloud of `Point(x, y, stroke_id)` goes to dollarpy's `Recognizer`. The fingertip stays the main signal and the arm adds the shape of the body. I could not see the Lab 5 code: this is my reading of "shoulders, elbows and wrists next to the hand landmarks", and the weights (32 against 4 points) are a first guess, **not tuned on real recordings**. Whether the pose helps or hurts is unknown until you record real movements and compare `--pose` with `--no-pose`.
-Rules: the pose is used only when the movement has the whole pose in at least 80% of its frames (missing frames repeat the nearest earlier one) **and** every template has the same pose landmarks; otherwise the fingertip alone is compared. A pose landmark with MediaPipe visibility below 0.5 counts as missing. Template files are version 2 (`pose_parts` and a `pose` per template, one point per path point); version 1 files (fingertip only) still load.
+dollarpy resamples the whole cloud to 32 points by path length and compares clouds as a whole, so a landmark that hardly moves (a shoulder) contributes few of the 32 points and the strokes that move most (fingertip, wrist, elbow) dominate. That is how the lab's recogniser behaves, and **how much the pose helps or hurts the fingertip alone is a guess**: it has not been compared on real recordings. Record the same letters with and without `--no-pose` and compare before trusting either.
+Rules: the pose is used only when the movement has the whole pose in at least 80% of its frames (a frame without it repeats the nearest earlier one) **and** every template has the same pose landmarks; otherwise (or when dollarpy cannot resample the cloud) the fingertip alone is compared. Template files are version 2 (`pose_parts` and a `pose` per template, one point per path point; the file grows by 12 strokes); version 1 files (fingertip only) still load.
 
 ## Demo without a webcam (SIMULATED)
     python tools/dollarpy/classify_live.py --simulate J Z --synthetic-templates [--fast] [--no-send]
@@ -49,5 +52,5 @@ Same rules and numbers as `followMotion` in `src/recognition/letterController.ts
     python -m pytest tools/dollarpy        # no webcam needed
 
 ## Verified, and not
-Verified here: the movement cutting on generated frames, the pose in the template points (generated arm; save, load, fallbacks), templates (save, load, refusals), classification with the real `dollarpy` package on generated shapes, the message against the server's own parser, sending to a real TCP socket, a server that is missing or refusing, the whole chain in a browser (`npm run e2e:context`), the real MediaPipe hand tracker on a blank picture (no hand) and on three still photographs of hands (21 landmarks each), and the real MediaPipe pose tracker on a blank picture (no body) and on one still photograph of a person (shoulders, elbows and wrists found).
+Verified here: the movement cutting on generated frames, the pose in the template points (generated body; the 12 landmarks, one whole-trajectory stroke each; save, load, fallbacks), templates (save, load, refusals), classification with the real `dollarpy` package on generated shapes, the message against the server's own parser, sending to a real TCP socket, a server that is missing or refusing, the whole chain in a browser (`npm run e2e:context`), the real MediaPipe hand tracker on a blank picture (no hand) and on three still photographs of hands (21 landmarks each), and the real MediaPipe pose tracker on a blank picture (no body) and on one still photograph of a person (the twelve Lab 5 landmarks are returned).
 **Not verified: a webcam.** The pose model on a moving person in front of a webcam, whether the pose improves recognition, the recording and live loops (`cv2.VideoCapture`, the preview windows, real finger paths) were not run, no accuracy on real movements is known, and the `--simulate` scores are meaningless for real people.

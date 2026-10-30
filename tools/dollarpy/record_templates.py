@@ -65,7 +65,8 @@ def main(argv=None) -> int:
     ap.add_argument("--camera", type=int, default=0)
     ap.add_argument("--model", help="hand_landmarker.task (default: public/models)")
     ap.add_argument("--pose", action=argparse.BooleanOptionalAction, default=True, help="also track the body (MediaPipe Pose) and keep it in the template points (default on; --no-pose for the fingertip alone)")
-    ap.add_argument("--pose-parts", nargs="+", default=list(DEFAULT_POSE_PARTS), choices=list(POSE_PARTS), help="which pose landmarks to add (default: shoulders elbows wrists)")
+    ap.add_argument("--pose-parts", nargs="+", default=list(DEFAULT_POSE_PARTS), choices=list(POSE_PARTS), help="which pose landmarks to add (default: all twelve of Lab 5: shoulders elbows wrists pinky index hips)")
+    ap.add_argument("--pose-min-visibility", type=float, default=0.0, help="drop the pose of a frame when a landmark is less visible than this (default 0: use every landmark as MediaPipe gives it, like Lab 5)")
     ap.add_argument("--pose-model", help="pose_landmarker_lite.task (default: public/models)")
     ap.add_argument("--no-window", action="store_true", help="no preview window (progress only on the terminal)")
     a = ap.parse_args(argv)
@@ -87,7 +88,7 @@ def main(argv=None) -> int:
 
     tracker = HandTracker(a.model or DEFAULT_MODEL)
     parts = tuple(a.pose_parts) if a.pose else ()
-    pose_tracker = PoseTracker(pose_keys(parts), a.pose_model or DEFAULT_POSE_MODEL) if parts else None
+    pose_tracker = PoseTracker(pose_keys(parts), a.pose_model or DEFAULT_POSE_MODEL, min_visibility=a.pose_min_visibility) if parts else None
     cap = cv2.VideoCapture(a.camera)
     if not cap.isOpened():
         print(f"error: camera {a.camera} cannot be opened", file=sys.stderr)
@@ -95,7 +96,7 @@ def main(argv=None) -> int:
     print(f"tracker: {tracker.describe()}")
     print(pose_tracker.describe() if pose_tracker else "pose: off (fingertip only)")
     if pose_tracker:
-        print("Stand so that your shoulders, elbows and wrists are in the picture.")
+        print("Stand so that your upper body is in the picture.")
     saved: list = []
     try:
         for letter in letters:
