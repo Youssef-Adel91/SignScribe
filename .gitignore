@@ -44,3 +44,8 @@ signscribe-comparison-*.csv
 signscribe-profile-*.csv
 signscribe-session-*.csv
 signscribe-perf-*.json
+
+# BLUETOOTH: your own device addresses (tools/bluetooth/README.md). Only devices.example.json is committed.
+tools/bluetooth/devices.json
+tools/bluetooth/devices.*.json
+!tools/bluetooth/devices.example.json

@@ -109,3 +109,6 @@ Done: sentence server (WebSocket for the app + plain TCP lab-style socket, JSON 
 
 ## Phase 7 status (branch feat/phase7-polish, stacked on Phase 6)
 Done: study logger final (profile + consent, session record, camera speed per trial, more exports, Python analysis script), axe audit with fixes, performance recording tool and benchmark, `npm run verify`, `docs/WHATS_LEFT.md`. All seven phases are built; what remains needs a real camera, real people and trained models (docs/WHATS_LEFT.md).
+
+## Phase II grading rows (branches feat/ble-presence, feat/context-push, feat/dollarpy-demo, feat/demo-all)
+The course Phase II sheet scores Bluetooth (UserID + discovery), socket programming, DollarPy on MediaPipe, and "load different content based on context". Order: (1) `tools/bluetooth/scan.py` + a `presence` message on the sentence server; (2) the server pushes context to the web app, which loads the place and the person's saved settings with a visible override; (3) `tools/dollarpy/` record + live classify, letters sent over the socket; (4) `tools/demo-all.md` with a clearly labelled FAKE device; (5) the mapping table in `docs/DONE.md`. No Bluetooth hardware and no webcam were available in the build environment: those rows stay "needs real hardware".
