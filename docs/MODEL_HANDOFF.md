@@ -14,7 +14,7 @@ For Youssef and the team. Everything the app needs around the model is built and
 | Wizard of Oz letters (`/?woz=1`) | `src/dev/WozPanel.tsx` | built; lets a facilitator type letters for a study with no model |
 
 ## Decisions you must make first
-1. **Which fingerspelling alphabet?** The app assumes one signing hand (the command zone is for the other hand), which fits ASL fingerspelling (J and Z are drawn in the air). British (BSL) fingerspelling uses two hands and does not fit this design. Arabic sign letters are a separate model and screen 03 shows them as "Coming soon".
+1. **Which fingerspelling alphabet?** Say ASL or ArSL, then set `config/alphabet.json` (and check the label file in `config/alphabets/`: the ArSL one is an unchecked template). The app assumes one signing hand (the command zone is for the other hand), which fits ASL fingerspelling (J and Z are drawn in the air). British (BSL) fingerspelling uses two hands and does not fit this design. Arabic sign letters are a separate model and screen 03 shows them as "Coming soon".
 2. **Who signs for the dataset?** The most valuable thing is several different people. See step 2.
 3. **Do you keep k-NN?** It is the baseline asked for. The app only knows the `StaticRecognizer` interface (`src/recognition/types.ts`): a better classifier trained in Python only has to export a model the TypeScript side can read, or add a new class next to `KnnRecognizer`.
 
@@ -23,12 +23,15 @@ For Youssef and the team. Everything the app needs around the model is built and
     pip install -r ml/requirements.txt
     python -m pytest ml/tests       # must pass; it also checks our $P against the dollarpy package
 
+## Step 0b: a public picture dataset instead of (or before) your own recordings
+`ml/import_images.py` turns a folder of labelled pictures into takes with MediaPipe, and `ml/evaluate.py` measures it by leaving whole people (or sources) out. Commands and flags: `ml/README.md`. Read the import report first: letters with few pictures, how many pictures had no hand, folders that were ignored. Datasets whose pictures show one person each work best with `--person-regex`; with no person ids use `--source` and add more than one source, or the evaluation refuses to run. Check the dataset's licence. Results go to `docs/MODEL_RESULTS.md` through the script only.
+
 ## Step 1: check the camera side first
 Open `/?dev=1` and use the checklist in `docs/PHASE2_CHECKLIST.md`. If hand tracking itself is poor in your room (dark, backlit, hand too close), a model cannot fix it. Collection refuses frames that are too dark/far/close/cut off, but fix the room first.
 
 ## Step 2: collect (`npm run dev`, open `/?collect=1`)
 1. Enter an **anonymous signer code** (`s01`, `s02`, …) and a **session note** (`lamp-60cm`). Choose the signing hand.
-2. Pick a letter, press Record, get the sign ready during the 3-second countdown, hold it still (J and Z: draw it once during the recording). The screen says why a take was refused; refused takes are not saved.
+2. **Fast way:** set "Takes per letter" (default 5) and press **Start guided run**. The letter to sign is shown big, the first take of a letter has a 3 s countdown, the next ones 1.5 s, takes are saved and the run moves on by itself; letters that already have enough takes are skipped, refused takes are retried, 3 in a row stop the run. The letter grid is red / amber / green against the target and "Still needed" lists the gaps. Or, one at a time: pick a letter, press Record, get the sign ready during the 3-second countdown, hold it still (J and Z: draw it once during the recording). The screen says why a take was refused; refused takes are not saved.
 3. Record **many takes per letter, in different positions, distances and tilts**, not many identical ones. A take is 1.5 s; each one is a separate chance for the sign to look slightly different.
 4. **Change something between sittings** (light, distance, time of day) and use a new session note.
 5. **More than one person.** This is the single most important rule: with one signer the evaluation can only measure how repeatable that person is.

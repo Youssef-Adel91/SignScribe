@@ -123,6 +123,37 @@ try {
       ),
     );
     check('undo removes the last take', true);
+
+    // guided run: letter prompt, countdown, automatic advance to the next letter that still has a gap
+    await panel.getByLabel('Takes per letter').fill('1');
+    check(
+      'gaps are listed and colour is not the only signal',
+      /Still needed \(target 1 per letter\): A 1, C 1/.test(
+        await page.getByTestId('gaps').textContent(),
+      ),
+      await page.getByTestId('gaps').textContent(),
+    );
+    await panel.getByRole('button', { name: 'Start guided run' }).click();
+    check(
+      'guided run shows the letter to sign first',
+      /^A\s*take 1 of 1/.test((await page.getByTestId('guided-prompt').textContent()).trim()),
+      await page.getByTestId('guided-prompt').textContent(),
+    );
+    await play([{ pose: 'fist', cx: 0.5, cy: 0.5, size: 0.2 }], 5400);
+    await page.waitForFunction(() =>
+      /^C\s*take 1 of 1/.test(
+        (document.querySelector('[data-testid="guided-prompt"]')?.textContent ?? '').trim(),
+      ),
+    );
+    check('after A is saved the run moves on to C by itself (B already has a take)', true);
+    await panel.getByRole('button', { name: 'Stop', exact: true }).click();
+    check(
+      'Stop ends the run and keeps the saved take',
+      (await panel.getByRole('button', { name: 'Start guided run' }).isEnabled()) &&
+        /Letter A, 1 of 1/.test(
+          (await panel.getByRole('radio', { name: /^Letter A,/ }).getAttribute('aria-label')) ?? '',
+        ),
+    );
     check('no page errors', errors.length === 0, errors.join(' ; ').slice(0, 200));
     await ctx.close();
   }

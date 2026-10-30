@@ -24,7 +24,7 @@ def write_report(path, title, takes, sha, ev, m, extra_lines=()):
         f"- k: {ev['k']}",
         *extra_lines,
         "",
-        f"**Accuracy: {fmt(m['accuracy'])}**",
+        (f"**Accuracy on held-out groups ({ev['method']}): {fmt(m['accuracy'])}**" if ev.get("generalises", True) else f"**Same-person accuracy: {fmt(m['accuracy'])} (optimistic, NOT a result for new people)**"),
         "",
         "| letter | support | precision | recall |",
         "| ------ | ------- | --------- | ------ |",

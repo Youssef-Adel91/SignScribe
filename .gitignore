@@ -49,3 +49,7 @@ signscribe-perf-*.json
 tools/bluetooth/devices.json
 tools/bluetooth/devices.*.json
 !tools/bluetooth/devices.example.json
+
+# local scratch for ml/: imported picture datasets and evaluation output (the vetted numbers go to docs/MODEL_RESULTS.md by the script)
+ml/data/
+ml/reports/

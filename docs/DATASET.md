@@ -15,7 +15,7 @@ A take is one short recording of one letter by one person: a few dozen frames of
 | ----- | ------- |
 | `v` | format version, always `1` |
 | `id` | unique per take |
-| `label` | one letter `A`-`Z` |
+| `label` | one letter of the active alphabet (`config/alphabets/*.json`, chosen in `config/alphabet.json`). Never a fixed list in code |
 | `kind` | `static` (hold the sign still, about 1.5 s) or `dynamic` (a letter drawn in the air, about 2.2 s; J and Z by default) |
 | `signer` | anonymous code such as `s01`. Never a name |
 | `session` | one sitting: same light, distance and camera, for example `lamp-60cm`. Used to hold sessions out when testing |
@@ -23,7 +23,15 @@ A take is one short recording of one letter by one person: a few dozen frames of
 | `width`, `height` | video size in pixels. x and y are normalised separately, so shapes can only be measured with both |
 | `frames[].t` | ms since the start of the recording |
 | `frames[].lm` | 21 MediaPipe hand landmarks `[x, y, z]`; x and y are 0..1 of the un-mirrored picture, z is MediaPipe's depth relative to the wrist |
+| `person` | optional. A human id when the dataset says who is in the picture (`user3`). Whole persons are held out when testing (leave-one-person-out). Anonymous, never a name |
+| `source` | optional. Which recording or sub-dataset the take comes from. Used to hold a source out (leave-one-source-out) when the dataset has no person ids |
 | `synthetic` | `true` only for generated test data (and for takes made with the mock camera). Training refuses it without `--allow-synthetic` |
+
+## Alphabets (label sets)
+The letters live in `config/alphabets/<id>.json` and `config/alphabet.json` says which is active (`{"active": "asl"}`). A file has `static` letters, `dynamic` letters (drawn in the air; ASL J and Z), and `aliases` that map a picture folder name to a letter. Python reads it directly (`--alphabet arsl` to pick another); the web app reads the same files at build time (`VITE_ALPHABET=arsl`). `arsl.json` is a **template**: it has not been checked against any dataset (`"reviewed": false`), so confirm it before use.
+
+## Taking landmarks from a folder of pictures
+`ml/import_images.py` runs MediaPipe Hands (Python) on a folder with one sub-folder per letter and writes one take with one frame per picture that has a hand. Pictures with no hand are skipped and counted; the pictures are not kept. Output: this same format, with `person` (from `--person-regex`) or `source` (from `--source`). Example in `ml/README.md`.
 
 ## What the collection mode keeps and refuses
 - Static takes: up to one frame every 60 ms for 1.5 s, at least 12 frames. Dynamic takes: every frame for 2.2 s, at least 20 frames.
@@ -32,7 +40,7 @@ A take is one short recording of one letter by one person: a few dozen frames of
 - Everything lives in the browser (IndexedDB) until you press Export. Export after every sitting; clearing browser data deletes the takes.
 
 ## Rules for a dataset that can be trusted
-1. **Several signers.** One person's takes only show how repeatable that person is. With 2 or more signers the tools evaluate by leaving one signer out; with one signer they say the result is optimistic.
+1. **Several people.** One person's takes only show how repeatable that person is. The tools hold out whole groups, in this order: `person`, `source`, `signer`, `session`. With only one group they refuse to evaluate (or label the number as not for new people).
 2. **Several sessions** per signer: change the light and the distance a little between sittings.
 3. **Never split the frames of one take** between training and testing (they are almost identical). The tools group by take, session and signer for you.
 4. Record both hands' worth of variation by also recording left-handed signers with `hand = left`, rather than flipping the data by hand.
