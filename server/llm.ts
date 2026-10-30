@@ -23,6 +23,15 @@ export const SYSTEM_PROMPT = [
   '- One sentence, at most 15 words. Plain text, no quotes, no explanation.',
 ].join('\n');
 
+/** ArSL: the words are Arabic. Same strictness; the answer is Arabic and keeps every word exactly as written. */
+export const SYSTEM_PROMPT_ARABIC = [
+  'You turn a short list of Arabic words into ONE short, polite Arabic sentence for a person who communicates with hand signs.',
+  'Rules, all of them strict:',
+  '- Use every word you are given, exactly as written (do not change its letters).',
+  '- Do NOT add facts: no names, numbers, times, places, symptoms, medicines, reasons or other new content words.',
+  '- Only Arabic letters and punctuation. One sentence, at most 15 words. Plain text, no quotes, no explanation.',
+].join('\n');
+
 export function buildUserPrompt(req: SuggestRequest): string {
   const lines = [`Place: ${PLACE_HINT[req.place]}`, `Words: ${req.words.join(', ')}`];
   if (req.avoid && req.avoid.length)
@@ -63,7 +72,7 @@ export class AnthropicProvider implements SentenceProvider {
         model: this.model,
         max_tokens: 100,
         temperature: req.attempt > 0 ? 0.9 : 0.4,
-        system: SYSTEM_PROMPT,
+        system: req.alphabet === 'arsl' ? SYSTEM_PROMPT_ARABIC : SYSTEM_PROMPT,
         messages: [{ role: 'user', content: buildUserPrompt(req) }],
       }),
       signal,

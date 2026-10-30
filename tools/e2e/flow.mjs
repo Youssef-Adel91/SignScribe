@@ -127,12 +127,21 @@ try {
       () => JSON.parse(localStorage.getItem('signscribe.settings.v2') || '{}').hand,
     );
     check('point-and-hold on "Left hand" selects it (03)', hand === 'left', `saved hand = ${hand}`);
-    await pointAtTile(3, 'Arabic', true);
-    check(
-      '"Coming soon" alphabet cannot be chosen',
-      (await page.evaluate(
+    const alphabetSaved = () =>
+      page.evaluate(
         () => JSON.parse(localStorage.getItem('signscribe.settings.v2') || '{}').alphabet,
-      )) === 'english',
+      );
+    await pointAtTile(3, 'More…', true);
+    check('"Coming soon" alphabet cannot be chosen', (await alphabetSaved()) === 'english');
+    await pointAtTile(3, 'Arabic');
+    check(
+      'point-and-hold on "Arabic" (ArSL) selects it and saves it with the settings',
+      (await alphabetSaved()) === 'arabic',
+    );
+    await pointAtTile(3, 'English'); // the rest of this flow spells English words
+    check(
+      'point-and-hold on "English" (ASL) selects it again',
+      (await alphabetSaved()) === 'english',
     );
 
     await play([{ pose: 'thumbsUp' }], 900);

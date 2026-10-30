@@ -102,7 +102,7 @@ What the importers do and do not know:
 - **Never mix** `arsl21l.jsonl` with the CSV files in one `--data` (some takes have a person, some do not: the split would fall back to holding a whole dataset out; `evaluate.py` prints a notice).
 - The CSV files are tagged with `--source` and never with a person; two signers in ASLAD are not known to the tool.
 - Big files: `--max-per-class N` on the CSV importer keeps N random rows per class (fixed seed, stated in the report) so a 190k-row file stays quick to evaluate.
-- **Do not copy an ArSL model into `public/models/` yet.** The spelling screens write the first character of a label, so `ain` would be written as `A`. ArSL in the app needs more work (labels that are names, the Arabic letter to show, an Arabic word list, right-to-left text): see `docs/MODEL_RESULTS.md` and `docs/WHATS_LEFT.md`.
+- **ArSL model in the app**: copy a model as `public/models/letters-arsl-mlp.json` / `letters-arsl-knn.json` (never under the ASL names; the app reads the pair of the alphabet chosen on screen 03 and refuses a model with other letters). The spelling screens show the glyph from `config/alphabets/arsl.json`; classes whose Arabic letter is not confirmed show as `⟨id⟩`. Still missing: Arabic word list and sentence rules, tuned `LETTER` thresholds, Arabic read-aloud: `docs/KNOWN_ISSUES.md` #5-#9.
 
 `takes.jsonl` comes from the in-app collection mode (`/?collect=1`), format in `docs/DATASET.md`.
 

@@ -12,7 +12,7 @@ export function parseSettings(p: Record<string, unknown>): Settings {
   const legacy = p.display;
   return {
     hand: pick(p.hand, ['left', 'right'], d.hand),
-    alphabet: 'english', // the other alphabets are "Coming soon"
+    alphabet: pick(p.alphabet, ['english', 'arabic'], d.alphabet), // 'more' is still "Coming soon"
     textSize: pick(
       p.textSize ?? (legacy === 'large' || legacy === 'contrast' ? 'large' : undefined),
       ['normal', 'large', 'xlarge'],

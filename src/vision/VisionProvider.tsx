@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { alphabetOfSetting } from '../config/alphabet';
 import { Machine } from '../state/MachineProvider';
 import { screenOf } from '../state/machine';
 import { evaluateChecks, FpsMeter, meanLuma } from './checks';
@@ -132,8 +133,19 @@ export function VisionProvider() {
         .finally(() => (cardBusy = false));
     };
     // letter models are optional files; the app works (with a clear notice) when they are absent
-    void loadModels().then((m: LoadedModels) => {
-      if (disposed) return;
+    let loadedFor = '';
+    const loadFor = (setting: string) => {
+      loadedFor = setting;
+      // no letters are read with the old alphabet's model while the new one loads
+      letters = new LetterController(null, null);
+      visionStore.set({ letters: { ...visionStore.state.letters, status: 'idle', message: '' } });
+      void loadModels(fetch, alphabetOfSetting(setting).id).then((m: LoadedModels) => {
+        // the alphabet was changed again while this was loading: that load wins
+        if (disposed || loadedFor !== setting) return;
+        applyModels(m);
+      });
+    };
+    const applyModels = (m: LoadedModels) => {
       letters = new LetterController(m.letters.recognizer, m.motion.recognizer);
       visionStore.set({
         letters: {
@@ -144,6 +156,10 @@ export function VisionProvider() {
           motionStatus: m.motion.status,
         },
       });
+    };
+    loadFor(actor.getSnapshot().context.alphabet);
+    const alphabetSub = actor.subscribe((snap) => {
+      if (snap.context.alphabet !== loadedFor) loadFor(snap.context.alphabet);
     });
     let lastHot: string | null = null;
 
@@ -211,6 +227,7 @@ export function VisionProvider() {
       });
       return () => {
         disposed = true;
+        alphabetSub.unsubscribe();
         cleanup();
         visionStore.reset();
       };
@@ -295,6 +312,7 @@ export function VisionProvider() {
 
     return () => {
       disposed = true;
+      alphabetSub.unsubscribe();
       cancelAnimationFrame(raf);
       clearInterval(lumaTimer);
       clearInterval(cardTimer);

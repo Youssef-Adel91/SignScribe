@@ -3,6 +3,7 @@ import { Hint } from '../ui/HintBar';
 import { Icon } from '../ui/Icon';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
+import { textDir, useAlphabet } from '../ui/useAlphabet';
 import { useCtx } from '../state/MachineProvider';
 import styles from './S12Share.module.css';
 import { HandChip } from '../vision/bits';
@@ -14,6 +15,7 @@ export function sizeTier(sentence: string): 'l' | 'm' | 's' {
 
 export default function S12Share() {
   const { sentence } = useCtx();
+  const { rtl } = useAlphabet();
   useAnnounceOnChange(sentence ? `Message for you: ${sentence}` : null);
   return (
     <Screen
@@ -36,7 +38,9 @@ export default function S12Share() {
     >
       <section className={styles.card} aria-label="Message for you">
         <h1 className={styles.label}>MESSAGE FOR YOU</h1>
-        <p className={`${styles.sentence} ${styles[sizeTier(sentence)]}`}>{sentence}</p>
+        <p className={`${styles.sentence} ${styles[sizeTier(sentence)]}`} {...textDir(rtl)}>
+          {sentence}
+        </p>
         <p className={styles.pill}>
           <Icon name="speaker" size="var(--s-24)" />
           Reading aloud…

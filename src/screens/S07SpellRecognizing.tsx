@@ -13,16 +13,21 @@ import { useCtx } from '../state/MachineProvider';
 import styles from './S07SpellRecognizing.module.css';
 import { HandChip } from '../vision/bits';
 import { Demo } from '../vision/bits';
+import { useAlphabet } from '../ui/useAlphabet';
 import { LiveLetterRing } from '../recognition/LiveLetterRing';
 
 export default function S07SpellRecognizing() {
   const { hand, place, words, word, candidate } = useCtx();
+  const { rtl, glyph } = useAlphabet();
   const text = [...words, word].filter(Boolean).join(' ');
-  const letter = candidate?.letter ?? '';
+  const letter = candidate ? glyph(candidate.letter).text : '';
   const caption = `Looks like "${letter}". Hold still…`;
   useAnnounceOnChange(letter ? caption : null);
   const guesses = candidate
-    ? [{ letter: candidate.letter, confidence: candidate.confidence }, ...candidate.alternatives]
+    ? [
+        { letter: candidate.letter, confidence: candidate.confidence },
+        ...candidate.alternatives,
+      ].map((g) => ({ ...g, key: g.letter, letter: glyph(g.letter).text }))
     : [];
   return (
     <Screen
@@ -72,12 +77,12 @@ export default function S07SpellRecognizing() {
         side={
           <>
             <Card title="Your message">
-              <Message text={text} candidate={letter} caret />
+              <Message text={text} candidate={letter} caret rtl={rtl} />
             </Card>
             <Card title="Not right? Other guesses">
               <ul className={styles.guesses}>
                 {guesses.map((g, i) => (
-                  <li key={g.letter} className={`${styles.guess} ${i === 0 ? styles.top : ''}`}>
+                  <li key={g.key} className={`${styles.guess} ${i === 0 ? styles.top : ''}`}>
                     <span className={styles.gl}>{g.letter}</span>
                     <span className={styles.gp}>{Math.round(g.confidence * 100)}%</span>
                     {i === 0 && <span className="sr-only"> (best guess)</span>}

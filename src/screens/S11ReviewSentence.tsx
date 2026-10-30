@@ -7,6 +7,7 @@ import { Icon } from '../ui/Icon';
 import { InfoList, InfoRow } from '../ui/InfoRow';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
+import { textDir, useAlphabet } from '../ui/useAlphabet';
 import { useCtx } from '../state/MachineProvider';
 import styles from './S11ReviewSentence.module.css';
 import { HandChip } from '../vision/bits';
@@ -35,6 +36,7 @@ function Action({
 
 export default function S11ReviewSentence() {
   const { place, words, sentence, sentenceSource } = useCtx();
+  const { rtl } = useAlphabet();
   useAnnounceOnChange(
     sentence
       ? `Suggested sentence: ${sentence}. Thumbs up to use it, thumbs down to try another.`
@@ -69,7 +71,7 @@ export default function S11ReviewSentence() {
                   {i === words.length - 1 && words.length > 1 && (
                     <Icon name="doc" size="var(--s-24)" />
                   )}
-                  {w}
+                  <span {...textDir(rtl)}>{w}</span>
                 </li>
               ))}
             </ul>
@@ -81,13 +83,17 @@ export default function S11ReviewSentence() {
               SUGGESTED SENTENCE
               <span className={styles.style}>{place} style</span>
             </p>
-            <p className={styles.sentence} data-source={sentenceSource}>
+            <p className={styles.sentence} data-source={sentenceSource} {...textDir(rtl)}>
               {sentence}
             </p>
             <p className={styles.source} data-testid="sentence-source">
-              {sentenceSource === 'server'
-                ? 'Written by the language model. The app checked it: only your words and small helper words.'
-                : 'Written by simple rules from your words.'}
+              {rtl
+                ? sentenceSource === 'server'
+                  ? 'Written by the language model. The app checked length and characters, and that your words are in it. It cannot check Arabic helper words yet.'
+                  : 'Your words, as you spelt them. Arabic sentence rules are not built yet.'
+                : sentenceSource === 'server'
+                  ? 'Written by the language model. The app checked it: only your words and small helper words.'
+                  : 'Written by simple rules from your words.'}
             </p>
             <p className={styles.safe}>
               <Icon name="shield" size="var(--s-24)" />
