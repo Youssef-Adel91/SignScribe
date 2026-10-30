@@ -45,6 +45,16 @@ export interface Settings {
   voice: boolean;
 }
 
+/** Who and where the Bluetooth scanner says is near (pushed by the sentence server). Null parts = not known. */
+export interface Detected {
+  userId: string | null;
+  place: Place | null;
+  /** the device is simulated (scan.py --fake): the screen says so */
+  demo: boolean;
+}
+export const detectedKey = (d: Pick<Detected, 'userId' | 'place'>): string =>
+  `${d.userId ?? '-'}|${d.place ?? '-'}`;
+
 export interface Ctx extends Settings {
   place: Place;
   method: Method;
@@ -66,6 +76,14 @@ export interface Ctx extends Settings {
   overlay: Overlay;
   /** overlay to return to when help closes */
   overlayBefore: Overlay;
+  /** from Bluetooth, null when nothing is detected (the app then works as it always did) */
+  detected: Detected | null;
+  /** the person said "ignore" to this detection (key of userId|place): it is not applied again until something else is detected */
+  detectedIgnored: string | null;
+  /** the person chose the place themselves: a detection never changes it */
+  placeChosen: boolean;
+  /** place and settings as they were before a detection changed them, so "ignore" can put them back */
+  beforeDetect: { place: Place; settings: Settings } | null;
 }
 
 export type Ev =
@@ -97,6 +115,17 @@ export type Ev =
   | { type: 'FINISH' }
   | { type: 'NEW_SENTENCE' }
   | { type: 'EDIT' }
+  /** Bluetooth: someone and/or somewhere was detected. `profile` = that person's saved settings, if any */
+  | {
+      type: 'CONTEXT_DETECTED';
+      userId: string | null;
+      place: Place | null;
+      demo: boolean;
+      profile?: Settings | null;
+    }
+  | { type: 'CONTEXT_CLEARED' }
+  /** "this is wrong": undo what the detection changed and do not apply it again */
+  | { type: 'CONTEXT_IGNORE' }
   /** the sentence server answered; accepted only if it is still the sentence being waited for and passes the safety rule */
   | { type: 'SENTENCE_SERVER'; sentence: string; words: string[]; attempt: number }
   /** study mode only: start the next trial from the context screen, keeping the settings */
@@ -126,6 +155,9 @@ const wordsAfterPush = ({ context }: Wrapped) => context.words.length + (context
 const isIdle = ({ context }: Wrapped) => context.overlay === 'none';
 
 /* ---------- machine ---------- */
+
+/** the states before the first letter or card: a detection may still change the place and the settings there */
+const detect = { CONTEXT_DETECTED: { actions: ['noteDetected', 'applyDetected'] } } as const;
 
 export const signScribeMachine = setup({
   types: {
@@ -172,8 +204,49 @@ export const signScribeMachine = setup({
     setDwell: assign(({ event }) => (event.type === 'CHOOSE_DWELL' ? { dwell: event.dwell } : {})),
     setVoice: assign(({ event }) => (event.type === 'CHOOSE_VOICE' ? { voice: event.voice } : {})),
     setPlace: assign(({ event }) =>
-      event.type === 'CHOOSE_CONTEXT' ? { place: event.place } : {},
+      event.type === 'CHOOSE_CONTEXT' ? { place: event.place, placeChosen: true } : {},
     ),
+    /** remember the detection (any screen); an ignored detection stays ignored until a different one arrives */
+    noteDetected: assign(({ context, event }) => {
+      if (event.type !== 'CONTEXT_DETECTED') return {};
+      const d: Detected = { userId: event.userId, place: event.place, demo: event.demo };
+      if (context.detectedIgnored === detectedKey(d)) return {};
+      return { detected: d, detectedIgnored: null };
+    }),
+    /** before the message starts: load that place (unless the person chose one) and that person's saved settings */
+    applyDetected: assign(({ context, event }) => {
+      if (event.type !== 'CONTEXT_DETECTED') return {};
+      if (context.detectedIgnored === detectedKey(event)) return {};
+      const before = context.beforeDetect ?? {
+        place: context.place,
+        settings: {
+          hand: context.hand,
+          alphabet: context.alphabet,
+          textSize: context.textSize,
+          contrast: context.contrast,
+          dwell: context.dwell,
+          voice: context.voice,
+        },
+      };
+      return {
+        beforeDetect: before,
+        ...(event.place && !context.placeChosen ? { place: event.place } : {}),
+        ...(event.userId && event.profile ? event.profile : {}),
+      };
+    }),
+    /** nothing is detected any more (person left, scanner or server gone): forget the detection and any "ignore" of it */
+    clearDetected: assign({ detected: null, detectedIgnored: null, beforeDetect: null }),
+    ignoreDetected: assign(({ context }) => {
+      if (!context.detected) return {};
+      const b = context.beforeDetect;
+      return {
+        detectedIgnored: detectedKey(context.detected),
+        detected: null,
+        beforeDetect: null,
+        ...(b ? { ...b.settings } : {}),
+        ...(b && !context.placeChosen ? { place: b.place } : {}),
+      };
+    }),
     setMethod: assign(({ event }) =>
       event.type === 'CHOOSE_METHOD' ? { method: event.method } : {},
     ),
@@ -254,6 +327,9 @@ export const signScribeMachine = setup({
       sentenceSource: 'offline' as const,
       overlay: 'none' as const,
       overlayBefore: 'none' as const,
+      placeChosen: false,
+      detectedIgnored: null,
+      beforeDetect: null,
     }),
     resetChoices: assign({
       place: 'Clinic' as const,
@@ -307,6 +383,10 @@ export const signScribeMachine = setup({
     sentenceSource: 'offline',
     overlay: 'none',
     overlayBefore: 'none',
+    detected: null,
+    detectedIgnored: null,
+    placeChosen: false,
+    beforeDetect: null,
   }),
   initial: 'welcome',
   // Overlay events that work from every state. Child states guard on `idle`, so when an overlay is
@@ -314,6 +394,10 @@ export const signScribeMachine = setup({
   on: {
     HELP_TOGGLE: { actions: 'toggleHelp' },
     STUDY_RESTART: { target: '.context', actions: ['resetSession', 'resetChoices'] },
+    // Bluetooth context: remembered on every screen; applied only before the message starts (the states that spread `detect`)
+    CONTEXT_DETECTED: { actions: 'noteDetected' },
+    CONTEXT_CLEARED: { actions: 'clearDetected' },
+    CONTEXT_IGNORE: { actions: 'ignoreDetected' },
     NO: { guard: 'helpOpen', actions: 'toggleHelp' },
     HAND_BACK: [
       { guard: 'handLostOpen', actions: 'handBack' },
@@ -322,16 +406,18 @@ export const signScribeMachine = setup({
   },
   states: {
     /* 01 */ welcome: {
-      on: { WAKE: { guard: 'idle', target: 'cameraCheck' } },
+      on: { ...detect, WAKE: { guard: 'idle', target: 'cameraCheck' } },
     },
     /* 02 */ cameraCheck: {
       on: {
+        ...detect,
         CHECKS_PASSED: { guard: 'idle', target: 'preferences' },
         NO: { guard: 'idle', target: 'welcome' },
       },
     },
     /* 03 */ preferences: {
       on: {
+        ...detect,
         CHOOSE_HAND: { guard: 'idle', actions: 'setHand' },
         CHOOSE_ALPHABET: { guard: and(['idle', 'alphabetAvailable']), actions: 'setAlphabet' },
         YES: { guard: 'idle', target: 'comfort' },
@@ -340,6 +426,7 @@ export const signScribeMachine = setup({
     },
     /* 14 (no Figma frame): comfort settings, shown right after 03 */ comfort: {
       on: {
+        ...detect,
         CHOOSE_TEXT_SIZE: { guard: 'idle', actions: 'setTextSize' },
         CHOOSE_CONTRAST: { guard: 'idle', actions: 'setContrast' },
         CHOOSE_DWELL: { guard: 'idle', actions: 'setDwell' },
@@ -350,6 +437,7 @@ export const signScribeMachine = setup({
     },
     /* 04 */ context: {
       on: {
+        ...detect,
         CHOOSE_CONTEXT: { guard: 'idle', actions: 'setPlace' },
         YES: { guard: 'idle', target: 'method' },
         NO: { guard: 'idle', target: 'comfort' },
@@ -357,6 +445,7 @@ export const signScribeMachine = setup({
     },
     /* 05 */ method: {
       on: {
+        ...detect,
         CHOOSE_METHOD: { guard: 'idle', actions: 'setMethod' },
         YES: [
           { guard: and(['idle', 'methodIsCard']), target: 'cards' },

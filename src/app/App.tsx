@@ -4,6 +4,7 @@ import { MachineProvider, useSend } from '../state/MachineProvider';
 import { PATH_TO_SCREEN } from '../state/paths';
 import { DevPanel } from '../dev/DevPanel';
 import { VisionDebug } from '../dev/VisionDebug';
+import { ContextBridge } from '../nlp/ContextBridge';
 import { SentenceBridge } from '../nlp/SentenceBridge';
 import { WsSentenceClient, resolveSentenceUrl } from '../nlp/sentenceClient';
 import { PerfPanel } from '../perf/PerfPanel';
@@ -71,6 +72,7 @@ function Body() {
         {WOZ && <WozPanel />}
         {PERF && <PerfPanel />}
         {sentenceClient && <SentenceBridge client={sentenceClient} />}
+        {SENTENCE_URL && !COLLECT && <ContextBridge url={SENTENCE_URL} />}
         {CARD_SHEET && <CardSheet />}
         <ScreenHost />
         <VisionProvider />

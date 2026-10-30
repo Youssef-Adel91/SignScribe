@@ -24,6 +24,7 @@ export class PresenceStore {
   private readonly limiter: RateLimiter;
   private readonly ttlMs: number;
   private readonly log: (line: string) => void;
+  private readonly listeners = new Set<(p: Presence) => void>();
 
   // plain fields, not constructor parameter properties: Node strips types but cannot run those
   constructor(ttlMs: number, rateLimit: number, log: (line: string) => void = () => {}) {
@@ -32,25 +33,44 @@ export class PresenceStore {
     this.limiter = new RateLimiter(rateLimit);
   }
 
+  /** called whenever who/where changes (including when a presence expires). Returns a function that stops it */
+  subscribe(listener: (p: Presence) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private tell(p: Presence) {
+    for (const l of this.listeners) l(p);
+  }
+
+  /** forget a presence that was not refreshed in time and tell the listeners; call it about once a second */
+  tick(now = Date.now()): void {
+    const before = this.value;
+    if (this.current(now) !== before) {
+      this.log('presence: nobody found (not refreshed, scanner stopped or Bluetooth off)');
+      this.tell(NOBODY);
+    }
+  }
+
   /** false = over the presence rate limit (not stored) */
   accept(msg: PresenceRequest, now = Date.now()): boolean {
     if (!this.limiter.allow(now)) return false;
-    const next: Presence = {
-      userId: msg.userId,
-      place: msg.place,
-      rssi: msg.rssi,
-      demo: msg.demo,
-    };
-    const changed = !same(this.value, next);
+    const found = msg.userId !== null || msg.place !== null;
+    const next: Presence = found
+      ? { userId: msg.userId, place: msg.place, rssi: msg.rssi, demo: msg.demo }
+      : NOBODY;
+    const before = this.current(now);
+    const changed = !same(before, next);
     this.value = next;
     this.updatedAt = now;
     // only changes are logged, and only the labels from the scanner's config: no address, no signal trace
     if (changed)
       this.log(
-        next.userId || next.place
+        found
           ? `presence: user ${next.userId ?? '-'}, place ${next.place ?? '-'}${next.demo ? ' (DEMO device, not real Bluetooth)' : ''}`
           : 'presence: nobody found',
       );
+    if (changed) this.tell(next);
     return true;
   }
 
