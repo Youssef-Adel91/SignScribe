@@ -1,6 +1,7 @@
 // Prepares public/models for the hand tracker. Run once on a machine with internet: `npm run models`
 //  - copies the MediaPipe WebAssembly runtime out of node_modules (no download needed)
 //  - downloads the HandLandmarker model (float16, about 7.5 MB) from Google's model storage
+//  - downloads the PoseLandmarker lite model (about 6 MB), used only by the Python tool tools/dollarpy (optional: a failure here is not fatal)
 // Nothing here is committed: public/models is in .gitignore.
 import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -70,5 +71,30 @@ if (existsSync(target) && statSync(target).size > 1e6) {
   }
   writeFileSync(target, buf);
   console.log(`saved   hand_landmarker.task (${(buf.length / 1e6).toFixed(1)} MB)`);
+}
+// Pose model for tools/dollarpy (the body skeleton next to the hand). The web app does not use it; the download may fail without harm.
+{
+  const POSE_URL =
+    'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task';
+  const poseTarget = join(out, 'pose_landmarker_lite.task');
+  if (existsSync(poseTarget) && statSync(poseTarget).size > 1e6) {
+    console.log(
+      `kept    pose_landmarker_lite.task (${(statSync(poseTarget).size / 1e6).toFixed(1)} MB), already there`,
+    );
+  } else {
+    try {
+      console.log(`downloading ${POSE_URL}`);
+      const r = await fetch(POSE_URL);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      writeFileSync(poseTarget, Buffer.from(await r.arrayBuffer()));
+      console.log(
+        `saved   pose_landmarker_lite.task (${(statSync(poseTarget).size / 1e6).toFixed(1)} MB)`,
+      );
+    } catch (e) {
+      console.warn(
+        `could not get the pose model (${e.message}); tools/dollarpy then needs --no-pose`,
+      );
+    }
+  }
 }
 console.log('Done. Start the app with `npm run dev`.');

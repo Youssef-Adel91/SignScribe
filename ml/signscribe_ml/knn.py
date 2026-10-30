@@ -7,7 +7,9 @@ from collections import defaultdict
 
 import numpy as np
 
+from .augment import AugmentConfig, augmented_samples
 from .dataset import Take
+from .folds import make_groups
 from .features import FEATURES_ID, FEATURE_LENGTH, static_features
 
 EPS = 1e-6
@@ -44,41 +46,66 @@ def predict(X_train, y_train, x, k):
     return ranked[0][0], ranked[0][1] / total, [(l, v / total) for l, v in ranked]
 
 
-def make_folds(takes: list[Take], kind: str = "static"):
+def make_folds(takes: list[Take], kind: str = "static", group_by: str = "auto"):
     """Groups for cross-validation, and the name of the method. Never splits the frames of one take."""
-    signers = sorted({t.signer for t in takes if t.kind == kind})
-    sessions = sorted({(t.signer, t.session) for t in takes if t.kind == kind})
-    if len(signers) >= 2:
-        return "leave-one-signer-out", [t.signer for t in takes]
-    if len(sessions) >= 2:
-        return "leave-one-session-out", [f"{t.signer}/{t.session}" for t in takes]
-    # one signer, one session: 5 folds over takes, assigned round-robin per label so every letter is in every fold
-    seen: dict = defaultdict(int)
-    groups = []
-    for t in takes:
-        groups.append(f"fold{seen[t.label] % 5}")
-        seen[t.label] += 1
-    return "5-fold over takes (one signer, one session: optimistic, do not quote as accuracy for new people)", groups
+    method, groups, _ = make_groups(takes, kind, group_by)
+    return method, groups
 
 
-def evaluate(takes: list[Take], k: int):
+def predict_batch(X_train, y_train, X_test, k, chunk: int = 256):
+    """The same weighted vote as predict(), for many rows at once. Returns (best, share, second, share)."""
+    X_train = np.asarray(X_train, dtype=np.float64)
+    classes = sorted(set(y_train))
+    ci = {c: i for i, c in enumerate(classes)}
+    yi = np.asarray([ci[l] for l in y_train])
+    kk = min(k, len(X_train))
+    tn = (X_train**2).sum(axis=1)
+    best, share, second, share2 = [], [], [], []
+    for s in range(0, len(X_test), chunk):
+        A = np.asarray(X_test[s : s + chunk], dtype=np.float64)
+        d2 = np.maximum(tn[None, :] + (A**2).sum(axis=1)[:, None] - 2.0 * A @ X_train.T, 0.0)
+        part = np.argpartition(d2, kk - 1, axis=1)[:, :kk] if kk < d2.shape[1] else np.tile(np.arange(d2.shape[1]), (len(A), 1))
+        w = 1.0 / (np.sqrt(np.take_along_axis(d2, part, axis=1)) + EPS)
+        votes = np.zeros((len(A), len(classes)))
+        rows = np.repeat(np.arange(len(A)), kk)
+        np.add.at(votes, (rows, yi[part].ravel()), w.ravel())
+        votes /= votes.sum(axis=1, keepdims=True)
+        order = np.argsort(-votes, axis=1, kind="stable")
+        r = np.arange(len(A))
+        f1 = order[:, 0]
+        f2 = order[:, 1] if len(classes) > 1 else order[:, 0]
+        best += [classes[i] for i in f1]
+        share += list(votes[r, f1])
+        second += [classes[i] if votes[j, i] > 0 else None for j, i in enumerate(f2)]
+        share2 += list(votes[r, f2])
+    return best, np.asarray(share), second, np.asarray(share2)
+
+
+def evaluate(takes: list[Take], k: int, augment: AugmentConfig | None = None, seed: int = 0, group_by: str = "auto"):
+    """Hold out one group at a time (person, source, signer or session). `augment` only touches the training side."""
     X, y, tk = build_samples(takes)
-    method, take_groups = make_folds(takes)
+    method, take_groups, generalises = make_groups(takes, "static", group_by)
     groups = np.asarray([take_groups[i] for i in tk])
-    truth, pred, conf = [], [], []
+    aug = augmented_samples(takes, augment, seed) if augment and augment.enabled else None
+    aug_groups = np.asarray([take_groups[i] for i in aug[2]]) if aug is not None and len(aug[2]) else None
+    truth, pred, conf, held = [], [], [], []
     for g in sorted(set(groups)):
         test = groups == g
         train = ~test
         if not train.any():
             continue
-        Xtr = X[train]
-        ytr = [y[i] for i in np.where(train)[0]]
-        for i in np.where(test)[0]:
-            lab, c, _ = predict(Xtr, ytr, X[i], k)
-            truth.append(y[i])
-            pred.append(lab)
-            conf.append(c)
-    return {"method": method, "truth": truth, "pred": pred, "conf": conf, "k": k, "groups": len(set(groups))}
+        Xtr, ytr = X[train], [y[i] for i in np.where(train)[0]]
+        if aug is not None and aug_groups is not None:
+            keep = aug_groups != g
+            Xtr = np.vstack([Xtr, aug[0][keep]])
+            ytr = ytr + [aug[1][i] for i in np.where(keep)[0]]
+        idx = np.where(test)[0]
+        lab, c, _, _ = predict_batch(Xtr, ytr, X[idx], k)
+        truth += [y[i] for i in idx]
+        pred += lab
+        conf += list(c)
+        held += [g] * len(idx)
+    return {"method": method, "generalises": generalises, "truth": truth, "pred": pred, "conf": conf, "groups_of": held, "k": k, "groups": len(set(groups))}
 
 
 def metrics(ev: dict) -> dict:
@@ -132,10 +159,13 @@ def subsample(X, y, max_per_class: int, seed: int = 0):
     return X[keep], [y[i] for i in keep]
 
 
-def export_model(takes: list[Take], k: int, max_per_class: int, sha: str, evaluation, synthetic: bool) -> dict:
+def export_model(takes: list[Take], k: int, max_per_class: int, sha: str, evaluation, synthetic: bool, augment: AugmentConfig | None = None, seed: int = 0) -> dict:
     import datetime
 
     X, y, _ = build_samples(takes)
+    if augment and augment.enabled:
+        ax, ay, _ = augmented_samples(takes, augment, seed)
+        X, y = np.vstack([X, ax]), y + ay
     X, y = subsample(X, y, max_per_class)
     labels = sorted(set(y))
     index = {l: i for i, l in enumerate(labels)}

@@ -29,7 +29,7 @@ Without it the app writes sentences with simple offline rules. With it, a langua
 | `/?dev=1#7`             | jump to screen 7                                                                                   |
 | `/?dev=1&vision=off`    | no camera at all (layout work, screenshots)                                                        |
 | `/?study=1`             | comparison study console (facilitator): camera vs keyboard + mouse, surveys, CSV export. See `docs/STUDY.md` |
-| `/?collect=1`           | data collection for the letter model (researcher tool). See `docs/MODEL_HANDOFF.md` |
+| `/?collect=1`           | data collection for the letter model (researcher tool): guided run (5 takes per letter by default, automatic), per-letter gaps. See `docs/MODEL_HANDOFF.md` |
 | `/?woz=1`               | Wizard of Oz: a facilitator types the letters (no model needed) |
 | `/?perf=1`              | record 30 s of fps / model time / stalls on the real camera (`docs/PERF.md`) |
 | `/?server=ws://localhost:8787` | use the sentence server (localhost only) |
@@ -68,5 +68,5 @@ Without it the app writes sentences with simple offline rules. With it, a langua
     src/perf/      performance recording (?perf=1)
     src/dev/       developer panels, mounted only with ?dev=1
     tests/         unit tests (machine, gestures, controller, dwell, pointer, contrast, dictionary ...)
-    tools/         models download, screenshot compare, e2e and layout checks; tools/bluetooth (BLE presence scanner)
-    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, STUDY.md, PHASE4.md, DATASET.md, MODEL_FORMAT.md, MODEL_HANDOFF.md, CARDS.md, PERF.md, WHATS_LEFT.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)
+    tools/         models download, screenshot compare, e2e and layout checks; tools/bluetooth (BLE presence scanner), tools/dollarpy (moving letters), tools/common (socket client)
+    docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, STUDY.md, PHASE4.md, DATASET.md, MODEL_FORMAT.md, MODEL_HANDOFF.md, MODEL_RESULTS.md (only numbers written by ml/evaluate.py), CARDS.md, PERF.md, WHATS_LEFT.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)

@@ -1,0 +1,73 @@
+"""The label set (alphabet) lives in config/alphabets/*.json, never in code. config/alphabet.json says which one is active."""
+from __future__ import annotations
+
+import json
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+
+CONFIG_DIR = Path(__file__).resolve().parents[2] / "config"
+
+
+class AlphabetError(ValueError):
+    pass
+
+
+@dataclass(frozen=True)
+class Alphabet:
+    id: str
+    name: str
+    static: tuple
+    dynamic: tuple
+    aliases: dict = field(default_factory=dict)
+    reviewed: bool = True
+
+    @property
+    def labels(self) -> list:
+        return list(self.static) + list(self.dynamic)
+
+    def kind_of(self, label: str) -> str:
+        return "dynamic" if label in self.dynamic else "static"
+
+    def resolve(self, folder_name: str):
+        """Folder (or class) name -> label, or None when it is not part of this alphabet.
+
+        Order: exact label, then an alias from the config (case-insensitive), then a case-insensitive label match."""
+        if folder_name in self.labels:
+            return folder_name
+        low = folder_name.strip().lower()
+        for k, v in self.aliases.items():
+            if k.strip().lower() == low and v in self.labels:
+                return v
+        for l in self.labels:
+            if l.lower() == low:
+                return l
+        return None
+
+
+def available(config_dir: Path = CONFIG_DIR) -> list:
+    return sorted(p.stem for p in (config_dir / "alphabets").glob("*.json"))
+
+
+def active_name(config_dir: Path = CONFIG_DIR) -> str:
+    env = os.environ.get("SIGNSCRIBE_ALPHABET")
+    if env:
+        return env
+    return json.loads((config_dir / "alphabet.json").read_text(encoding="utf-8"))["active"]
+
+
+def load_alphabet(name: str | None = None, config_dir: Path = CONFIG_DIR) -> Alphabet:
+    name = name or active_name(config_dir)
+    p = config_dir / "alphabets" / f"{name}.json"
+    if not p.exists():
+        raise AlphabetError(f"no alphabet '{name}' (have: {', '.join(available(config_dir)) or 'none'})")
+    raw = json.loads(p.read_text(encoding="utf-8"))
+    static, dynamic = tuple(raw.get("static", [])), tuple(raw.get("dynamic", []))
+    allv = list(static) + list(dynamic)
+    if not allv:
+        raise AlphabetError(f"alphabet '{name}' has no labels")
+    if len(set(allv)) != len(allv):
+        raise AlphabetError(f"alphabet '{name}' lists a label twice")
+    if any(not isinstance(l, str) or len(l) != 1 for l in allv):
+        raise AlphabetError(f"alphabet '{name}': every label must be a single character")
+    return Alphabet(raw.get("id", name), raw.get("name", name), static, dynamic, dict(raw.get("aliases", {})), bool(raw.get("reviewed", True)))

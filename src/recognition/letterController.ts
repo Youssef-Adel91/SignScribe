@@ -41,8 +41,16 @@ export interface LetterInput {
 }
 
 export interface LetterUI {
-  /** best guess right now (may still be too weak to show) */
+  /**
+   * best guess right now, ONLY when it is strong enough to act on (confidence >= LETTER.minConfidence).
+   * A weaker guess is null here: the app shows nothing rather than a guess that is probably wrong.
+   */
   guess: { letter: string; confidence: number } | null;
+  /**
+   * What the recognizer said, strong or not: the two best letters with their confidence. For the developer
+   * panel only (?dev=1); no screen may show it to the signer.
+   */
+  raw: { letter: string; confidence: number }[];
   /** 0..1 progress of the hold that writes the letter */
   progress: number;
   /** a moving sign is being followed */
@@ -105,7 +113,7 @@ export class LetterController {
   step(frame: HandFrame, inp: LetterInput): { events: Ev[]; ui: LetterUI } {
     const { t } = frame;
     const events: Ev[] = [];
-    const idle: LetterUI = { guess: null, progress: 0, tracingMotion: false };
+    const idle: LetterUI = { guess: null, raw: [], progress: 0, tracingMotion: false };
     if (inp.screen !== this.lastScreen) {
       this.lastScreen = inp.screen;
       this.reset();
@@ -141,13 +149,21 @@ export class LetterController {
       if (this.shown) events.push({ type: 'CANDIDATE_LOST' });
       this.cand = null;
       this.shown = false;
-      return { events, ui: { guess: null, progress: 0, tracingMotion: true } };
+      return { events, ui: { guess: null, raw: [], progress: 0, tracingMotion: true } };
     }
 
     // ---- static letters
     const g =
       this.stat?.recognize(hand, frame.width, frame.height, inp.signingHand === 'left') ?? null;
     const strong = g && g.confidence >= LETTER.minConfidence ? g : null;
+    const raw = g
+      ? [
+          { letter: g.letter, confidence: g.confidence },
+          ...g.alternatives
+            .slice(0, 1)
+            .map((a) => ({ letter: a.letter, confidence: a.confidence })),
+        ]
+      : [];
     this.noteRelease(strong ? strong.letter : null, t);
 
     if (!strong) {
@@ -156,11 +172,7 @@ export class LetterController {
       this.shown = false;
       return {
         events,
-        ui: {
-          guess: g ? { letter: g.letter, confidence: g.confidence } : null,
-          progress: 0,
-          tracingMotion: false,
-        },
+        ui: { guess: null, raw, progress: 0, tracingMotion: false },
       };
     }
     if (strong.letter !== this.cand) {
@@ -175,6 +187,7 @@ export class LetterController {
         events,
         ui: {
           guess: { letter: strong.letter, confidence: strong.confidence },
+          raw,
           progress: 0,
           tracingMotion: false,
         },
@@ -211,6 +224,7 @@ export class LetterController {
         events,
         ui: {
           guess: { letter: strong.letter, confidence: strong.confidence },
+          raw,
           progress: 1,
           tracingMotion: false,
         },
@@ -220,6 +234,7 @@ export class LetterController {
       events,
       ui: {
         guess: { letter: strong.letter, confidence: strong.confidence },
+        raw,
         progress,
         tracingMotion: false,
       },

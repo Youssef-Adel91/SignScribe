@@ -1,0 +1,9 @@
+{
+  "id": "asl",
+  "name": "ASL fingerspelling (American Sign Language)",
+  "script": "latin",
+  "reviewed": true,
+  "static": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y"],
+  "dynamic": ["J", "Z"],
+  "aliases": {}
+}

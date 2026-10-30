@@ -92,7 +92,37 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Visible override by point-and-hold; choosing a place yourself wins; ignore restores place and settings | verified here (synthetic hand) | `tests/bluetooth-context.test.ts`, `npm run e2e:context` |
 | No Bluetooth / no scanner / no server: the app behaves as before | verified here | `npm run e2e:context` |
 | Override with a real camera and hand | needs my camera | screens 1-5, 14 |
+
+## DollarPy demo (branch feat/dollarpy-demo)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Movement cut out of a fingertip path with the web app's numbers; templates; classification with the real `dollarpy` package | verified here (generated paths) | `tools/dollarpy/test_dollarpy.py` |
+| MediaPipe hand tracker (Python) returns 21 landmarks | verified here (3 still photographs of hands) and finds nothing in a blank picture | `test_real_mediapipe_tracker_...`, one manual run |
+| `letter` message: strict fields, own rate limit, relayed to apps, not stored or logged | verified here (real TCP + WebSocket) | `tests/letter-relay.test.ts` |
+| App offers the letter and adds it by point-and-hold; labelled simulated; ignored outside the alphabet | verified here (synthetic hand) | `tests/letter-relay.test.ts`, `npm run e2e:context` |
+| MediaPipe Pose, the twelve Lab 5 landmarks (11-20, 23, 24; x and y), one stroke each with its whole trajectory, plus the hand fingertip as one extra stroke; optional (`--no-pose`), default on; template file v2, v1 still loads | verified here (generated arm; the real pose tracker on one still photograph of a person and on a blank picture) | `tools/dollarpy/test_dollarpy.py` |
+| Whether the pose improves recognition (the weighting is dollarpy's own resampling of the cloud, a guess) | not met | needs real recordings: compare `--pose` with `--no-pose` |
+| Recording and live classification from a webcam | needs real hardware | `record_templates.py`, `classify_live.py` |
+| Recognition accuracy on real moving letters | not met | no recorded templates; `--simulate` scores mean nothing |
+| Moving letters of ArSL | not met | `arsl.json` lists none; the team must decide them |
 | FAKE device for demos, labelled in the banner and in every message | verified here | `scan.py --fake` |
+
+## Alphabet pipeline (pictures -> honest evaluation -> model; tooling only, no model, no results)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Label set is a config file (`config/alphabets/*.json`) read by Python and the web app; no letter list in code | verified here | `ml/tests/test_alphabet_import_eval.py`, `tests/alphabet.test.ts` |
+| ArSL label set | not met | `arsl.json` is an unchecked TEMPLATE; the team must confirm it against their dataset |
+| `ml/import_images.py`: folder of letter sub-folders -> takes, skips pictures with no hand, per-letter counts, `person` or `source` | verified here (fake detector for the logic; real MediaPipe on a blank picture, a broken file and 3 real hand photos: finds no hand / unreadable / 21 landmarks) | `ml/tests`, one smoke run |
+| Import on a real labelled alphabet dataset | not met | no dataset chosen yet |
+| `ml/evaluate.py`: leave-one-person/source/signer/session-out, per-letter precision/recall, 10 worst pairs, threshold view; refuses a same-person split | verified here (generated data; a leakage test proves a held-out person never reaches training, with and without augmentation) | `ml/tests` |
+| k-NN against a small MLP on identical folds | verified here (logic) | `ml/tests` |
+| Augmentation (rotate, x/y scale, mirror) keeps the shape: exact distances under rotation/mirror, bounded angle and ratio, same-factor scale is a no-op, extended fingers unchanged in 300 random draws; training side only | verified here | `ml/tests` |
+| Whether augmentation helps on real hands | not met | run `evaluate.py --augment-ablation` on real data |
+| Letter accuracy for the whole alphabet | not met | no real run: `docs/MODEL_RESULTS.md` is empty on purpose |
+| Collection mode: guided run (letter prompt, countdown, auto-advance, retry, skip, stop) and per-letter gap view | verified here (synthetic hands) | `tests/guided.test.ts`, `npm run e2e:collect` |
+| Collection mode: speed and comfort of a guided run with a real person | needs my camera | `/?collect=1` |
+| Letter controller shows nothing below `LETTER.minConfidence`; the two best raw guesses appear only in the dev panel | verified here | `tests/letters.test.ts` |
+| Exported model JSON format unchanged | verified here | `ml/tests`, `ml/validate_model.py` |
 
 ## Phase 5 (picture cards; no detector)
 | Item | Phase | Status | Evidence |

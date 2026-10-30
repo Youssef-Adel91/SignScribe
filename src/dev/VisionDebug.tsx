@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LETTER } from '../recognition/letterController';
 import { useVision } from '../vision/store';
 import styles from './VisionDebug.module.css';
 
@@ -14,6 +15,7 @@ export function VisionDebug() {
   const video = useVision((s) => s.video);
   const ui = useVision((s) => s.ui);
   const checks = useVision((s) => s.checks);
+  const letterUi = useVision((s) => s.letters.ui);
   if (!open) {
     return (
       <button type="button" className={styles.reopen} onClick={() => setOpen(true)}>
@@ -69,6 +71,17 @@ export function VisionDebug() {
               : '-',
           )}
           {row('hand lost', ui?.handLost ? 'yes' : 'no')}
+          {row(
+            'letter top 2',
+            letterUi && letterUi.raw.length
+              ? letterUi.raw
+                  .map((r) => `${r.letter} ${(r.confidence * 100).toFixed(0)}%`)
+                  .join('  ') +
+                  (letterUi.guess
+                    ? ''
+                    : `  (hidden: below ${(LETTER.minConfidence * 100).toFixed(0)}%)`)
+              : '-',
+          )}
           {row(
             'checks',
             checks

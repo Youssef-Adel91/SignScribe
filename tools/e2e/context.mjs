@@ -167,6 +167,63 @@ try {
     await chipText(),
   );
 
+  // a letter recognised by the dollarpy client (SIMULATED here) is offered on the spelling screen and added by pointing
+  {
+    const spell = await ctx.newPage();
+    await spell.goto(`${base}?dev=1&vision=mock&server=ws://localhost:${wsPort}#6`);
+    await spell.waitForSelector('[data-screen="6"]');
+    const client = spawn(
+      python,
+      [
+        'tools/dollarpy/classify_live.py',
+        '--simulate',
+        'J',
+        '--synthetic-templates',
+        '--fast',
+        '--port',
+        String(tcpPort),
+      ],
+      {
+        cwd: root,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
+    let clientOut = '';
+    client.stdout.on('data', (d) => (clientOut += d));
+    client.stderr.on('data', (d) => (clientOut += d));
+    await spell.waitForSelector('[data-testid="remote-letter"]', { timeout: 15000 });
+    const offer = await spell.getByTestId('remote-letter').textContent();
+    check(
+      'the recognised letter is offered, labelled as simulated',
+      /dollarpy: J \(simulated\)/.test(offer),
+      offer,
+    );
+    check(
+      'the python client said it is simulated',
+      /SIMULATED INPUT/.test(clientOut) && /recognised J/.test(clientOut),
+    );
+    const before = await spell.locator('[data-screen="6"]').textContent();
+    const b = await spell.getByTestId('remote-letter').boundingBox();
+    const h = await spell.evaluate(
+      ([x, y]) => window.__signscribe.pointAt(x, y),
+      [b.x + b.width / 2, b.y + b.height / 2],
+    );
+    await spell.evaluate(([hs, t]) => window.__signscribe.play(hs, t), [[h], 2500]);
+    await spell.waitForFunction(
+      () => !document.querySelector('[data-testid="remote-letter"]'),
+      null,
+      { timeout: 5000 },
+    );
+    const after = await spell.locator('[data-screen="6"]').textContent();
+    check(
+      'pointing and holding adds the letter to the message, once',
+      !/J/.test(before.replace(/dollarpy: J/g, '')) && /J/.test(after),
+      after.slice(0, 120),
+    );
+    client.kill();
+    await spell.close();
+  }
+
   // the server going away changes nothing for the person
   server.kill();
   await page.waitForTimeout(500);

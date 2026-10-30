@@ -1,5 +1,21 @@
 {
   "extends": "../tsconfig.json",
-  "compilerOptions": { "types": ["node"], "lib": ["ES2022", "DOM"], "target": "ES2022" },
-  "include": ["./**/*.ts", "../src/nlp/*.ts"]
+  "compilerOptions": {
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "target": "ES2022"
+  },
+  "include": [
+    "./**/*.ts",
+    "../src/nlp/protocol.ts",
+    "../src/nlp/validate.ts",
+    "../src/nlp/sentence.ts",
+    "../src/nlp/words.ts",
+    "../src/nlp/dictionary.ts"
+  ]
 }

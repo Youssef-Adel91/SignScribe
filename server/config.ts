@@ -15,6 +15,8 @@ export interface Config {
   maxConnections: number;
   /** presence messages (Bluetooth scanner) accepted from everyone together in a 10 s window */
   presenceRateLimit: number;
+  /** letters from the dollarpy client accepted from everyone together in a 10 s window */
+  letterRateLimit: number;
   /** a presence that is not refreshed for this long is forgotten (the scanner sends a heartbeat) */
   presenceTtlMs: number;
   /** 'anthropic' (needs a key), 'offline' (rules only) or 'fake' (deterministic, for tests) */
@@ -51,6 +53,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     maxConnections: num(env.MAX_CONNECTIONS, 30),
     presenceRateLimit: num(env.PRESENCE_RATE_LIMIT, 10),
     presenceTtlMs: num(env.PRESENCE_TTL_MS, 15000),
+    letterRateLimit: num(env.LETTER_RATE_LIMIT, 10),
     provider,
   };
 }

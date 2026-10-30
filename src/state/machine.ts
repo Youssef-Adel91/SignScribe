@@ -101,6 +101,8 @@ export type Ev =
   | { type: 'CANDIDATE_LOST' }
   | { type: 'LETTER_CONFIRMED'; letter: string }
   | { type: 'SPACE' }
+  /** a letter from outside the camera pipeline (the dollarpy client), chosen by the person by pointing at it */
+  | { type: 'LETTER_ADD'; letter: string }
   | { type: 'DELETE' }
   | { type: 'WORD_ACCEPT' }
   | { type: 'WORD_REJECT' }
@@ -254,6 +256,11 @@ export const signScribeMachine = setup({
       event.type === 'LETTER_CANDIDATE' ? { candidate: event.candidate } : {},
     ),
     clearCandidate: assign({ candidate: null }),
+    addLetter: assign(({ context, event }) =>
+      event.type === 'LETTER_ADD'
+        ? { word: context.word + event.letter.toUpperCase().slice(0, 1), candidate: null }
+        : {},
+    ),
     appendLetter: assign(({ context, event }) =>
       event.type === 'LETTER_CONFIRMED'
         ? { word: context.word + event.letter.toUpperCase().slice(0, 1), candidate: null }
@@ -462,6 +469,7 @@ export const signScribeMachine = setup({
           { guard: 'idle', actions: 'handLost' },
         ],
         DELETE: { guard: 'idle', actions: 'deleteLast', target: '.ready' },
+        LETTER_ADD: { guard: 'idle', actions: 'addLetter', target: '.ready' },
         SPACE: [
           { guard: and(['idle', 'wordEmpty']), target: '.ready', actions: 'clearCandidate' },
           {
