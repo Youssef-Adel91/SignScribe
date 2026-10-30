@@ -52,7 +52,7 @@ def test_active_alphabet_is_read_from_the_config_file_not_from_code():
 
 def test_another_alphabet_can_be_selected_and_the_arabic_one_is_marked_unreviewed():
     ar = load_alphabet("arsl")
-    assert not ar.reviewed and len(ar.labels) == 28 and "ع" in ar.labels
+    assert not ar.reviewed and len(ar.labels) == 32 and "ain" in ar.labels and ar.resolve("ع") == "ain"
 
 
 def test_unknown_alphabet_and_bad_configs_are_rejected(tmp_path):
@@ -63,8 +63,8 @@ def test_unknown_alphabet_and_bad_configs_are_rejected(tmp_path):
     (tmp_path / "alphabets" / "x.json").write_text(json.dumps({"static": ["A", "A"]}))
     with pytest.raises(AlphabetError, match="twice"):
         load_alphabet("x", tmp_path)
-    (tmp_path / "alphabets" / "x.json").write_text(json.dumps({"static": ["AB"]}))
-    with pytest.raises(AlphabetError, match="single character"):
+    (tmp_path / "alphabets" / "x.json").write_text(json.dumps({"static": ["a b"]}))
+    with pytest.raises(AlphabetError, match="1 to 16 characters"):
         load_alphabet("x", tmp_path)
 
 
@@ -82,10 +82,10 @@ def test_the_reader_checks_labels_against_the_alphabet_not_a_fixed_list():
     assert parse_take(t, 1).label == "J"
     with pytest.raises(DatasetError, match="alphabet"):
         parse_take(t, 1, labels=["A", "B"])
-    t["label"] = "ع"
+    t["label"] = "ain"
     with pytest.raises(DatasetError, match="alphabet"):
         parse_take(t, 1)
-    assert parse_take(t, 1, labels=load_alphabet("arsl").labels).label == "ع"
+    assert parse_take(t, 1, labels=load_alphabet("arsl").labels).label == "ain"
 
 
 def test_person_and_source_are_optional_but_must_not_be_empty():
@@ -352,10 +352,10 @@ def people_dataset(persons=("p1", "p2", "p3"), labels="ABC", per=3, frames=2):
 
 def test_every_person_is_held_out_once_and_both_models_share_the_folds():
     res = evaluation.run(people_dataset(), ("knn", "mlp"), k=3)
-    assert res["method"] == "leave-one-person-out" and res["groups"] == ["p1", "p2", "p3"]
+    assert res["method"] == "leave-one-person-out" and res["n_groups"] == 3 and res["n_minor_groups"] == 0
     a, b = res["models"]["knn"], res["models"]["mlp"]
     assert a["group"] == b["group"] and a["truth"] == b["truth"] and len(a["truth"]) == 3 * 3 * 3 * 2
-    assert set(a["metrics"]["per_group_accuracy"]) == {"p1", "p2", "p3"}
+    assert a["metrics"]["groups_total"] == 3 and "per_group_accuracy" not in a["metrics"]
 
 
 def test_leakage_canary_a_held_out_person_never_reaches_training():

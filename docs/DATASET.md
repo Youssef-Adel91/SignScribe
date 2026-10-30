@@ -15,7 +15,7 @@ A take is one short recording of one letter by one person: a few dozen frames of
 | ----- | ------- |
 | `v` | format version, always `1` |
 | `id` | unique per take |
-| `label` | one letter of the active alphabet (`config/alphabets/*.json`, chosen in `config/alphabet.json`). Never a fixed list in code |
+| `label` | one label of the active alphabet: a letter (`A`) or, for ArSL21L, the class name (`ain`), taken from `config/alphabets/*.json` (chosen in `config/alphabet.json`). Never a fixed list in code |
 | `kind` | `static` (hold the sign still, about 1.5 s) or `dynamic` (a letter drawn in the air, about 2.2 s; J and Z by default) |
 | `signer` | anonymous code such as `s01`. Never a name |
 | `session` | one sitting: same light, distance and camera, for example `lamp-60cm`. Used to hold sessions out when testing |
@@ -25,10 +25,14 @@ A take is one short recording of one letter by one person: a few dozen frames of
 | `frames[].lm` | 21 MediaPipe hand landmarks `[x, y, z]`; x and y are 0..1 of the un-mirrored picture, z is MediaPipe's depth relative to the wrist |
 | `person` | optional. A human id when the dataset says who is in the picture (`user3`). Whole persons are held out when testing (leave-one-person-out). Anonymous, never a name |
 | `source` | optional. Which recording or sub-dataset the take comes from. Used to hold a source out (leave-one-source-out) when the dataset has no person ids |
+| `minor` | optional. `true` when the person was under 18, set by `import_images.py --age-regex`. **The age is never stored**, and evaluation only counts such persons: it never shows a result for one of them |
 | `synthetic` | `true` only for generated test data (and for takes made with the mock camera). Training refuses it without `--allow-synthetic` |
 
 ## Alphabets (label sets)
 The letters live in `config/alphabets/<id>.json` and `config/alphabet.json` says which is active (`{"active": "asl"}`). A file has `static` letters, `dynamic` letters (drawn in the air; ASL J and Z), and `aliases` that map a picture folder name to a letter. Python reads it directly (`--alphabet arsl` to pick another); the web app reads the same files at build time (`VITE_ALPHABET=arsl`). `arsl.json` is a **template**: it has not been checked against any dataset (`"reviewed": false`), so confirm it before use.
+
+## Taking landmarks from a folder of pictures, or from a CSV
+`ml/import_images.py` also reads a **flat folder** whose file names carry the label (`--label-regex`, `--person-regex`, `--age-regex`), without moving any file; `ml/import_landmarks_csv.py` turns landmark CSV files (ASLAD, ArSL_dataset.csv) into takes tagged with a `source` and never a person. The exact commands are in `ml/README.md`.
 
 ## Taking landmarks from a folder of pictures
 `ml/import_images.py` runs MediaPipe Hands (Python) on a folder with one sub-folder per letter and writes one take with one frame per picture that has a hand. Pictures with no hand are skipped and counted; the pictures are not kept. Output: this same format, with `person` (from `--person-regex`) or `source` (from `--source`). Example in `ml/README.md`.

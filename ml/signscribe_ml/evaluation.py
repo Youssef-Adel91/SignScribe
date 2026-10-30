@@ -98,24 +98,28 @@ def run(takes: list[Take], models=("knn", "mlp"), k: int = 5, augment: AugmentCo
             o["conf2"] += [float(v) for v in c2]
             o["group"] += [g] * len(idx)
     labels = sorted(set(y))
+    # a held-out group is a "minor group" when its takes are marked minor (a person under 18). Such groups are only ever COUNTED:
+    # no per-group result is stored or printed for any group, and the worst/best group below covers the other groups only.
+    minor_groups = {take_groups[i] for i, t in enumerate(takes) if t.minor and t.kind == "static"}
     return {
         "method": method,
         "generalises": generalises,
-        "groups": sorted(set(groups)),
-        "group_sizes": {g: int((groups == g).sum()) for g in sorted(set(groups))},
+        "n_groups": len(set(groups)),
+        "n_minor_groups": len(minor_groups),
         "labels": labels,
-        "models": {m: {**out[m], "description": desc[m], "metrics": metrics(out[m], labels)} for m in models},
+        "models": {m: {**out[m], "description": desc[m], "metrics": metrics(out[m], labels, minor_groups)} for m in models},
         "augment": augment.describe() if augment else "none",
         "k": k,
         "seed": seed,
     }
 
 
-def metrics(o: dict, labels: list) -> dict:
+def metrics(o: dict, labels: list, minor_groups=frozenset()) -> dict:
     t, p, c, grp = o["truth"], o["pred"], np.asarray(o["conf"]), np.asarray(o["group"])
     n = len(t)
     correct = np.asarray([a == b for a, b in zip(t, p)])
     per_group = {g: float(correct[grp == g].mean()) for g in sorted(set(grp))}
+    shown = [v for g, v in per_group.items() if g not in minor_groups]  # worst/best never look at a group of minors
     per = {}
     for l in labels:
         tp = sum(1 for a, b in zip(t, p) if a == l and b == l)
@@ -141,9 +145,10 @@ def metrics(o: dict, labels: list) -> dict:
         "samples": n,
         "pooled_accuracy": float(correct.mean()) if n else None,
         "mean_group_accuracy": float(np.mean(vals)) if vals else None,
-        "min_group_accuracy": float(min(vals)) if vals else None,
-        "max_group_accuracy": float(max(vals)) if vals else None,
-        "per_group_accuracy": per_group,
+        "min_group_accuracy": float(min(shown)) if shown else None,
+        "max_group_accuracy": float(max(shown)) if shown else None,
+        "groups_in_min_max": len(shown),
+        "groups_total": len(vals),
         "macro_recall": float(np.mean(recalls)) if recalls else None,
         "per_label": per,
         "worst_pairs": detail,
@@ -194,7 +199,8 @@ def markdown(res: dict, prov: dict, min_confidence: float = DEFAULT_MIN_CONFIDEN
         f"- date (UTC): {prov['date']}" + (f", git commit {prov['git_commit']}" if prov["git_commit"] else ""),
         f"- dataset: **{prov['dataset_name'] or '(not named)'}**, version **{prov['dataset_version'] or '(not given)'}**, sha256 `{prov['dataset_sha256']}`",
         f"- alphabet: {prov['alphabet']}; takes: {prov['takes']}; persons: {prov['persons']}, sources: {prov['sources']}, signers: {prov['signers']}",
-        f"- split: **{res['method']}**, {len(res['groups'])} held-out groups, the same folds for every model",
+        f"- split: **{res['method']}**, {res['n_groups']} held-out groups, the same folds for every model"
+        + (f". {res['n_minor_groups']} of them are persons under 18: they are included in the pooled numbers and in the mean over groups, and are only counted here; the worst and best group below cover the other {res['n_groups'] - res['n_minor_groups']} groups" if res["n_minor_groups"] else ""),
         f"- augmentation (training side only): {res['augment']}",
         f"- python {prov['python']}, numpy {prov['numpy']}",
         "",

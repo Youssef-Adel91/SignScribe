@@ -1,10 +1,143 @@
 {
   "id": "arsl",
-  "name": "ArSL fingerspelling (Arabic Sign Language) - TEMPLATE",
+  "name": "ArSL21L classes (32), NOT reviewed",
   "script": "arabic",
   "reviewed": false,
-  "note": "TEMPLATE, not checked against any dataset. The 28 base Arabic letters are listed as static. Before using it: compare with the class list of the dataset you will train on, remove or add letters, move any letter that is drawn in the air to 'dynamic', and add the dataset's folder names to 'aliases' (folder name -> letter).",
-  "static": ["ا", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر", "ز", "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ", "ف", "ق", "ك", "ل", "م", "ن", "ه", "و", "ي"],
+  "note": "The labels are the 32 class names of the ArSL21L dataset (which the ASLAD landmark CSV uses too). 'display' is the Arabic letter to show a person and is filled in ONLY where the mapping is not in doubt; null = the team has to decide (see 'todo'). 'aliases' maps other spellings, and the Arabic letters that are certain, to a label. Letters of another dataset that cannot be resolved here (for example ت ط ة ه ح ي ى ظ ض, or Space, Delete, Finish) are skipped and counted by the importers, never guessed. 'dynamic' stays empty until the team confirms which letters are drawn in the air; every picture and landmark in these datasets is a still sign.",
+  "static": [
+    "ain",
+    "al",
+    "aleff",
+    "bb",
+    "dal",
+    "dha",
+    "dhad",
+    "fa",
+    "gaaf",
+    "ghain",
+    "ha",
+    "haa",
+    "jeem",
+    "kaaf",
+    "khaa",
+    "la",
+    "laam",
+    "meem",
+    "nun",
+    "ra",
+    "saad",
+    "seen",
+    "sheen",
+    "ta",
+    "taa",
+    "thaa",
+    "thal",
+    "toot",
+    "waw",
+    "ya",
+    "yaa",
+    "zay"
+  ],
   "dynamic": [],
-  "aliases": {}
+  "aliases": {
+    "ع": "ain",
+    "ال": "al",
+    "ا": "aleff",
+    "ب": "bb",
+    "د": "dal",
+    "ف": "fa",
+    "ق": "gaaf",
+    "غ": "ghain",
+    "ج": "jeem",
+    "ك": "kaaf",
+    "خ": "khaa",
+    "لا": "la",
+    "ل": "laam",
+    "م": "meem",
+    "ن": "nun",
+    "ر": "ra",
+    "ص": "saad",
+    "س": "seen",
+    "ش": "sheen",
+    "ث": "thaa",
+    "ذ": "thal",
+    "و": "waw",
+    "ز": "zay",
+    "alef": "aleff",
+    "alif": "aleff",
+    "jim": "jeem",
+    "ba": "bb"
+  },
+  "display": {
+    "ain": "ع",
+    "al": "ال",
+    "aleff": "ا",
+    "bb": "ب",
+    "dal": "د",
+    "dha": null,
+    "dhad": null,
+    "fa": "ف",
+    "gaaf": "ق",
+    "ghain": "غ",
+    "ha": null,
+    "haa": null,
+    "jeem": "ج",
+    "kaaf": "ك",
+    "khaa": "خ",
+    "la": "لا",
+    "laam": "ل",
+    "meem": "م",
+    "nun": "ن",
+    "ra": "ر",
+    "saad": "ص",
+    "seen": "س",
+    "sheen": "ش",
+    "ta": null,
+    "taa": null,
+    "thaa": "ث",
+    "thal": "ذ",
+    "toot": null,
+    "waw": "و",
+    "ya": null,
+    "yaa": null,
+    "zay": "ز"
+  },
+  "todo": [
+    {
+      "classes": [
+        "ta",
+        "taa",
+        "toot"
+      ],
+      "question": "Which Arabic letter is each of ta, taa and toot? Candidates: ت (taa), ط (Taa), ة (taa marbuta). The dataset's own class list or the people who made it must say."
+    },
+    {
+      "classes": [
+        "ha",
+        "haa"
+      ],
+      "question": "Which is ه (haa) and which is ح (Haa)? Not decided."
+    },
+    {
+      "classes": [
+        "ya",
+        "yaa"
+      ],
+      "question": "Which is ي and which is ى (alef maksura)? Not decided."
+    },
+    {
+      "classes": [
+        "dha",
+        "dhad"
+      ],
+      "question": "Probably ظ and ض, but the order is not checked against the dataset: confirm before showing them."
+    },
+    {
+      "classes": [
+        "al",
+        "la"
+      ],
+      "question": "Ligatures (ال and لا): two letters in one sign. Decide how the app should write them (they are two characters)."
+    }
+  ]
 }
