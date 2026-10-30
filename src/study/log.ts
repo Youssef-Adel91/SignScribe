@@ -27,6 +27,8 @@ export interface TrialLog {
   cameraFps: number | null;
   inferMsMean: number | null;
   delegate: 'GPU' | 'CPU' | null;
+  /** camera trials: the sign alphabet that was active ('asl' | 'arsl'); '' for keyboard trials and for data saved before this field existed */
+  alphabet?: string;
 }
 
 export interface ProfileLog {
@@ -96,6 +98,7 @@ export function trialsCsv(d: StudyData): string {
     'camera_fps',
     'model_ms_mean',
     'delegate',
+    'alphabet',
     'final_text',
   ];
   const lines = d.trials.map((t) =>
@@ -118,6 +121,7 @@ export function trialsCsv(d: StudyData): string {
       t.cameraFps === null ? '' : t.cameraFps.toFixed(2),
       t.inferMsMean === null ? '' : t.inferMsMean.toFixed(2),
       t.delegate ?? '',
+      t.alphabet ?? '',
       t.finalText,
     ]),
   );
@@ -173,6 +177,7 @@ export function sessionCsv(d: StudyData): string {
     'hold_time',
     'voice',
     'signing_hand',
+    'alphabet',
   ];
   const lines = d.sessions.map((m) =>
     row([
@@ -187,6 +192,7 @@ export function sessionCsv(d: StudyData): string {
       m.dwell,
       m.voice,
       m.signingHand,
+      m.alphabet ?? '',
     ]),
   );
   return [row(head), ...lines].join('\n') + '\n';

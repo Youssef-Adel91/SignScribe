@@ -1,4 +1,5 @@
-import { and, assign, setup } from 'xstate';
+import { and, assign, raise, setup } from 'xstate';
+import { alphabetOfSetting, dropLastGlyph, glyphOf } from '../config/alphabet';
 import { closestMatch, isKnownWord } from '../nlp/dictionary';
 import { offlineSentence } from '../nlp/sentence';
 import { validateSentence } from '../nlp/validate';
@@ -16,7 +17,7 @@ export type Method = 'spell' | 'card';
 export type Overlay = 'none' | 'handLost' | 'help';
 
 /** Alphabets that currently have a label set + model. Others are shown as "Coming soon". */
-export const AVAILABLE_ALPHABETS: readonly Alphabet[] = ['english'];
+export const AVAILABLE_ALPHABETS: readonly Alphabet[] = ['english', 'arabic'];
 
 export interface Candidate {
   letter: string;
@@ -118,6 +119,7 @@ type Wrapped = { context: Ctx };
 const wordIsEmpty = ({ context }: Wrapped) => context.word.length === 0;
 /** spelt word that is not in the context list AND has a close list match -> screen 09 */
 const needsSuggestion = ({ context }: Wrapped) =>
+  context.alphabet === 'english' && // there is no Arabic word list yet
   context.word.length > 0 &&
   !isKnownWord(context.word, context.place) &&
   closestMatch(context.word, context.place) !== null;
@@ -150,9 +152,16 @@ export const signScribeMachine = setup({
       event.attempt === context.sentenceAttempt &&
       event.words.length === context.words.length &&
       event.words.every((w, i) => w === context.words[i]) &&
-      validateSentence(context.words, event.sentence).ok,
+      validateSentence(
+        context.words,
+        event.sentence,
+        context.alphabet === 'arabic' ? 'arabic' : 'english',
+      ).ok,
     alphabetAvailable: ({ event }) =>
       event.type === 'CHOOSE_ALPHABET' && AVAILABLE_ALPHABETS.includes(event.alphabet),
+    confirmedControl: ({ context, event }) =>
+      event.type === 'LETTER_CONFIRMED' &&
+      alphabetOfSetting(context.alphabet).controls[event.letter] !== undefined,
     methodIsCard: ({ context }) => context.method === 'card',
     chosenIsCard: ({ event }) => event.type === 'CHOOSE_METHOD' && event.method === 'card',
     candidateExists: ({ context }) => context.candidate !== null,
@@ -183,12 +192,19 @@ export const signScribeMachine = setup({
     clearCandidate: assign({ candidate: null }),
     appendLetter: assign(({ context, event }) =>
       event.type === 'LETTER_CONFIRMED'
-        ? { word: context.word + event.letter.toUpperCase().slice(0, 1), candidate: null }
+        ? {
+            word: context.word + glyphOf(alphabetOfSetting(context.alphabet), event.letter).text,
+            candidate: null,
+          }
         : {},
     ),
     /** delete the last letter; with no letters left, take back the last finished word */
     deleteLast: assign(({ context }) => {
-      if (context.word.length > 0) return { word: context.word.slice(0, -1), candidate: null };
+      if (context.word.length > 0)
+        return {
+          word: dropLastGlyph(alphabetOfSetting(context.alphabet), context.word),
+          candidate: null,
+        };
       if (context.words.length > 0) return { words: context.words.slice(0, -1), candidate: null };
       return {};
     }),
@@ -218,7 +234,10 @@ export const signScribeMachine = setup({
     })),
     /** "Delete letters" on screen 09: put the word back and drop its last letter */
     reopenWord: assign(({ context }) => ({
-      word: (context.suggestion?.original ?? context.word).slice(0, -1),
+      word: dropLastGlyph(
+        alphabetOfSetting(context.alphabet),
+        context.suggestion?.original ?? context.word,
+      ),
       suggestion: null,
     })),
     setCardCandidate: assign(({ event }) =>
@@ -261,14 +280,19 @@ export const signScribeMachine = setup({
       afterWord: 'spell' as const,
     }),
     computeSentence: assign(({ context }) => ({
-      sentence: offlineSentence(context.words, context.place, 0),
+      sentence: offlineSentence(context.words, context.place, 0, context.alphabet),
       sentenceAttempt: 0,
       sentenceConfirmed: false,
       sentenceSource: 'offline' as const,
     })),
     tryAnother: assign(({ context }) => ({
       sentenceAttempt: context.sentenceAttempt + 1,
-      sentence: offlineSentence(context.words, context.place, context.sentenceAttempt + 1),
+      sentence: offlineSentence(
+        context.words,
+        context.place,
+        context.sentenceAttempt + 1,
+        context.alphabet,
+      ),
       sentenceSource: 'offline' as const,
     })),
     applyServerSentence: assign(({ event }) =>
@@ -405,7 +429,26 @@ export const signScribeMachine = setup({
         recognizing: {
           on: {
             LETTER_CANDIDATE: { guard: 'idle', actions: 'setCandidate' },
-            LETTER_CONFIRMED: { guard: 'idle', target: 'ready', actions: 'appendLetter' },
+            LETTER_CONFIRMED: [
+              // a class the alphabet file marks as a command does the same as the hand gesture
+              {
+                guard: and(['idle', 'confirmedControl']),
+                target: 'ready',
+                actions: [
+                  'clearCandidate',
+                  raise(({ context, event }) => {
+                    const what =
+                      event.type === 'LETTER_CONFIRMED'
+                        ? alphabetOfSetting(context.alphabet).controls[event.letter]
+                        : 'space';
+                    return {
+                      type: what === 'delete' ? 'DELETE' : what === 'finish' ? 'YES' : 'SPACE',
+                    } as const;
+                  }),
+                ],
+              },
+              { guard: 'idle', target: 'ready', actions: 'appendLetter' },
+            ],
             CANDIDATE_LOST: { guard: 'idle', target: 'ready', actions: 'clearCandidate' },
             NO: { guard: 'idle', target: 'ready', actions: 'clearCandidate' },
           },

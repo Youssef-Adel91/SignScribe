@@ -81,4 +81,6 @@ export interface SessionMeta {
   dwell: string;
   voice: boolean;
   signingHand: string;
+  /** the sign alphabet set when the session started ('asl' | 'arsl'); '' in data saved before this field existed */
+  alphabet?: string;
 }

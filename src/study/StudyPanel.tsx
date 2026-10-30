@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { alphabetOfSetting } from '../config/alphabet';
 import { useCtx, useScreenNumber, useSend } from '../state/MachineProvider';
 import { MODE_LABEL, TASK_SETS, isSuccess, type Task } from './design';
 import { TASKS_PER_BLOCK } from './flow';
@@ -140,10 +141,11 @@ export function StudyPanel() {
         success: isSuccess(task, sentence),
         endedBy: 'done',
         finalText: sentence,
+        alphabet: alphabetOfSetting(settings.alphabet).id,
         ...camStats(),
       },
     });
-  }, [study, phase, cameraRunning, screen, task, sentence, rec, camStats]);
+  }, [study, phase, cameraRunning, screen, task, sentence, rec, camStats, settings.alphabet]);
 
   if (!study) return null;
   const { state, dispatch } = study;
@@ -159,6 +161,7 @@ export function StudyPanel() {
         success: false,
         endedBy: 'gaveup',
         finalText: sentence,
+        alphabet: block?.mode === 'camera' ? alphabetOfSetting(settings.alphabet).id : '',
         ...(block?.mode === 'camera' ? camStats() : NO_CAMERA_STATS),
       },
     });
@@ -177,6 +180,7 @@ export function StudyPanel() {
       dwell: settings.dwell,
       voice: settings.voice,
       signingHand: settings.hand,
+      alphabet: alphabetOfSetting(settings.alphabet).id,
     });
     return (
       <ProfileForm
@@ -222,6 +226,7 @@ export function StudyPanel() {
                 success: r.success,
                 endedBy: 'done',
                 finalText: r.finalText,
+                alphabet: '',
                 ...NO_CAMERA_STATS,
               },
             })

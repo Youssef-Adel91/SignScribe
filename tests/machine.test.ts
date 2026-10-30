@@ -241,12 +241,16 @@ describe('14 comfort settings', () => {
 });
 
 describe('03 preferences', () => {
-  it('stores hand; English alphabet only', () => {
+  it('stores hand and the alphabet (English or Arabic); "More" is not selectable', () => {
     let s = at(3);
     s = send(s, { type: 'CHOOSE_HAND', hand: 'left' });
     expect(s.context.hand).toBe('left');
     s = send(s, { type: 'CHOOSE_ALPHABET', alphabet: 'arabic' });
-    expect(s.context.alphabet).toBe('english'); // "Coming soon" is not selectable
+    expect(s.context.alphabet).toBe('arabic');
+    s = send(s, { type: 'CHOOSE_ALPHABET', alphabet: 'more' });
+    expect(s.context.alphabet).toBe('arabic'); // "Coming soon" is not selectable
+    s = send(s, { type: 'CHOOSE_ALPHABET', alphabet: 'english' });
+    expect(s.context.alphabet).toBe('english');
   });
   it('04 and 05 store place and method', () => {
     expect(send(at(4), { type: 'CHOOSE_CONTEXT', place: 'Shop' }).context.place).toBe('Shop');

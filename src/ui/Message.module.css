@@ -14,6 +14,17 @@
   color: var(--ink);
   overflow-wrap: anywhere;
 }
+.rtl {
+  /* spacing between letters would break the joined shapes of Arabic writing */
+  letter-spacing: 0;
+}
+.unconfirmed {
+  font-weight: 500;
+  text-decoration: underline dashed;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 10px;
+  color: var(--muted);
+}
 .flagged {
   color: var(--red);
   text-decoration: underline;

@@ -5,6 +5,11 @@
  */
 export const PLACES = ['Clinic', 'Shop', 'Work', 'Home'] as const;
 export type PlaceName = (typeof PLACES)[number];
+/** which sign alphabet the words were spelt in; no field means 'asl' (English) */
+export const ALPHABET_IDS = ['asl', 'arsl'] as const;
+export type AlphabetId = (typeof ALPHABET_IDS)[number];
+/** Arabic letters (with their marks and presentation forms) and spaces: what an ArSL word is made of */
+const ARABIC_WORD = /^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF ]+$/;
 
 export const LIMITS = {
   /** bytes in one message */
@@ -23,6 +28,8 @@ export interface SuggestRequest {
   place: PlaceName;
   /** 0 for the first suggestion, +1 for every "try another" */
   attempt: number;
+  /** left out = 'asl'. With 'arsl' the words are Arabic and the server skips the English-only checks (see validate.ts) */
+  alphabet?: AlphabetId;
   /** sentences already shown, so the server can give a different wording */
   avoid?: string[];
 }
@@ -77,16 +84,22 @@ export function parseRequest(text: string): Parsed {
   const words = o.words;
   if (!Array.isArray(words) || words.length < 1 || words.length > LIMITS.maxWords)
     return { ok: false, id, message: `'words' must be 1 to ${LIMITS.maxWords} words` };
+  if (o.alphabet !== undefined && !ALPHABET_IDS.includes(o.alphabet as AlphabetId))
+    return { ok: false, id, message: `'alphabet' must be one of ${ALPHABET_IDS.join(', ')}` };
+  const alphabet: AlphabetId = (o.alphabet as AlphabetId | undefined) ?? 'asl';
   for (const w of words) {
     if (
       typeof w !== 'string' ||
       w.length > LIMITS.maxWordChars ||
-      !/^[A-Za-z][A-Za-z' ]*$/.test(w.trim())
+      !(alphabet === 'arsl' ? ARABIC_WORD : /^[A-Za-z][A-Za-z' ]*$/).test(w.trim())
     )
       return {
         ok: false,
         id,
-        message: 'each word must be letters only (spaces and apostrophes allowed)',
+        message:
+          alphabet === 'arsl'
+            ? 'each word must be Arabic letters only (spaces allowed)'
+            : 'each word must be letters only (spaces and apostrophes allowed)',
       };
   }
   if (!PLACES.includes(o.place as PlaceName))
@@ -120,6 +133,7 @@ export function parseRequest(text: string): Parsed {
       words: (words as string[]).map((w) => w.trim()),
       place: o.place as PlaceName,
       attempt: attempt as number,
+      ...(alphabet === 'arsl' ? { alphabet } : {}),
       ...(avoid ? { avoid } : {}),
     },
   };
