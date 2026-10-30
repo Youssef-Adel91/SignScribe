@@ -87,13 +87,15 @@ const tcpLines = (payload, n) =>
     rssi: -58,
     demo: true,
   };
-  const [ok, bad] = await tcpLines(
+  const answers = await tcpLines(
     JSON.stringify(pres) +
       '\n' +
       JSON.stringify({ ...pres, id: 'p2', address: 'AA:BB:CC:DD:EE:01' }) +
       '\n',
     2,
   );
+  const ok = answers.find((a) => a.id === 'p1');
+  const bad = answers.find((a) => a.id === 'p2');
   check('presence over TCP is acknowledged', ok.ok === true && ok.type === 'presence');
   check(
     'a presence with a device address is refused',
