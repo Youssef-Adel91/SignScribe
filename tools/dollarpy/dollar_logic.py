@@ -26,9 +26,8 @@ FORMAT = "signscribe-dollarpy-templates"
 INDEX_TIP = 8  # MediaPipe hand landmark 8 = tip of the index finger
 WRIST, MIDDLE_KNUCKLE = 0, 9
 
-# MediaPipe Pose landmarks (left, right) for each body part. Lab 5's getPoints uses shoulders, elbows, wrists, pinky,
-# index and hips; the default here is shoulders, elbows and wrists (the hands are tracked by the hand model, and hips
-# are usually outside a desk webcam's picture). Any of the others can be named with --pose-parts.
+# MediaPipe Pose landmarks (left, right) for each body part: exactly the ones Lab 5 uses (Holistic pose_landmarks 11-20, 23, 24),
+# x and y only. The default is all twelve; --pose-parts can name fewer.
 POSE_PARTS = {
     "shoulders": (11, 12),
     "elbows": (13, 14),
@@ -37,9 +36,8 @@ POSE_PARTS = {
     "index": (19, 20),
     "hips": (23, 24),
 }
-DEFAULT_POSE_PARTS = ("shoulders", "elbows", "wrists")
+DEFAULT_POSE_PARTS = ("shoulders", "elbows", "wrists", "pinky", "index", "hips")
 MIN_POSE_SHARE = 0.8  # a movement needs the whole pose in at least this share of its frames, else it is judged by the fingertip alone
-POSE_VISIBILITY = 0.5
 
 
 def pose_keys(parts) -> list:
@@ -161,34 +159,14 @@ def to_points(path) -> list:
     return [Point(float(x), float(y), 1) for x, y in path]
 
 
-N_TIP = 32  # points of the fingertip stroke (dollarpy's own default)
-N_POSE = 4  # points of each pose landmark's stroke: the arm gives the shape of the body, the fingertip stays the main signal
-
-
-def time_resample(pts, m: int) -> list:
-    """m points evenly spaced in TIME (by index) along a trajectory, so a landmark that hardly moves still gets its m points."""
-    pts = list(pts)
-    n = len(pts)
-    out = []
-    for i in range(m):
-        f = i * (n - 1) / (m - 1)
-        a = int(f)
-        b = min(a + 1, n - 1)
-        r = f - a
-        out.append((pts[a][0] * (1 - r) + pts[b][0] * r, pts[a][1] * (1 - r) + pts[b][1] * r))
-    return out
-
-
 def to_cloud(path, pose: dict, keys) -> list:
-    """The fingertip (stroke 1, N_TIP points) and every pose landmark (one stroke each, N_POSE points) as one point cloud."""
-    pts = [Point(x, y, 1) for x, y in time_resample(path, N_TIP)]
+    """Lab 5's point cloud, plus the fingertip. Every tracked landmark is ONE stroke holding its WHOLE trajectory over the
+    movement (one point per frame, x and y only): the pose landmarks get stroke ids 2.. in `keys` order and the index fingertip
+    of the hand is one extra stroke, id 1. Nothing is thinned out here: dollarpy's own resampling does that."""
+    pts = [Point(float(x), float(y), 1) for x, y in path]
     for sid, k in enumerate(keys, start=2):
-        pts += [Point(x, y, sid) for x, y in time_resample(pose[k], N_POSE)]
+        pts += [Point(float(x), float(y), sid) for x, y in pose[k]]
     return pts
-
-
-def cloud_size(keys) -> int:
-    return N_TIP + N_POSE * len(keys)
 
 
 def _r(pts):
@@ -257,7 +235,7 @@ def load_templates(path, allow_synthetic: bool = False):
 
 class PoseAwareRecognizer:
     """dollarpy's Recognizer, used on the fingertip path alone or, when the movement and every template carry the same
-    pose landmarks, on the fingertip plus the pose of every frame. `used_pose` says which one the last call used."""
+    pose landmarks, on the fingertip stroke plus one stroke per pose landmark (Lab 5). `used_pose` says which one the last call used."""
 
     def __init__(self, templates: list):
         self.templates = templates
@@ -278,8 +256,12 @@ class PoseAwareRecognizer:
         keys = self._keys_for(movement)
         self.used_pose = keys is not None
         if keys:
-            rec = Recognizer([Template(l, to_cloud(t, t.pose, keys)) for l, t in self.templates])
-            return rec.recognize(to_cloud(movement, movement.pose, keys), n=cloud_size(keys))
+            try:
+                rec = Recognizer([Template(l, to_cloud(t, t.pose, keys)) for l, t in self.templates])
+                return rec.recognize(to_cloud(movement, movement.pose, keys))
+            except (IndexError, ZeroDivisionError):
+                # dollarpy cannot resample some clouds (for example when nothing moved at all): judge by the fingertip alone
+                self.used_pose = False
         rec = Recognizer([Template(l, to_points(t)) for l, t in self.templates])
         return rec.recognize(to_points(movement))
 

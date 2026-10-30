@@ -269,10 +269,15 @@ def movement(letter, variant=0.25, pose=True, drop=0.0):
     raise AssertionError("no movement")
 
 
+def test_the_default_pose_landmarks_are_exactly_the_twelve_of_lab_5():
+    assert dl.DEFAULT_POSE_PARTS == ("shoulders", "elbows", "wrists", "pinky", "index", "hips")
+    assert len(KEYS) == 12
+    # Lab 5 (Holistic pose_landmarks): 11,12 shoulders, 13,14 elbows, 15,16 wrists, 17,18 pinky, 19,20 index, 23,24 hips
+    assert [dl.pose_index(k) for k in KEYS] == [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23, 24]
+
+
 def test_pose_parts_are_named_in_a_fixed_order_and_unknown_ones_are_refused():
-    assert KEYS == ["shoulders_l", "shoulders_r", "elbows_l", "elbows_r", "wrists_l", "wrists_r"]
-    assert dl.DEFAULT_POSE_PARTS == ("shoulders", "elbows", "wrists")
-    assert [dl.pose_index(k) for k in KEYS] == [11, 12, 13, 14, 15, 16]  # MediaPipe Pose landmark numbers
+    assert KEYS[:6] == ["shoulders_l", "shoulders_r", "elbows_l", "elbows_r", "wrists_l", "wrists_r"]
     assert dl.pose_index("hips_r") == 24 and dl.pose_index("pinky_l") == 17 and dl.pose_index("index_r") == 20
     with pytest.raises(ValueError, match="unknown pose part"):
         dl.pose_keys(["knees"])
@@ -312,12 +317,37 @@ def test_templates_without_pose_are_compared_by_the_fingertip_even_when_the_move
     assert build.used_pose is False  # every template must have the pose, or none is used
 
 
-def test_the_cloud_has_the_fingertip_stroke_and_one_short_stroke_per_pose_landmark():
+def test_the_cloud_is_one_stroke_per_landmark_with_its_whole_trajectory_and_one_more_for_the_fingertip():
     mv = movement("J")
     pts = dl.to_cloud(mv, mv.pose, KEYS)
-    assert len(pts) == dl.cloud_size(KEYS) == dl.N_TIP + dl.N_POSE * len(KEYS)
-    assert [p.stroke_id for p in pts[: dl.N_TIP]] == [1] * dl.N_TIP
-    assert sorted({p.stroke_id for p in pts}) == list(range(1, len(KEYS) + 2))
+    assert len(pts) == len(mv) * (1 + len(KEYS))  # no thinning: every frame of every landmark
+    assert sorted({p.stroke_id for p in pts}) == list(range(1, 14))  # 1 = fingertip, 2..13 = the twelve pose landmarks
+    by = {sid: [(p.x, p.y) for p in pts if p.stroke_id == sid] for sid in range(1, 14)}
+    assert by[1] == [tuple(map(float, q)) for q in mv]
+    assert all(len(v) == len(mv) for v in by.values())
+    assert by[2] == [tuple(map(float, q)) for q in mv.pose[KEYS[0]]]  # stroke 2 is shoulders_l, in time order
+    assert all(hasattr(p, "x") and not hasattr(p, "z") for p in pts)  # x and y only
+
+
+def test_a_cloud_dollarpy_cannot_resample_falls_back_to_the_fingertip(monkeypatch):
+    rec = build_recognizer(simulate.synthetic_templates(["J"], 2, pose_keys=KEYS))
+
+    class Boom:
+        def __init__(self, *a):
+            pass
+
+        def recognize(self, *a, **k):
+            raise ZeroDivisionError
+
+    real = dl.Recognizer
+    calls = []
+
+    def fake(templates):
+        calls.append(1)
+        return Boom() if len(calls) == 1 else real(templates)
+
+    monkeypatch.setattr(dl, "Recognizer", fake)
+    assert rec.recognize(movement("J"))[0] == "J" and rec.used_pose is False
 
 
 def test_templates_with_pose_roundtrip_and_older_files_still_load(tmp_path):
@@ -344,10 +374,10 @@ def test_templates_with_pose_roundtrip_and_older_files_still_load(tmp_path):
 def test_simulation_uses_the_pose_by_default_and_says_so(capsys):
     assert classify_live.main(["--simulate", "J", "Z", "--synthetic-templates", "--fast", "--no-send"]) == 0
     out = capsys.readouterr().out
-    assert "a simulated arm" in out and "recognised J" in out and "recognised Z" in out
+    assert "a simulated body" in out and "recognised J" in out and "recognised Z" in out
     assert classify_live.main(["--simulate", "J", "--synthetic-templates", "--fast", "--no-send", "--no-pose"]) == 0
     out = capsys.readouterr().out
-    assert "simulated arm" not in out and "recognised J" in out
+    assert "simulated body" not in out and "recognised J" in out
 
 
 def test_other_pose_parts_can_be_chosen(capsys):

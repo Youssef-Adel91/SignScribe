@@ -50,9 +50,13 @@ class HandTracker:
 class PoseTracker:
     """MediaPipe Pose Landmarker (the body skeleton, 33 landmarks). Only the ones named in `keys` are returned.
 
+    Like Lab 5 every landmark is used as MediaPipe gives it, also one that is outside the picture (MediaPipe then estimates it,
+    for example the hips of someone sitting at a desk). `min_visibility` above 0 drops the whole pose for a frame when any
+    landmark is less visible than that.
+
     The pose model is not used by the web app: `npm run models` downloads it for these tools (about 6 MB)."""
 
-    def __init__(self, keys, model_path: str | Path = DEFAULT_POSE_MODEL, min_confidence: float = 0.5, min_visibility: float = 0.5):
+    def __init__(self, keys, model_path: str | Path = DEFAULT_POSE_MODEL, min_confidence: float = 0.5, min_visibility: float = 0.0):
         try:
             import mediapipe as mp
             from mediapipe.tasks import python as mpp
