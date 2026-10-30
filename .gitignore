@@ -44,3 +44,6 @@ signscribe-comparison-*.csv
 signscribe-profile-*.csv
 signscribe-session-*.csv
 signscribe-perf-*.json
+# local scratch for ml/: imported picture datasets and evaluation output (the vetted numbers go to docs/MODEL_RESULTS.md by the script)
+ml/data/
+ml/reports/
