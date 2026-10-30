@@ -144,6 +144,19 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Analysis: SUS row, careless-answer flags (identical answers, contradicting reverse items), `--exclude-flagged` | 7 | verified here (made-up exports) | `npm run ml:test` |
 | SUS results on real participants | 7 | not met | no study run yet |
 
+## ArSL stage 2: model commands, calibration, credits, helper words (branch feat/arsl-models-calibration)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| One documented command per ArSL model file (`ml/export_mlp.py` -> `letters-arsl-mlp.json`, `ml/train_knn.py` -> `letters-arsl-knn.json`) and `ml/export_arsl.py` for both: same alphabet file, same class order (checked), same seed gives the same models, synthetic refused, no data written | verified here (generated hands) | `ml/tests/test_arsl_export.py` |
+| The browser loader accepts both files exactly as the exporters write them and rejects a mismatched alphabet | verified here (generated fixtures in `tests/fixtures/arsl/`, not a model) | `tests/arsl-models.test.ts` |
+| `ml/calibrate.py`: precision and coverage at several thresholds, k-NN vote share and MLP softmax in separate tables, from leave-one-person-out or `--train/--test` predictions; chooses and changes no threshold; no person id in its output | verified here (generated hands) | `ml/tests/test_calibration.py` |
+| The calibration numbers for the real ArSL data | not met | run `ml/calibrate.py` on your machine, quote only its report |
+| `LETTER` thresholds chosen for the ArSL models | not met | needs a real model, its calibration table and a camera |
+| CC BY 4.0 credit for ArSL21L (and ASLAD, test-only) in `docs/CREDITS.md` and the About text on the help screen (13) | verified here; the full dataset citations still have to be pasted (`TODO(Youssef)` in `docs/CREDITS.md`) | `tests/credits.test.ts` |
+| Arabic helper-word list (written by us, `docs/ARABIC_WORDS.md`) used by the validator in the browser and on the server, and given to the language model | verified here | `tests/arabic-words.test.ts`, `tests/arsl-server.test.ts` |
+| UI note that read-aloud is English only (share screen 12, voice setting 14) | verified here (rendered markup) | `tests/arsl-screens.test.ts` |
+| Arabic text-to-speech, an Arabic dictionary / spelling help, grammar | not met | out of scope: `docs/KNOWN_ISSUES.md` #5, #7 |
+
 ## ArSL in the web app, stage 1 (branch feat/arsl-app)
 | Item | Status | Evidence |
 | --- | --- | --- |

@@ -66,6 +66,11 @@ It trains on ALL takes (nothing held out), so its `.report.md` has no accuracy. 
     python ml/evaluate.py --train ml/data/arsl21l.jsonl --test my-takes.jsonl --test-name "team webcam"
 Reports accuracy on your recordings only; they are never mixed into the training side (the script refuses a take id that is on both sides, or a letter that only the test has, unless `--shared-classes`). It is not a leave-one-person-out result and the report says so.
 
+### Choosing a threshold per model: `ml/calibrate.py`
+    python ml/calibrate.py --data all-takes.jsonl --dataset-name NAME --dataset-version V --augment all
+    python ml/calibrate.py --train all-takes.jsonl --test my-takes.jsonl --test-name "team webcam" --dataset-name NAME --dataset-version V
+For the k-NN vote share and the MLP softmax, separately, it prints how many predictions would be shown at each threshold and how many of those are right (with a 95% interval), from held-out predictions only. It never changes `LETTER`; read the table of the model that will ship, then change the value by hand with a test (Step 5). The two tables are not comparable.
+
 ## Step 5: tune the thresholds with the model in hand
 `LETTER` in `src/recognition/letterController.ts`: `minConfidence`, `confirmConfidence`, `stableMs`, `holdMs`, `releaseMs` and the motion constants. They are first guesses. The report gives per-letter precision; use it. When a letter misfires, write a test that reproduces it in `tests/letters.test.ts` first, then change the value, and note it in `docs/KNOWN_ISSUES.md`.
 

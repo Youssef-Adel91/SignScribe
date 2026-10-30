@@ -102,7 +102,18 @@ What the importers do and do not know:
 - **Never mix** `arsl21l.jsonl` with the CSV files in one `--data` (some takes have a person, some do not: the split would fall back to holding a whole dataset out; `evaluate.py` prints a notice).
 - The CSV files are tagged with `--source` and never with a person; two signers in ASLAD are not known to the tool.
 - Big files: `--max-per-class N` on the CSV importer keeps N random rows per class (fixed seed, stated in the report) so a 190k-row file stays quick to evaluate.
-- **ArSL model in the app**: copy a model as `public/models/letters-arsl-mlp.json` / `letters-arsl-knn.json` (never under the ASL names; the app reads the pair of the alphabet chosen on screen 03 and refuses a model with other letters). The spelling screens show the glyph from `config/alphabets/arsl.json`; classes whose Arabic letter is not confirmed show as `⟨id⟩`. Still missing: Arabic word list and sentence rules, tuned `LETTER` thresholds, Arabic read-aloud: `docs/KNOWN_ISSUES.md` #5-#9.
+- **ArSL model files (the two the app loads)**: both from the same takes file, the same alphabet file and the same fixed settings. One command writes both and checks them:
+
+      python ml/export_arsl.py --data ml/data/arsl21l.jsonl          # -> public/models/letters-arsl-mlp.json + letters-arsl-knn.json
+
+  or each alone (this is what the script runs):
+
+      python ml/export_mlp.py --data ml/data/arsl21l.jsonl --alphabet arsl --augment all --seed 0 --out public/models/letters-arsl-mlp.json
+      python ml/train_knn.py  --data ml/data/arsl21l.jsonl --alphabet arsl --augment all --seed 0 --out public/models/letters-arsl-knn.json
+      python ml/validate_model.py public/models/letters-arsl-mlp.json --alphabet arsl     # same check for the knn file
+
+  Both train on ALL persons (nothing held out), list the same classes in the same order (sorted class ids) and carry no accuracy of their own; honest numbers come from `ml/evaluate.py`. The same takes and seed give the same weights (only `meta.trainedAt` differs). Never commit the takes file, the pictures or the landmark files (`ml/data/`, `ml/reports/` and `datasets/` are git-ignored); the model files are the only thing that goes into `public/models/`, and they carry numbers, not pictures. The app reads the pair of the alphabet chosen on screen 03 (`letters-arsl-*.json`, never the ASL names) and refuses a model with other letters. Still missing: Arabic sentence rules, tuned `LETTER` thresholds (`ml/calibrate.py` prints the table to choose from), Arabic read-aloud: `docs/KNOWN_ISSUES.md` #5-#9. The datasets' licence and credit: `docs/CREDITS.md`.
+- **Choosing confidence thresholds per model**: `python ml/calibrate.py --data ml/data/arsl21l.jsonl --alphabet arsl --dataset-name ArSL21L --dataset-version "as published" --augment all` (or `--train ... --test ...` for your own webcam takes) prints, for the k-NN vote share and the MLP softmax separately, how many predictions would be shown and how many of those are right at each threshold. It chooses nothing and changes nothing.
 
 `takes.jsonl` comes from the in-app collection mode (`/?collect=1`), format in `docs/DATASET.md`.
 
