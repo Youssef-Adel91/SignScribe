@@ -429,3 +429,42 @@ def test_cli_commands_for_the_two_real_files(tmp_path, capsys):
     # a delimiter that is not the file's gives a clear error
     assert import_landmarks_csv.main(["--csv", str(a), "--out", str(tmp_path / "x.jsonl"), "--alphabet", "arsl", "--source", "s", "--header", "yes", "--layout", "xy-interleaved", "--coords", "1-42", "--label-column", "Sign"]) == 2
     assert "error" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------- ASLAD classes with suffixes (haa+, haa++): not merged unless asked
+def test_suffix_classes_are_skipped_and_counted_by_default_and_never_merged_silently(tmp_path):
+    f = tmp_path / "aslad.csv"
+    aslad_like_file(f, per_class=3, order=["ain", "haa", "haa+", "haa++"])
+    takes, st = lc.import_csv(f, ARSL, "aslad", "xyz-interleaved", **ASLAD_ARGS)
+    assert st.per_label == {"ain": 3, "haa": 3} and len(takes) == 6
+    assert st.ignored == {"haa+": 3, "haa++": 3} and st.merged == {}
+    assert "| haa+ | 3 |" in lc.report_markdown(st, ARSL, {})
+
+
+def test_the_opt_in_option_imports_them_as_the_base_class_and_says_so(tmp_path):
+    f = tmp_path / "aslad.csv"
+    aslad_like_file(f, per_class=3, order=["ain", "haa", "haa+", "haa++"])
+    takes, st = lc.import_csv(f, ARSL, "aslad", "xyz-interleaved", strip_suffix=r"\++$", **ASLAD_ARGS)
+    assert st.per_label == {"ain": 3, "haa": 9} and st.merged == {"haa+": 3, "haa++": 3} and st.ignored == {}
+    rep = lc.report_markdown(st, ARSL, {})
+    assert "merged into their base class" in rep and "haa+ -> haa (3 rows)" in rep and "haa++ -> haa (3 rows)" in rep
+    assert all(t["label"] in ("ain", "haa") for t in takes)
+
+
+def test_the_option_only_touches_names_that_are_not_classes_already_and_needs_a_real_base(tmp_path):
+    f = tmp_path / "aslad.csv"
+    aslad_like_file(f, per_class=2, order=["ain", "zzz+"])  # zzz is not a class: stays skipped
+    takes, st = lc.import_csv(f, ARSL, "aslad", "xyz-interleaved", strip_suffix=r"\++$", **ASLAD_ARGS)
+    assert st.per_label == {"ain": 2} and st.ignored == {"zzz+": 2} and st.merged == {}
+
+
+def test_cli_option_for_the_suffix_classes(tmp_path, capsys):
+    import import_landmarks_csv
+
+    f = tmp_path / "aslad.csv"
+    aslad_like_file(f, per_class=2, order=["ain", "haa", "haa+"])
+    base = ["--csv", str(f), "--alphabet", "arsl", "--source", "aslad", "--header", "no", "--skip-rows", "1", "--layout", "xyz-interleaved", "--coords", "0-62", "--name-column", "90", "--numeric-label-column", "89"]
+    assert import_landmarks_csv.main([*base, "--out", str(tmp_path / "a.jsonl")]) == 0
+    assert "haa+" in capsys.readouterr().out and len(read_takes(tmp_path / "a.jsonl", ARSL.labels)[0]) == 4
+    assert import_landmarks_csv.main([*base, "--out", str(tmp_path / "b.jsonl"), "--strip-class-suffix", "\\++$"]) == 0
+    assert "haa+ -> haa" in capsys.readouterr().out and len(read_takes(tmp_path / "b.jsonl", ARSL.labels)[0]) == 6
