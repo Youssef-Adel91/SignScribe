@@ -53,3 +53,6 @@ tools/bluetooth/devices.*.json
 # local scratch for ml/: imported picture datasets and evaluation output (the vetted numbers go to docs/MODEL_RESULTS.md by the script)
 ml/data/
 ml/reports/
+
+# DOLLARPY: recorded movement templates are a person's data too (tools/dollarpy/README.md)
+tools/dollarpy/templates*.json

@@ -1,4 +1,4 @@
-import { parseContextPush, type ContextPush } from './protocol';
+import { parseContextPush, parseLetterPush, type ContextPush, type LetterPush } from './protocol';
 
 type WsLike = {
   close(): void;
@@ -10,7 +10,7 @@ type WsLike = {
 type WsCtor = new (url: string) => WsLike;
 
 /**
- * Listens to the sentence server for who/where the Bluetooth scanner found (messages the server pushes).
+ * Listens to the sentence server for what it pushes: who/where the Bluetooth scanner found, and letters another program (the dollarpy client) recognised.
  * Connects by itself, reconnects after a drop with a growing pause, and says "nothing detected" while the
  * server is not reachable, so the app then works exactly as it does without Bluetooth.
  */
@@ -26,6 +26,7 @@ export class ContextFeed {
     private readonly Ctor: WsCtor = WebSocket as unknown as WsCtor,
     private readonly minPauseMs = 1000,
     private readonly maxPauseMs = 15000,
+    private readonly onLetter: (l: LetterPush) => void = () => {},
   ) {
     this.pause = minPauseMs;
     this.connect();
@@ -45,8 +46,14 @@ export class ContextFeed {
       this.pause = this.minPauseMs;
     };
     ws.onmessage = (e) => {
-      const c = parseContextPush(String(e.data));
-      if (c) this.onContext(c.userId || c.place ? c : null);
+      const text = String(e.data);
+      const c = parseContextPush(text);
+      if (c) {
+        this.onContext(c.userId || c.place ? c : null);
+        return;
+      }
+      const l = parseLetterPush(text);
+      if (l) this.onLetter(l);
     };
     const drop = () => {
       if (this.ws !== ws) return;

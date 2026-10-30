@@ -1,0 +1,36 @@
+.card {
+  position: fixed;
+  right: var(--s-24);
+  bottom: calc(var(--u) * 110);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--s-14);
+  padding: var(--s-12) var(--s-20);
+  border: 3px dashed var(--teal);
+  border-radius: var(--s-16);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+}
+.card[data-hot='true'] {
+  background: #ccfbf1;
+  border-style: solid;
+}
+.letter {
+  display: grid;
+  place-items: center;
+  width: calc(var(--u) * 56);
+  height: calc(var(--u) * 56);
+  border-radius: 50%;
+  background: var(--teal);
+  color: #fff;
+  font-size: var(--fs-26, 26px);
+  font-weight: 700;
+}
+.text {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-16);
+  line-height: 1.3;
+}
