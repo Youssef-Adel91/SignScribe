@@ -16,7 +16,7 @@ Camera bugs go in docs/KNOWN_ISSUES.md; do not fix them unless they block the ph
     npm run models     # copies MediaPipe wasm + downloads hand_landmarker.task into public/models
     npm run dev        # http://localhost:5173 (?dev=1 for dev panels; vision=off | vision=mock)
     npm run check      # typecheck + lint + unit tests (see npm run check) + production build. Keep green on every commit
-    npm run e2e        # needs a build; flow driven by synthetic hands (31 checks)
+    npm run e2e        # needs a build; flow driven by synthetic hands (43 checks)
     npm run layout     # needs a build; 78 screen/size combos
     npm run e2e:study | e2e:collect | e2e:cards | e2e:server   # study session / collection mode in a browser (synthetic hands)
     npm run ml:test    # Python tests for ml/ (pip install -r ml/requirements.txt)

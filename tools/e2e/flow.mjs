@@ -184,6 +184,25 @@ try {
 
     await play([], 1300);
     check('no hand for 1 s: hand lost overlay (08)', await waitScreen(8));
+    const hints = await page.evaluate(() => document.querySelector('footer')?.textContent ?? '');
+    check(
+      'hand lost (08): the hint bar offers only "Bring your hand back", not commands that do nothing',
+      /Bring your hand back/.test(hints) && !/Space|Delete|Done|Cancel/.test(hints),
+      hints.slice(0, 80),
+    );
+    check(
+      'hand lost: the camera advice is not shown at first',
+      !(await page.evaluate(() => /Still no hand/.test(document.body.textContent ?? ''))),
+    );
+    await play([], 10500);
+    check(
+      'hand lost for 10 s: the screen also says what to check',
+      await page.evaluate(() =>
+        /Still no hand\? Check that nothing covers the camera/.test(
+          document.body.textContent ?? '',
+        ),
+      ),
+    );
     await play([{ pose: 'open', cx: 0.8 }], 500);
     check('hand back: 08 -> 06, message kept', await waitScreen(6));
     await play([], 500);
@@ -236,6 +255,40 @@ try {
       (await screen()) === 11,
       `${sBefore} -> ${sAfter}`,
     );
+
+    // "Need to add more?": two point-and-hold targets take the person back with the words kept
+    const more = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-screen="11"] [aria-label="Add more words"] li')].map(
+        (e) => e.textContent.trim(),
+      ),
+    );
+    check(
+      'screen 11 offers "Add a card" and "Spell more"',
+      more.join('|') === 'Add a card|Spell more',
+      more.join('|'),
+    );
+    await pointAtTile(11, 'Add a card');
+    check('point and hold "Add a card": 11 -> 10', await waitScreen(10));
+    const kept = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-screen="10"] li')].map((e) => e.textContent).join('|'),
+    );
+    check(
+      'the words chosen before are still there',
+      /price/i.test(kept) && /help/i.test(kept),
+      kept.slice(0, 100),
+    );
+    await pointAtTile(10, 'Thank you');
+    await play([{ pose: 'thumbsUp', cx: 0.2, cy: 0.5 }], 900);
+    check(
+      'thumbs up in the zone: 10 -> 11 again, with the new card in the sentence',
+      await waitScreen(11),
+    );
+    await play([], 500);
+    await pointAtTile(11, 'Spell more');
+    check('point and hold "Spell more": 11 -> 06', await waitScreen(6));
+    await play([{ pose: 'thumbsUp', cx: 0.2, cy: 0.5 }], 900);
+    check('nothing new spelt, thumbs up: 06 -> 11 (the words are kept)', await waitScreen(11));
+    await play([], 500);
 
     await play([{ pose: 'thumbsUp' }], 900);
     check('thumbs up: 11 -> 12 (share) only after the thumbs up', await waitScreen(12));
