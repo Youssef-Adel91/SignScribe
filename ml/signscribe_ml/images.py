@@ -37,10 +37,13 @@ class LetterCount:
 @dataclass
 class ImportStats:
     per_letter: dict = field(default_factory=dict)
-    ignored_folders: list = field(default_factory=list)
+    ignored_folders: list = field(default_factory=list)  # (folder or class name, files)
     dynamic_skipped: dict = field(default_factory=dict)
     no_person_id: int = 0
     persons: set = field(default_factory=set)
+    minors: set = field(default_factory=set)  # person ids that are under 18: only ever COUNTED in a report, never listed
+    unmatched_files: int = 0  # picture files whose name does not match --label-regex
+    age_unknown: int = 0
 
     def letter(self, l) -> LetterCount:
         return self.per_letter.setdefault(l, LetterCount())
@@ -116,18 +119,63 @@ def person_of(relpath: str, regex) -> str | None:
     return (g if g is not None else (m.group(1) if m.groups() else m.group(0))) or None
 
 
-def import_folder(root: Path, alphabet: Alphabet, detect, source: str, hand: str = "right", person_regex: str | None = None, dataset_name: str = "", now: str | None = None):
-    """Returns (takes as dicts, stats). `detect(path) -> Detection | None`, may raise ImageUnreadable."""
+def _group(m, name: str):
+    """The named group `name` of a regex match, else group 1, else the whole match."""
+    if m.groupdict() and m.groupdict().get(name) is not None:
+        return m.group(name)
+    return m.group(1) if m.groups() else m.group(0)
+
+
+def import_folder(
+    root: Path,
+    alphabet: Alphabet,
+    detect,
+    source: str,
+    hand: str = "right",
+    person_regex: str | None = None,
+    dataset_name: str = "",
+    now: str | None = None,
+    label_regex: str | None = None,
+    age_regex: str | None = None,
+    minor_below: int = 18,
+):
+    """Returns (takes as dicts, stats). `detect(path) -> Detection | None`, may raise ImageUnreadable.
+
+    Two layouts:
+    - one sub-folder per letter (default): the folder name is the label;
+    - a flat folder (or any folder tree) when `label_regex` is given: the label is read from each file NAME with the regex
+      (group `label`, else group 1), so the files never have to be moved.
+    `person_regex` and `age_regex` are searched in the picture's path inside `root` (for a flat folder: its file name).
+    A person younger than `minor_below` is marked `minor: true` on the take; the age itself is never stored."""
     root = Path(root)
     rx = re.compile(person_regex) if person_regex else None
+    lrx = re.compile(label_regex) if label_regex else None
+    arx = re.compile(age_regex) if age_regex else None
     stats = ImportStats()
     takes = []
     now = now or datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
-    for folder in sorted(p for p in root.iterdir() if p.is_dir()):
-        label = alphabet.resolve(folder.name)
-        files = sorted(f for f in folder.rglob("*") if f.is_file() and f.suffix.lower() in IMAGE_SUFFIXES)
+
+    def units():
+        """(class name, files) pairs; class names are resolved to labels afterwards."""
+        if lrx is None:
+            for folder in sorted(p for p in root.iterdir() if p.is_dir()):
+                yield folder.name, sorted(f for f in folder.rglob("*") if f.is_file() and f.suffix.lower() in IMAGE_SUFFIXES)
+            return
+        by: dict = {}
+        for f in sorted(root.rglob("*")):
+            if not f.is_file() or f.suffix.lower() not in IMAGE_SUFFIXES:
+                continue  # for example YOLO .txt label files next to the pictures
+            m = lrx.search(f.name)
+            if not m:
+                stats.unmatched_files += 1
+                continue
+            by.setdefault(_group(m, "label"), []).append(f)
+        yield from sorted(by.items())
+
+    for name, files in units():
+        label = alphabet.resolve(name)
         if label is None:
-            stats.ignored_folders.append((folder.name, len(files)))
+            stats.ignored_folders.append((name, len(files)))
             continue
         if alphabet.kind_of(label) == "dynamic":
             stats.dynamic_skipped[label] = stats.dynamic_skipped.get(label, 0) + len(files)
@@ -147,8 +195,19 @@ def import_folder(root: Path, alphabet: Alphabet, detect, source: str, hand: str
             person = person_of(rel, rx)
             if rx is not None and person is None:
                 stats.no_person_id += 1
+            minor = None
+            if arx is not None:
+                am = arx.search(rel)
+                try:
+                    minor = int(_group(am, "age")) < minor_below if am else None
+                except ValueError:
+                    minor = None
+                if minor is None:
+                    stats.age_unknown += 1
             if person:
                 stats.persons.add(person)
+                if minor:
+                    stats.minors.add(person)
             c.imported += 1
             take = {
                 "v": 1,
@@ -166,6 +225,8 @@ def import_folder(root: Path, alphabet: Alphabet, detect, source: str, hand: str
             }
             if person:
                 take["person"] = person
+            if minor is not None:
+                take["minor"] = minor
             takes.append(take)
     return takes, stats
 
@@ -187,11 +248,15 @@ def report_markdown(stats: ImportStats, alphabet: Alphabet, meta: dict) -> str:
     if missing:
         L.append(f"Letters with nothing imported: {' '.join(missing)}")
     if stats.ignored_folders:
-        L.append("Folders ignored (name is not a letter of this alphabet; add it to `aliases` in the alphabet config if it is one): " + ", ".join(f"{n} ({c} files)" for n, c in stats.ignored_folders))
+        L.append("Classes ignored (the name is not a label of this alphabet; add it to `aliases` in the alphabet config if it is one): " + ", ".join(f"{n} ({c} files)" for n, c in stats.ignored_folders))
+    if stats.unmatched_files:
+        L.append(f"{stats.unmatched_files} picture files did not match --label-regex and were skipped.")
     if stats.dynamic_skipped:
         L.append("Moving letters not imported from pictures (record them in the collection mode): " + ", ".join(f"{l} ({c} files)" for l, c in stats.dynamic_skipped.items()))
     if stats.no_person_id:
         L.append(f"WARNING: {stats.no_person_id} imported pictures did not match --person-regex, so they have no `person`; leave-one-person-out needs every picture to have one.")
     if stats.persons:
-        L.append(f"Persons found: {len(stats.persons)}")
+        L.append(f"Persons found: {len(stats.persons)}" + (f", of which under 18: {len(stats.minors)} (a count only; evaluation never shows a result for any of them)" if stats.minors or stats.age_unknown < stats.images else ""))
+    if stats.age_unknown and stats.persons:
+        L.append(f"WARNING: {stats.age_unknown} imported pictures had no readable age, so they are not marked as minor or adult.")
     return "\n".join(L) + "\n"

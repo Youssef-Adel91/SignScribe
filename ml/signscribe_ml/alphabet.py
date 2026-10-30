@@ -21,6 +21,9 @@ class Alphabet:
     dynamic: tuple
     aliases: dict = field(default_factory=dict)
     reviewed: bool = True
+    # label -> the letter to show a person (only where it is certain), and open questions the team still has to answer
+    display: dict = field(default_factory=dict)
+    todo: tuple = ()
 
     @property
     def labels(self) -> list:
@@ -68,6 +71,16 @@ def load_alphabet(name: str | None = None, config_dir: Path = CONFIG_DIR) -> Alp
         raise AlphabetError(f"alphabet '{name}' has no labels")
     if len(set(allv)) != len(allv):
         raise AlphabetError(f"alphabet '{name}' lists a label twice")
-    if any(not isinstance(l, str) or len(l) != 1 for l in allv):
-        raise AlphabetError(f"alphabet '{name}': every label must be a single character")
-    return Alphabet(raw.get("id", name), raw.get("name", name), static, dynamic, dict(raw.get("aliases", {})), bool(raw.get("reviewed", True)))
+    # a label is one letter (ASL: "A") or a short name without spaces (ArSL21L: "ain"); the letter to show may differ (`display`)
+    if any(not isinstance(l, str) or not 1 <= len(l) <= 16 or any(c.isspace() for c in l) for l in allv):
+        raise AlphabetError(f"alphabet '{name}': every label must be 1 to 16 characters without spaces")
+    return Alphabet(
+        raw.get("id", name),
+        raw.get("name", name),
+        static,
+        dynamic,
+        dict(raw.get("aliases", {})),
+        bool(raw.get("reviewed", True)),
+        dict(raw.get("display", {})),
+        tuple(raw.get("todo", [])),
+    )

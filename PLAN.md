@@ -112,3 +112,7 @@ Done: study logger final (profile + consent, session record, camera speed per tr
 
 ## Alphabet pipeline (branch feat/alphabet-tooling, after the merge)
 Youssef asked (2026-10-22) for the tooling to recognise a whole static alphabet and to measure it honestly. Done: alphabet as config (ASL ready, ArSL template), `ml/import_images.py`, `ml/evaluate.py` (leave-one-person-out, k-NN vs MLP, augmentation ablation), `train_knn.py --augment`, guided recording and gap view in the collection mode, weak letter guesses hidden, top-2 in the dev panel. Not done, on purpose: choosing the alphabet and dataset, running on real data, any accuracy number (`docs/MODEL_RESULTS.md` is empty until the script writes into it).
+
+## ArSL datasets (branch feat/arsl-datasets, on top of the alphabet pipeline)
+Youssef checked three local datasets: ArSL21L pictures (flat folder, 50 persons, 32 classes), the ASLAD landmark CSV and ArSL_dataset.csv. Done: flat-folder import by file-name regex, a landmark CSV importer that measures the layout, `arsl.json` with the 32 class names (ambiguous Arabic mappings are TODO, not guessed), evaluation by person with persons under 18 only counted, exact commands in `ml/README.md`. Everything runs on his machine; nothing here ran on the real files.
+

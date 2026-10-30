@@ -46,6 +46,13 @@ def main(argv=None) -> int:
         prov = ev.provenance(["ml/evaluate.py", *argv], a.dataset_name, a.dataset_version, sha, takes, alphabet)
         if prov["synthetic"] and not a.allow_synthetic:
             raise ev.EvaluationError("the data contains synthetic takes; pass --allow-synthetic to test the pipeline")
+        with_person = sum(1 for t in takes if t.person)
+        if 0 < with_person < len(takes):
+            print(
+                f"notice: {with_person} of {len(takes)} takes have a person id and the rest do not, so person ids cannot be used for the split "
+                "(it falls back to the source, which holds a WHOLE dataset out). To evaluate by person, pass only the files that have person ids.",
+                file=sys.stderr,
+            )
         aug = parse_augment(a.augment, a.augment_copies)
         models = tuple(m.strip() for m in a.models.split(",") if m.strip())
         runs = [("with augmentation", aug)] if aug.enabled else [("no augmentation", parse_augment("none"))]

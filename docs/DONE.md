@@ -143,3 +143,18 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | SUS (10 statements, published wording) scored 0-100, shown in the survey and exported in the scores CSV; two reverse-worded items flipped before averaging; identical wording for both methods | 7 | verified here (scoring against a hand-worked example; no statement names a method) | `tests/study.test.ts` |
 | Analysis: SUS row, careless-answer flags (identical answers, contradicting reverse items), `--exclude-flagged` | 7 | verified here (made-up exports) | `npm run ml:test` |
 | SUS results on real participants | 7 | not met | no study run yet |
+
+## ArSL datasets (branch feat/arsl-datasets)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| `import_images.py` reads a flat folder (`--label-regex`, `--person-regex`, `--age-regex`) without moving files; persons under 18 are marked, the age is not stored | verified here (generated file names like `1001_46_F_ain_0.jpg`) | `ml/tests/test_arsl_datasets.py` |
+| `import_landmarks_csv.py`: layout chosen by you and measured, class from a file-name column / a class column / a numeric column with names, `--source` tag and never a person, classes outside the alphabet skipped and counted | verified here (generated CSV in the described shape) | `ml/tests/test_arsl_datasets.py` |
+| The importer handles ArSL_dataset.csv (`;`, header `Sign;x0;y0;...`, 90 columns, 42 xy coordinates after `Sign`) and the ASLAD-96K CSV (no real header, 63 interleaved xyz, 26 angles, number, image name) exactly as described; `--delimiter`, `--skip-rows`, `--header no`, columns by index, `--decimal-comma` | verified here (generated files of those shapes) | `ml/tests/test_arsl_datasets.py` |
+| ArSL_dataset class names mapped to the ArSL21L ids where the Arabic letter is certain from the name (21 of 31); the uncertain ones are in `todo`, and Space / Delete / Finish are skipped with their row counts reported | verified here | `ml/tests/test_arsl_datasets.py` |
+| The real files' coordinate frame, picture size and layout check on the real rows | needs my data | the importer prints what it measured and assumed |
+| `arsl.json`: the 32 ArSL21L class names as ids, aliases, `reviewed: false`, the ambiguous Arabic mappings listed as TODO and not guessed | verified here (it loads and resolves) | `ml/tests/test_arsl_datasets.py` |
+| Arabic letters for ta/taa/toot, ha/haa, ya/yaa (and dha/dhad, al/la) | not met | the team decides: `todo` in `config/alphabets/arsl.json` |
+| Evaluation by person for ArSL21L; persons under 18 only as a count, no per-person result or id in any report | verified here (generated persons) | `ml/tests/test_arsl_datasets.py` |
+| Accuracy on ArSL21L / ASLAD / ArSL_dataset.csv | not met | run `ml/evaluate.py` on your machine; `docs/MODEL_RESULTS.md` is filled only by it |
+| ArSL in the web app (labels that are names, Arabic display, word list, right to left) | not met | the spelling screens write the first character of a label |
+

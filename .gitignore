@@ -47,3 +47,6 @@ signscribe-perf-*.json
 # local scratch for ml/: imported picture datasets and evaluation output (the vetted numbers go to docs/MODEL_RESULTS.md by the script)
 ml/data/
 ml/reports/
+
+# the datasets themselves (pictures, landmark CSVs): keep them outside the repository or here, never commit them
+datasets/
