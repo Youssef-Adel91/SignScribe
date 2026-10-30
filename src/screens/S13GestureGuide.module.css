@@ -22,7 +22,7 @@
   list-style: none;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--s-20);
+  gap: var(--s-12);
   width: 100%;
   margin-top: var(--s-4);
 }
@@ -34,7 +34,7 @@
   background: #fff;
   border: 2px solid var(--line);
   border-radius: var(--s-20);
-  padding: var(--s-20) var(--s-28);
+  padding: var(--s-12) var(--s-28);
 }
 .hands {
   flex: none;
