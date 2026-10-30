@@ -25,7 +25,7 @@ Until they exist the app says so on screen; the Wizard of Oz page (`/?woz=1`) le
 Put `ANTHROPIC_API_KEY` in `.env`, `npm run server`, open `/?server=ws://localhost:8787`, and read the `note` field of the answers: it says how often the safety rule rejected the model. Prompt, model name and quality are untested.
 
 ## 4b. Phase II sheet: what only you can do
-- Write the **Scenario** and the **PACT** analysis (nothing exists in the repository), and run the survey with people.
+- The **Scenario** and the **PACT** analysis are in the Phase I PDF, which is not in this repository (put it in `docs/phase1/` if you want it here). Run the survey with people.
 - Try the Bluetooth scanner with real devices (`tools/bluetooth/README.md`) and the DollarPy recording and live classification with a webcam (`tools/dollarpy/README.md`). Decide which Arabic letters move (`config/alphabets/arsl.json` -> `dynamic`).
 - Demo order and checklist: `tools/demo-all.md`. Mapping of every sheet row to files and tests: top of `docs/DONE.md`.
 

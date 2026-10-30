@@ -4,7 +4,7 @@ For the Phase II demo. One command starts the sentence server, the Bluetooth sca
 
 ## One command
     npm ci && pip install -r tools/bluetooth/requirements.txt -r tools/dollarpy/requirements.txt     # once
-    npm run models                                                                                    # once (MediaPipe hand model)
+    npm run models                                                                                    # once (MediaPipe hand and pose models)
 
     npm run demo                       # FAKE: a SIMULATED Bluetooth device and SIMULATED hand paths, no hardware
     npm run demo -- --real             # REAL: your Bluetooth adapter + your webcam (needs devices.json and recorded templates)
@@ -26,8 +26,8 @@ Open `http://localhost:5173/?server=ws://localhost:8787` (the server address is 
 1. **Server (socket programming).** Terminal 1 prints the two doors: WebSocket for the app, plain TCP for Python. Show `python server/examples/client.py doctor help` getting a JSON answer: "Python talks to the server with the socket module, one JSON line per message".
 2. **Bluetooth (UserID and discovery).** Start the scanner. The server log says `presence: user youssef, place Clinic`. In the app a chip `Bluetooth: youssef · Clinic (demo device)` appears in the top bar **on every screen**. FAKE: the chip says "(demo device)" on purpose. REAL: carry the device you listed in `devices.json` near the computer.
 3. **Load different content based on context.** On "Where are you today?" the detected place is already selected. Run the fake scanner with another place (`--fake youssef:Shop`) and show the Shop words and cards; with a saved profile (change the text size once while detected) the person's settings come back next time. Show the override: point and hold on "Wrong? Point and hold here to ignore": place and settings go back. Stop the scanner: after about 15 s the chip disappears and the app works exactly as before.
-4. **MediaPipe + DollarPy.** Go to the spelling screen. FAKE: the client prints `recognised J` and a card "dollarpy: J (simulated)" appears; point and hold to add it. REAL: draw J or Z in the air with the index finger. Say what it tracks: the hand skeleton (21 landmarks), the fingertip path, `Recognizer/Template/Point` from the dollarpy package.
-5. **Figma interface, PACT, scenario, survey.** Not part of these tools: see `docs/DONE.md` ("Phase II grading sheet") for where each lives.
+4. **MediaPipe + DollarPy.** Go to the spelling screen. FAKE: the client prints `recognised J` and a card "dollarpy: J (simulated)" appears; point and hold to add it. REAL: draw J or Z in the air with the index finger. Say what it tracks: the hand skeleton (21 landmarks) and the shoulders, elbows and wrists (MediaPipe Pose, `--no-pose` to switch off), the fingertip path, `Recognizer/Template/Point` from the dollarpy package.
+5. **Figma interface, PACT, scenario, survey.** Not part of these tools: the scenario and the PACT are in the Phase I PDF (not in this repo); see `docs/DONE.md` ("Phase II grading sheet") for the rest.
 
 ## Before you present (checklist)
 - [ ] `npm run demo -- --check` prints three PASS lines.
