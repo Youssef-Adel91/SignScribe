@@ -206,7 +206,7 @@ def test_without_depth_z_is_zero_and_the_report_says_the_files_are_not_comparabl
     assert len(takes) == 5 and all(p[2] == 0.0 for t in takes for p in t["frames"][0]["lm"])
     assert st.ignored == {"Space": 5}  # not a letter: skipped and counted, never guessed
     rep = lc.report_markdown(st, ARSL, {})
-    assert "no depth" in rep and "Space (5 rows)" in rep
+    assert "no depth" in rep and "| Space | 5 |" in rep
     assert "tagged with `source`, never with a person" in rep
 
 
@@ -301,3 +301,131 @@ def test_all_groups_minor_gives_no_worst_or_best(tmp_path):
     takes = people(n_adults=0, n_minors=3)
     m = evaluation.run(takes, ("knn",), k=3)["models"]["knn"]["metrics"]
     assert m["min_group_accuracy"] is None and m["max_group_accuracy"] is None and m["pooled_accuracy"] is not None
+
+
+# ---------------------------------------------------------------- the two real files, as described (GENERATED rows of the same shape)
+ARSL_DATASET_NAMES = "3ayn 7a2 9af Alef Ba2 Chin DDad Dal Delete Fa2 Finish Ghayn Ha2 Jim Kaf Kha2 Lam Mim Noon Ra2 SSad Sin Space TTa2 TTha2 Ta2 Tha2 Thal Waw Ya2 Zayn".split()
+
+
+def arsl_dataset_like(path, per_class=3, decimal_comma=False, extra=None):
+    """Semicolon-delimited, header 'Sign;x0;y0;x1;y1;...', 90 columns (Sign + 42 coordinates + 47 other features)."""
+    header = ["Sign"] + [f"{a}{i}" for i in range(21) for a in "xy"] + [f"f{i}" for i in range(47)]
+    assert len(header) == 90
+    rows = []
+    for ci, name in enumerate(ARSL_DATASET_NAMES):
+        for k in range(per_class + (extra or {}).get(name, 0)):
+            vals = hand_row(ci * 50 + k, z=False) + [0.25] * 47
+            rows.append([name] + [(f"{v:.5f}".replace(".", ",") if decimal_comma else f"{v:.5f}") for v in vals])
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, delimiter=";")
+        w.writerow(header)
+        w.writerows(rows)
+    return len(rows)
+
+
+def test_arsl_dataset_csv_semicolon_header_names_and_42_xy_columns(tmp_path):
+    f = tmp_path / "ArSL_dataset.csv"
+    n = arsl_dataset_like(f, extra={"Space": 4, "Delete": 2, "Finish": 1})
+    takes, st = lc.import_csv(f, ARSL, "arsl-dataset-csv", "xy-interleaved", label_column="Sign", coords="1-42", delimiter=";", header_mode="yes")
+    assert st.rows == n and st.bad_rows == 0
+    mapped = {"ain", "gaaf", "aleff", "bb", "sheen", "dal", "fa", "ghain", "jeem", "kaaf", "khaa", "laam", "meem", "nun", "ra", "saad", "seen", "thaa", "thal", "waw", "zay"}
+    assert set(st.per_label) == mapped and all(v == 3 for v in st.per_label.values()) and len(takes) == 21 * 3
+    # not letters, and the letters whose id is still undecided, are skipped and counted, never guessed
+    assert st.ignored["Space"] == 3 + 4 and st.ignored["Delete"] == 3 + 2 and st.ignored["Finish"] == 3 + 1
+    assert {k for k in st.ignored} == {"7a2", "Ha2", "DDad", "TTa2", "TTha2", "Ta2", "Ya2", "Space", "Delete", "Finish"}
+    assert all(t["source"] == "arsl-dataset-csv" and "person" not in t for t in takes)
+    assert all(p[2] == 0.0 for t in takes for p in t["frames"][0]["lm"])  # no depth in this file
+    rep = lc.report_markdown(st, ARSL, {})
+    assert "| Space | 7 |" in rep and "| Delete | 5 |" in rep and "| Finish | 4 |" in rep
+
+
+def test_the_first_42_columns_after_sign_are_the_coordinates_and_the_other_columns_are_ignored(tmp_path):
+    f = tmp_path / "ArSL_dataset.csv"
+    arsl_dataset_like(f)
+    with pytest.raises(lc.CsvError, match="do not look like a hand|numeric"):
+        lc.import_csv(f, ARSL, "s", "xy-interleaved", label_column="Sign", coords="0-41", delimiter=";", header_mode="yes")  # off by one: Sign is column 0
+    takes, st = lc.import_csv(f, ARSL, "s", "xy-interleaved", label_column="Sign", coords="x0-y20".replace("x0-y20", ",".join(f"{a}{i}" for i in range(21) for a in "xy")), delimiter=";", header_mode="yes")
+    assert len(takes) == 63  # the same by header names
+
+
+def test_a_decimal_comma_needs_its_flag_and_the_error_says_so(tmp_path):
+    f = tmp_path / "c.csv"
+    arsl_dataset_like(f, decimal_comma=True)
+    with pytest.raises(lc.CsvError, match="decimal-comma"):
+        lc.import_csv(f, ARSL, "s", "xy-interleaved", label_column="Sign", coords="1-42", delimiter=";", header_mode="yes")
+    takes, st = lc.import_csv(f, ARSL, "s", "xy-interleaved", label_column="Sign", coords="1-42", delimiter=";", header_mode="yes", decimal_comma=True)
+    assert len(takes) == 63 and st.bad_rows == 0
+
+
+def aslad_like_file(path, per_class=4, order=None, counter_first_line=True, delimiter=","):
+    """No real header: the first line is a run of column numbers (4096, 4097, ...), then 63 interleaved coordinates in 0..1,
+    26 angles, the class number and last the image name like 'ain (5191).jpg'. Class 0 is ain; the rest of the numbering here is generated."""
+    order = order or ["ain", "al", "aleff", "bb", "dal", "fa"]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, delimiter=delimiter)
+        if counter_first_line:
+            w.writerow(range(4096, 4096 + 91))
+        for num, c in enumerate(order):
+            for k in range(per_class):
+                w.writerow([f"{v:.6f}" for v in hand_row(num * 40 + k)] + [f"{0.3:.4f}"] * 26 + [num, f"{c} ({5000 + k}).jpg"])
+    return len(order) * per_class
+
+
+ASLAD_ARGS = dict(header_mode="no", skip_rows=1, coords="0-62", name_column="90", numeric_label_column="89")
+
+
+def test_aslad_like_file_no_header_columns_by_index_and_the_numbering_is_learned_from_the_names(tmp_path):
+    f = tmp_path / "aslad.csv"
+    n = aslad_like_file(f)
+    takes, st = lc.import_csv(f, ARSL, "aslad", "xyz-interleaved", **ASLAD_ARGS)
+    assert len(takes) == n and st.rows == n and st.bad_rows == 0
+    assert set(st.per_label) == {"ain", "al", "aleff", "bb", "dal", "fa"}
+    assert st.learned_numbers == {0: "ain", 1: "al", 2: "aleff", 3: "bb", 4: "dal", 5: "fa"}  # learned, not assumed
+    assert st.layout_check["xyz-interleaved"]["implausible_share"] == 0.0
+    assert all("person" not in t and t["source"] == "aslad" for t in takes)
+    rep = lc.report_markdown(st, ARSL, {})
+    assert "0 = ain" in rep and "Class numbers learned" in rep
+
+
+def test_the_line_of_column_numbers_is_dropped_by_skip_rows_or_recognised_on_its_own(tmp_path):
+    f = tmp_path / "aslad.csv"
+    n = aslad_like_file(f)
+    # without --skip-rows and with --header no that line would be read as a row of data: it is not (it has no class name) and is counted
+    _, st = lc.import_csv(f, ARSL, "aslad", "xyz-interleaved", header_mode="no", coords="0-62", name_column="90", numeric_label_column="89")
+    assert st.rows == n + 1
+    takes, st = lc.import_csv(f, ARSL, "aslad", "xyz-interleaved", header_mode="auto", coords="0-62", name_column="90", numeric_label_column="89")
+    assert st.rows == n and len(takes) == n  # 4096, 4097, ... in a row is a counter, so auto takes it for the header line
+
+
+def test_a_numbering_that_disagrees_with_the_names_is_refused(tmp_path):
+    f = tmp_path / "aslad.csv"
+    aslad_like_file(f)
+    text = f.read_text().replace("ain (5000).jpg", "bb (5000).jpg")  # one row whose number 0 now sits next to the name bb
+    f.write_text(text)
+    with pytest.raises(lc.CsvError, match="one to one"):
+        lc.import_csv(f, ARSL, "aslad", "xyz-interleaved", **ASLAD_ARGS)
+    takes, _ = lc.import_csv(f, ARSL, "aslad", "xyz-interleaved", force=True, **ASLAD_ARGS)
+    assert takes
+
+
+def test_cli_commands_for_the_two_real_files(tmp_path, capsys):
+    import import_landmarks_csv
+
+    a = tmp_path / "ArSL_dataset.csv"
+    arsl_dataset_like(a, extra={"Space": 2})
+    out_a = tmp_path / "a.jsonl"
+    code = import_landmarks_csv.main(["--csv", str(a), "--out", str(out_a), "--alphabet", "arsl", "--source", "arsl-dataset-csv", "--delimiter", ";", "--header", "yes", "--layout", "xy-interleaved", "--coords", "1-42", "--label-column", "Sign"])
+    out = capsys.readouterr().out
+    assert code == 0 and "| Space | 5 |" in out and len(read_takes(out_a, ARSL.labels)[0]) == 63
+
+    b = tmp_path / "aslad.csv"
+    aslad_like_file(b)
+    out_b = tmp_path / "b.jsonl"
+    code = import_landmarks_csv.main(["--csv", str(b), "--out", str(out_b), "--alphabet", "arsl", "--source", "aslad", "--header", "no", "--skip-rows", "1", "--layout", "xyz-interleaved", "--coords", "0-62", "--name-column", "90", "--numeric-label-column", "89"])
+    assert code == 0 and "0 = ain" in capsys.readouterr().out
+    # the two sources can be held out one against the other
+    takes, _ = read_takes(out_b, ARSL.labels)
+    assert {t.source for t in takes} == {"aslad"} and not any(t.person for t in takes)
+    # a delimiter that is not the file's gives a clear error
+    assert import_landmarks_csv.main(["--csv", str(a), "--out", str(tmp_path / "x.jsonl"), "--alphabet", "arsl", "--source", "s", "--header", "yes", "--layout", "xy-interleaved", "--coords", "1-42", "--label-column", "Sign"]) == 2
+    assert "error" in capsys.readouterr().err

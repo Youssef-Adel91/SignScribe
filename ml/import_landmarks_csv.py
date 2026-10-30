@@ -28,11 +28,13 @@ def main(argv=None) -> int:
     ap.add_argument("--alphabet", help="config/alphabets/<name>.json (default: the active one)")
     ap.add_argument("--coords", help="the coordinate columns: 0-62, or a list, or header names (default: the first 63 / 42 columns)")
     ap.add_argument("--header", default="auto", choices=["auto", "yes", "no"])
-    ap.add_argument("--delimiter", default=",")
-    ap.add_argument("--name-column", help="column with a file name that carries the class, e.g. 'ain (5191).jpg'")
+    ap.add_argument("--delimiter", default=",", help="the column separator, for example ';'")
+    ap.add_argument("--skip-rows", type=int, default=0, help="drop this many leading lines first (a line that is not data, such as a row of column numbers)")
+    ap.add_argument("--decimal-comma", action="store_true", help="the numbers are written 0,53 (usual in files that separate columns with ';')")
+    ap.add_argument("--name-column", help="column (a number from 0, or a header name) with a file name that carries the class, e.g. 'ain (5191).jpg'")
     ap.add_argument("--name-regex", default=r"^(.+?)\s*\(\d+\)", help="regular expression for the class inside that name (group 1)")
-    ap.add_argument("--label-column", help="column with the class itself: a class name or an Arabic letter (resolved through the alphabet's aliases)")
-    ap.add_argument("--numeric-label-column", help="column with a class number")
+    ap.add_argument("--label-column", help="column (a number from 0, or a header name) with the class itself: a class name or an Arabic letter (resolved through the alphabet's aliases)")
+    ap.add_argument("--numeric-label-column", help="column with a class number. With a name column too, the numbering is learned from the names and must be one to one (the report lists it)")
     ap.add_argument("--numeric-label-names", help="comma-separated class names for 0, 1, 2 ... (needed when the number is the only label; the order is NOT known, so it is never assumed). Cross-checked against --name-column when both are given")
     ap.add_argument("--hand", default="right", choices=["right", "left"])
     ap.add_argument("--width", type=int, default=1000, help="ASSUMED picture width (the aspect ratio is not in the file)")
@@ -53,6 +55,7 @@ def main(argv=None) -> int:
             a.csv, alphabet, a.source, a.layout, a.name_column, a.name_regex, a.label_column, a.numeric_label_column,
             [s.strip() for s in a.numeric_label_names.split(",")] if a.numeric_label_names else None,
             a.coords, a.header, a.delimiter, a.hand, a.width, a.height, a.max_per_class, a.seed, a.dataset_name, a.force,
+            skip_rows=a.skip_rows, decimal_comma=a.decimal_comma,
         )
     except (lc.CsvError, AlphabetError, OSError) as e:
         print(f"error: {e}", file=sys.stderr)

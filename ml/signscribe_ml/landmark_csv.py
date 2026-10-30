@@ -114,25 +114,43 @@ class CsvStats:
     layout_check: dict = field(default_factory=dict)
     coord_ranges: dict = field(default_factory=dict)
     label_conflicts: list = field(default_factory=list)
+    learned_numbers: dict = field(default_factory=dict)  # number -> class, learned from a file-name column; checked to be one-to-one
+    skipped_header_lines: int = 0
 
 
-def read_csv(path, header_mode: str = "auto", coord_cols=None, delimiter: str = ","):
-    """(header or None, rows as lists of strings)."""
+def to_float(text: str, decimal_comma: bool = False) -> float:
+    """float(), optionally with a decimal comma ('0,53') for files that use ';' between columns."""
+    return float(text.strip().replace(",", ".") if decimal_comma else text)
+
+
+def read_csv(path, header_mode: str = "auto", coord_cols=None, delimiter: str = ",", skip_rows: int = 0, decimal_comma: bool = False):
+    """(header or None, rows as lists of strings).
+
+    `skip_rows` drops that many leading lines first (for example a line of column numbers that is not data). A first line made
+    of consecutive whole numbers (4096, 4097, 4098 ...) is also taken for such a line in `auto` mode: it is a counter, not a row."""
     with open(path, newline="", encoding="utf-8-sig") as f:
         rows = [r for r in csv.reader(f, delimiter=delimiter) if r]
+    rows = rows[skip_rows:]
     if not rows:
         raise CsvError("the file is empty")
     first = rows[0]
 
     def numeric(r, cols):
         try:
-            [float(r[c]) for c in cols]
+            [to_float(r[c], decimal_comma) for c in cols]
             return True
         except (ValueError, IndexError):
             return False
 
+    def counter(r):
+        try:
+            v = [int(x) for x in r]
+        except ValueError:
+            return False
+        return len(v) >= 10 and all(b - a == 1 for a, b in zip(v, v[1:]))
+
     probe = coord_cols if coord_cols else list(range(min(len(first), 6)))
-    has_header = header_mode == "yes" or (header_mode == "auto" and not numeric(first, probe))
+    has_header = header_mode == "yes" or (header_mode == "auto" and (not numeric(first, probe) or counter(first)))
     return (first, rows[1:]) if has_header else (None, rows)
 
 
@@ -157,6 +175,8 @@ def import_csv(
     dataset_name: str = "",
     force: bool = False,
     now: str | None = None,
+    skip_rows: int = 0,
+    decimal_comma: bool = False,
 ):
     """Returns (takes as dicts, stats). Rows whose class is not a label of the alphabet are counted, not imported."""
     import datetime
@@ -168,7 +188,7 @@ def import_csv(
         raise CsvError("say where the class is: --name-column (a file name such as 'ain (5191).jpg'), --label-column (a class name or an Arabic letter) or --numeric-label-column with --numeric-label-names")
     if numeric_label_column and not (name_column or label_column) and not numeric_label_names:
         raise CsvError("a numeric label needs --numeric-label-names (the class name of 0, 1, 2 ... in order), because the order is not known")
-    first_pass = read_csv(path, header_mode, parse_columns(coords, None, n) if coords and not re.search(r"[A-Za-z]", coords) else None, delimiter)
+    first_pass = read_csv(path, header_mode, parse_columns(coords, None, n) if coords and not re.search(r"[A-Za-z]", coords) else None, delimiter, skip_rows, decimal_comma)
     header, rows = first_pass
     cols = parse_columns(coords, header, n)
     if len(cols) != n:
@@ -181,7 +201,7 @@ def import_csv(
     for i, r in enumerate(rows):
         stats.rows += 1
         try:
-            vals = [float(r[c]) for c in cols]
+            vals = [to_float(r[c], decimal_comma) for c in cols]
         except (ValueError, IndexError):
             stats.bad_rows += 1
             continue
@@ -204,7 +224,7 @@ def import_csv(
         numbers.append(vals)
         meta.append((i, r[iname].strip() if iname is not None and iname < len(r) else "", names, num))
     if not numbers:
-        raise CsvError("no row has numeric coordinates in those columns: check --coords and --header")
+        raise CsvError("no row has numeric coordinates in those columns: check --coords, --header and --skip-rows" + (", and --decimal-comma if the numbers look like 0,53" if delimiter != "," else ""))
 
     stats.layout_check = layout_check(numbers, dims)
     chosen = stats.layout_check[layout]
@@ -220,6 +240,23 @@ def import_csv(
     allx = [p[0] for r in numbers[:500] for p in assemble(r, layout)]
     ally = [p[1] for r in numbers[:500] for p in assemble(r, layout)]
     stats.coord_ranges = {"x": (min(allx), max(allx)), "y": (min(ally), max(ally)), "wrist_x_spread": (max(wrist_x) - min(wrist_x)) if wrist_x else 0.0}
+
+    # a class NUMBER next to a class NAME in the file: learn the numbering from the names (never assumed) and require it to be one-to-one
+    if inum is not None and (iname is not None or ilabel is not None) and not numeric_label_names:
+        seen: dict = {}
+        for _, _, names, num in meta:
+            cls = next((alphabet.resolve(v) for _, v in names if alphabet.resolve(v) is not None), None)
+            if num is not None and cls is not None:
+                seen.setdefault(num, set()).add(cls)
+        bad = {k: sorted(v) for k, v in seen.items() if len(v) > 1}
+        classes_numbers: dict = {}
+        for k, v in seen.items():
+            for c in v:
+                classes_numbers.setdefault(c, set()).add(k)
+        bad_classes = {c: sorted(v) for c, v in classes_numbers.items() if len(v) > 1}
+        if (bad or bad_classes) and not force:
+            raise CsvError(f"the class numbers and the class names in the file do not match one to one (numbers with several names: {len(bad)}, names with several numbers: {len(bad_classes)}): the numbering is not what the names say. Check the columns or pass --force.")
+        stats.learned_numbers = {k: sorted(v)[0] for k, v in sorted(seen.items()) if len(v) == 1}
 
     # the class of every row; when several sources of the class are given they must agree
     by_label: dict = {}
@@ -291,8 +328,14 @@ def report_markdown(stats: CsvStats, alphabet: Alphabet, meta: dict) -> str:
     for l in alphabet.labels:
         L.append(f"| {l} | {stats.per_label.get(l, 0)} |")
     L += ["", f"**Total imported: {sum(stats.per_label.values())} rows.**", ""]
+    if stats.learned_numbers:
+        L.append("Class numbers learned from the names in the file (check them against what you know about the file): " + ", ".join(f"{k} = {v}" for k, v in list(stats.learned_numbers.items())[:40]) + (" ..." if len(stats.learned_numbers) > 40 else ""))
+        L.append("")
     if stats.ignored:
-        L.append("Classes skipped (not a label of this alphabet; nothing was guessed): " + ", ".join(f"{n} ({c} rows)" for n, c in sorted(stats.ignored.items())))
+        L += ["Classes skipped, with their row counts (not a label of this alphabet; nothing was guessed. Letters in the `todo` of the alphabet file are skipped until the team decides):", "", "| skipped class | rows |", "| --- | --- |"]
+        for n, c in sorted(stats.ignored.items(), key=lambda kv: (-kv[1], kv[0])):
+            L.append(f"| {n} | {c} |")
+        L.append("")
     if stats.no_label:
         L.append(f"{stats.no_label} rows had no readable class and were skipped.")
     if stats.dropped_by_cap:
