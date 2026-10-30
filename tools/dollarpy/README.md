@@ -2,27 +2,39 @@
 
 Course Phase II row "Track human skeleton using MediaPipe and classify the movement using DollarPy". A Python demo like Lab 5: **MediaPipe** tracks the hand's skeleton (21 landmarks) from the webcam, the path of the **index fingertip** is cut into one movement, and the **`dollarpy`** package (`Recognizer`, `Template`, `Point`) classifies it as a moving letter (ASL J and Z; the moving letters of the active alphabet in `config/alphabets/*.json`). The recognised letter is sent to the sentence server over its TCP socket and the web app offers it on the spelling screen.
 
-What it tracks is the **hand** skeleton, not the whole body (the sheet says "human skeleton"; a hand is what a sign-language app needs). Body tracking would need MediaPipe Pose and its own model: not done.
+It tracks the **hand skeleton** (MediaPipe Hand Landmarker, 21 landmarks) and, by default, the **body skeleton** next to it (MediaPipe Pose Landmarker: shoulders, elbows and wrists), like Lab 5. The pose is optional: `--no-pose` uses the fingertip alone.
 
 ## Run it
     pip install -r tools/dollarpy/requirements.txt         # dollarpy, mediapipe, opencv
-    npm run models                                         # the MediaPipe hand model (public/models/hand_landmarker.task)
+    npm run models                                         # MediaPipe models: the hand model, and the pose model for this tool (public/models/)
 
     python tools/dollarpy/record_templates.py              # 1. record your templates (default: the moving letters, 5 each)
     npm run server                                         # 2. in another terminal
     python tools/dollarpy/classify_live.py                 # 3. classify live from the webcam
     npm run dev                                            # 4. open http://localhost:5173/?server=ws://localhost:8787 and go to the spelling screen
 
+Stand so that your shoulders, elbows and wrists are in the picture (a webcam at a desk usually shows this; hips usually are not). Without the body in the picture, or with `--no-pose`, only the fingertip is used.
+
 Recording: for each letter the prompt "Draw J (take 2/5)" and a 3 s countdown, then draw the letter in the air with your index finger; the take ends when your finger slows down. Keys: `q` quit, `s` skip the letter. Templates go to `tools/dollarpy/templates.json` (git-ignored: it is a person's movement data). Use `--letters J Z --per-letter 6 --alphabet asl --camera 1 --no-window` to change things.
 
-Classifying: draw a letter; when the movement ends the program prints `recognised J (score 0.84) -> sent to the server`. A movement that matches nothing at `--min-score` (default 0.6, the same number as `LETTER.motionMinScore` in the web app) prints a notice. The score is dollarpy's match score `(2 - distance) / 2`, **not a probability of being right**.
+Classifying: with templates that were recorded with pose the program also tracks the body; with templates recorded by `--no-pose` it compares the fingertip alone and says so. Draw a letter; when the movement ends the program prints `recognised J (score 0.84) -> sent to the server`. A movement that matches nothing at `--min-score` (default 0.6, the same number as `LETTER.motionMinScore` in the web app) prints a notice. The score is dollarpy's match score `(2 - distance) / 2`, **not a probability of being right**.
 
 In the web app (`?server=ws://localhost:8787`, localhost only): on the spelling screens a card "dollarpy: J, Point and hold here to add it" appears for 8 s. The letter is written into the message only when the person points at the card and holds, like any other choice. Letters that are not in the active alphabet are ignored.
+
+## The pose, and what goes into the template points
+| Flag | Meaning |
+| ---- | ------- |
+| `--pose` / `--no-pose` | on by default. `--no-pose`: only the index fingertip path is recorded and compared |
+| `--pose-parts shoulders elbows wrists` | the default. Others from Lab 5's list: `pinky index hips` (hips are rarely in a desk webcam's picture) |
+| `--pose-model PATH` | default `public/models/pose_landmarker_lite.task` (downloaded by `npm run models`; the web app does not use it) |
+
+How the points are built (`dollar_logic.to_cloud`): the fingertip path is **one stroke of 32 points**, and each pose landmark (left and right of each chosen part) is **its own stroke of 4 points**, all evenly spaced in time, so a point cloud of `Point(x, y, stroke_id)` goes to dollarpy's `Recognizer`. The fingertip stays the main signal and the arm adds the shape of the body. I could not see the Lab 5 code: this is my reading of "shoulders, elbows and wrists next to the hand landmarks", and the weights (32 against 4 points) are a first guess, **not tuned on real recordings**. Whether the pose helps or hurts is unknown until you record real movements and compare `--pose` with `--no-pose`.
+Rules: the pose is used only when the movement has the whole pose in at least 80% of its frames (missing frames repeat the nearest earlier one) **and** every template has the same pose landmarks; otherwise the fingertip alone is compared. A pose landmark with MediaPipe visibility below 0.5 counts as missing. Template files are version 2 (`pose_parts` and a `pose` per template, one point per path point); version 1 files (fingertip only) still load.
 
 ## Demo without a webcam (SIMULATED)
     python tools/dollarpy/classify_live.py --simulate J Z --synthetic-templates [--fast] [--no-send]
 
-Feeds generated hand frames (the fingertip follows a generated hook or zig-zag) through the same pipeline with generated templates. It prints `*** SIMULATED INPUT ***` and `*** SYNTHETIC TEMPLATES ***`, the messages carry `"demo": true` and the app says "(simulated)". Only J and Z can be simulated. **The scores it prints say nothing about real hands.**
+Feeds generated hand frames (the fingertip follows a generated hook or zig-zag, and with pose a simulated arm trails it) through the same pipeline with generated templates. It prints `*** SIMULATED INPUT ***` and `*** SYNTHETIC TEMPLATES ***`, the messages carry `"demo": true` and the app says "(simulated)". Only J and Z can be simulated. **The scores it prints say nothing about real hands.**
 
 ## Moving letters of other alphabets
 `config/alphabets/arsl.json` is an unchecked template with no moving letters. Once the team has decided which Arabic letters are drawn in the air, list them under `"dynamic"` in that file (the web app, the Python tools and this demo all read it) and run `record_templates.py --alphabet arsl`.
@@ -37,5 +49,5 @@ Same rules and numbers as `followMotion` in `src/recognition/letterController.ts
     python -m pytest tools/dollarpy        # no webcam needed
 
 ## Verified, and not
-Verified here: the movement cutting on generated frames, templates (save, load, refusals), classification with the real `dollarpy` package on generated shapes, the message against the server's own parser, sending to a real TCP socket, a server that is missing or refusing, the whole chain in a browser (`npm run e2e:context`), and the real MediaPipe hand tracker on a blank picture (no hand) and on three still photographs of hands (21 landmarks each).
-**Not verified: a webcam.** The recording and live loops (`cv2.VideoCapture`, the preview windows, real finger paths) were not run, no accuracy on real movements is known, and the `--simulate` scores are meaningless for real people.
+Verified here: the movement cutting on generated frames, the pose in the template points (generated arm; save, load, fallbacks), templates (save, load, refusals), classification with the real `dollarpy` package on generated shapes, the message against the server's own parser, sending to a real TCP socket, a server that is missing or refusing, the whole chain in a browser (`npm run e2e:context`), the real MediaPipe hand tracker on a blank picture (no hand) and on three still photographs of hands (21 landmarks each), and the real MediaPipe pose tracker on a blank picture (no body) and on one still photograph of a person (shoulders, elbows and wrists found).
+**Not verified: a webcam.** The pose model on a moving person in front of a webcam, whether the pose improves recognition, the recording and live loops (`cv2.VideoCapture`, the preview windows, real finger paths) were not run, no accuracy on real movements is known, and the `--simulate` scores are meaningless for real people.

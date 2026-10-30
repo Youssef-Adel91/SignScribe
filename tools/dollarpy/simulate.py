@@ -47,10 +47,53 @@ def frames(letter: str, variant: float = 0.0, fps: int = 30, still_ms: int = 600
         t += dt
 
 
-def synthetic_templates(letters, per_letter: int = 4):
-    """Templates for the demo, generated from the same shapes with a little variation. SYNTHETIC, labelled as such when saved."""
+# SIMULATED body: where each pose landmark rests (x, y) in the picture. The left side never moves; on the right side the
+# shoulders and hips stay too, and the elbow, wrist, pinky and index follow the fingertip by a fraction (an arm moves less than the finger).
+_REST = {
+    "shoulders": ((0.35, 0.92), (0.65, 0.92)),
+    "elbows": ((0.28, 0.80), (0.72, 0.78)),
+    "wrists": ((0.30, 0.62), (0.62, 0.62)),
+    "pinky": ((0.31, 0.58), (0.60, 0.50)),
+    "index": ((0.29, 0.57), (0.58, 0.50)),
+    "hips": ((0.40, 1.0), (0.60, 1.0)),
+}
+_FOLLOW = {"elbows": 0.1, "wrists": 0.3, "pinky": 0.5, "index": 0.8}
+
+
+def pose_at(x: float, y: float, keys):
+    """SIMULATED pose for a fingertip at (x, y)."""
+    out = {}
+    for k in keys:
+        part, side = k.rsplit("_", 1)
+        left, right = _REST[part]
+        if side == "l" or part not in _FOLLOW:
+            out[k] = left if side == "l" else right
+        else:
+            f = _FOLLOW[part]
+            out[k] = (right[0] + (x - 0.5) * f, right[1] + (y - 0.5) * f)
+    return out
+
+
+def frames_with_pose(letter: str, keys, variant: float = 0.0, **kw):
+    """Like frames(), plus the simulated pose: yields (t_ms, landmarks, width, height, pose)."""
+    for t, lm, w, h in frames(letter, variant, **kw):
+        yield t, lm, w, h, pose_at(lm[8][0], lm[8][1], keys)
+
+
+def synthetic_templates(letters, per_letter: int = 4, pose_keys=()):
+    """Templates for the demo, generated from the same shapes with a little variation. SYNTHETIC, labelled as such when saved.
+    With pose_keys each template also carries a simulated pose (one entry per path point)."""
+    from dollar_logic import Movement  # imported here: dollar_logic imports nothing from this file
+
     out = []
     for l in letters:
         for k in range(per_letter):
-            out.append((l, shape(l, k + 0.5)))
+            path = Movement(shape(l, k + 0.5))
+            if pose_keys:
+                per_key = {key: [] for key in pose_keys}
+                for x, y in path:
+                    for key, v in pose_at(x, y, pose_keys).items():
+                        per_key[key].append(v)
+                path.pose = per_key
+            out.append((l, path))
     return out

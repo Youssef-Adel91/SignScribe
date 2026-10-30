@@ -250,3 +250,133 @@ def test_real_mediapipe_tracker_finds_no_hand_in_a_blank_picture():
         assert tr.track(np.full((120, 160, 3), 128, dtype=np.uint8)) is None
     finally:
         tr.close()
+
+
+# ---------------------------------------------------------------- pose (shoulders, elbows, wrists) next to the hand
+KEYS = dl.pose_keys(dl.DEFAULT_POSE_PARTS)
+
+
+def movement(letter, variant=0.25, pose=True, drop=0.0):
+    seg = Segmenter()
+    n = 0
+    for t, lm, w, h, p in simulate.frames_with_pose(letter, KEYS, variant):
+        n += 1
+        if drop and (n % round(1 / drop)) == 0:
+            p = None
+        state, mv = seg.feed(t, lm, w, h, p if pose else None)
+        if mv:
+            return mv
+    raise AssertionError("no movement")
+
+
+def test_pose_parts_are_named_in_a_fixed_order_and_unknown_ones_are_refused():
+    assert KEYS == ["shoulders_l", "shoulders_r", "elbows_l", "elbows_r", "wrists_l", "wrists_r"]
+    assert dl.DEFAULT_POSE_PARTS == ("shoulders", "elbows", "wrists")
+    assert [dl.pose_index(k) for k in KEYS] == [11, 12, 13, 14, 15, 16]  # MediaPipe Pose landmark numbers
+    assert dl.pose_index("hips_r") == 24 and dl.pose_index("pinky_l") == 17 and dl.pose_index("index_r") == 20
+    with pytest.raises(ValueError, match="unknown pose part"):
+        dl.pose_keys(["knees"])
+
+
+def test_a_movement_carries_the_pose_of_every_path_point():
+    mv = movement("J")
+    assert mv.pose is not None and set(mv.pose) == set(KEYS)
+    assert all(len(v) == len(mv) for v in mv.pose.values())
+
+
+def test_without_pose_input_the_movement_has_none():
+    assert movement("J", pose=False).pose is None
+
+
+def test_a_few_missing_pose_frames_are_filled_but_too_many_drop_the_pose():
+    ok = movement("J", drop=0.1)  # one frame in ten has no pose: the nearest earlier one is repeated
+    assert ok.pose is not None and all(len(v) == len(ok) for v in ok.pose.values())
+    assert movement("J", drop=0.5).pose is None  # half of the frames: the fingertip is judged alone
+
+
+def test_the_pose_changes_what_is_compared_and_still_recognises_the_generated_letters():
+    rec = build_recognizer(simulate.synthetic_templates(["J", "Z"], 4, pose_keys=KEYS))
+    for letter in "JZ":
+        name, score = rec.recognize(movement(letter))
+        assert name == letter and rec.used_pose is True
+    rec.recognize(movement("J", pose=False))
+    assert rec.used_pose is False  # a movement without pose is compared by the fingertip alone
+
+
+def test_templates_without_pose_are_compared_by_the_fingertip_even_when_the_movement_has_pose():
+    rec = build_recognizer(simulate.synthetic_templates(["J", "Z"], 4))
+    assert rec.recognize(movement("Z"))[0] == "Z" and rec.used_pose is False
+    mixed = simulate.synthetic_templates(["J"], 2, pose_keys=KEYS) + simulate.synthetic_templates(["Z"], 2)
+    build = build_recognizer(mixed)
+    build.recognize(movement("J"))
+    assert build.used_pose is False  # every template must have the pose, or none is used
+
+
+def test_the_cloud_has_the_fingertip_stroke_and_one_short_stroke_per_pose_landmark():
+    mv = movement("J")
+    pts = dl.to_cloud(mv, mv.pose, KEYS)
+    assert len(pts) == dl.cloud_size(KEYS) == dl.N_TIP + dl.N_POSE * len(KEYS)
+    assert [p.stroke_id for p in pts[: dl.N_TIP]] == [1] * dl.N_TIP
+    assert sorted({p.stroke_id for p in pts}) == list(range(1, len(KEYS) + 2))
+
+
+def test_templates_with_pose_roundtrip_and_older_files_still_load(tmp_path):
+    t = simulate.synthetic_templates(["J"], 2, pose_keys=KEYS)
+    f = tmp_path / "t.json"
+    save_templates(f, t, "asl", pose_parts=dl.DEFAULT_POSE_PARTS)
+    raw = json.loads(f.read_text())
+    assert raw["version"] == 2 and raw["pose_parts"] == list(dl.DEFAULT_POSE_PARTS) and set(raw["templates"][0]["pose"]) == set(KEYS)
+    got, _ = load_templates(f)
+    assert set(got[0][1].pose) == set(KEYS) and len(got[0][1]) == len(t[0][1])
+    save_templates(f, t, "asl")  # recorded with --no-pose
+    got, raw = load_templates(f)
+    assert raw["pose_parts"] == [] and getattr(got[0][1], "pose", None) is None
+    f.write_text(json.dumps({"format": dl.FORMAT, "version": 1, "templates": [{"label": "J", "points": [[0.1 * i, 0.2] for i in range(6)]}]}))
+    assert load_templates(f)[0][0][0] == "J"  # a version 1 file (fingertip only)
+    bad = json.loads(f.read_text())
+    bad["version"] = 2
+    bad["templates"][0]["pose"] = {"wrists_r": [[0, 0]]}
+    f.write_text(json.dumps(bad))
+    with pytest.raises(dl.TemplateError, match="one \\[x, y\\] per point"):
+        load_templates(f)
+
+
+def test_simulation_uses_the_pose_by_default_and_says_so(capsys):
+    assert classify_live.main(["--simulate", "J", "Z", "--synthetic-templates", "--fast", "--no-send"]) == 0
+    out = capsys.readouterr().out
+    assert "a simulated arm" in out and "recognised J" in out and "recognised Z" in out
+    assert classify_live.main(["--simulate", "J", "--synthetic-templates", "--fast", "--no-send", "--no-pose"]) == 0
+    out = capsys.readouterr().out
+    assert "simulated arm" not in out and "recognised J" in out
+
+
+def test_other_pose_parts_can_be_chosen(capsys):
+    assert classify_live.main(["--simulate", "J", "--synthetic-templates", "--fast", "--no-send", "--pose-parts", "wrists", "hips", "pinky"]) == 0
+    assert "recognised J" in capsys.readouterr().out
+    with pytest.raises(SystemExit):
+        classify_live.main(["--pose-parts", "knees"])
+
+
+def test_real_mediapipe_pose_tracker_finds_no_body_in_a_blank_picture():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("mediapipe")
+    import hand_tracker
+
+    if not hand_tracker.DEFAULT_POSE_MODEL.exists():
+        pytest.skip("run `npm run models` to get pose_landmarker_lite.task")
+    try:
+        tr = hand_tracker.PoseTracker(KEYS)
+    except SystemExit as e:
+        pytest.skip(f"MediaPipe cannot run here: {e}")
+    try:
+        assert tr.track(np.full((120, 160, 3), 128, dtype=np.uint8)) is None
+    finally:
+        tr.close()
+
+
+def test_the_pose_tracker_says_what_to_do_without_its_model(tmp_path):
+    import hand_tracker
+
+    pytest.importorskip("mediapipe")
+    with pytest.raises(SystemExit, match="npm run models"):
+        hand_tracker.PoseTracker(KEYS, tmp_path / "missing.task")

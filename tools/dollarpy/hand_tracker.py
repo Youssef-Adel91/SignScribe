@@ -8,6 +8,7 @@ import hashlib
 from pathlib import Path
 
 DEFAULT_MODEL = Path(__file__).resolve().parents[2] / "public" / "models" / "hand_landmarker.task"
+DEFAULT_POSE_MODEL = Path(__file__).resolve().parents[2] / "public" / "models" / "pose_landmarker_lite.task"
 
 
 class HandTracker:
@@ -41,6 +42,56 @@ class HandTracker:
         if not res.hand_landmarks:
             return None
         return [[float(p.x), float(p.y), float(p.z)] for p in res.hand_landmarks[0]]
+
+    def close(self) -> None:
+        self._lm.close()
+
+
+class PoseTracker:
+    """MediaPipe Pose Landmarker (the body skeleton, 33 landmarks). Only the ones named in `keys` are returned.
+
+    The pose model is not used by the web app: `npm run models` downloads it for these tools (about 6 MB)."""
+
+    def __init__(self, keys, model_path: str | Path = DEFAULT_POSE_MODEL, min_confidence: float = 0.5, min_visibility: float = 0.5):
+        try:
+            import mediapipe as mp
+            from mediapipe.tasks import python as mpp
+            from mediapipe.tasks.python import vision
+        except (ImportError, OSError) as e:
+            raise SystemExit(f"mediapipe cannot be loaded ({e}). pip install -r tools/dollarpy/requirements.txt") from e
+        if not Path(model_path).exists():
+            raise SystemExit(f"pose model not found: {model_path} (run `npm run models`, or use --no-pose)")
+        from dollar_logic import pose_index
+
+        self._mp, self._model, self.min_visibility = mp, Path(model_path), min_visibility
+        self.keys = list(keys)
+        self._index = {k: pose_index(k) for k in self.keys}
+        self._lm = vision.PoseLandmarker.create_from_options(
+            vision.PoseLandmarkerOptions(
+                base_options=mpp.BaseOptions(model_asset_path=str(model_path)),
+                running_mode=vision.RunningMode.IMAGE,
+                num_poses=1,
+                min_pose_detection_confidence=min_confidence,
+                min_pose_presence_confidence=min_confidence,
+            )
+        )
+
+    def describe(self) -> str:
+        return f"pose: {self._model.name} (sha256 {hashlib.sha256(self._model.read_bytes()).hexdigest()[:16]}...), landmarks {', '.join(self.keys)}"
+
+    def track(self, rgb):
+        """{landmark name: (x, y)} in picture units, or None when no body is found or one of the landmarks is not clearly visible."""
+        res = self._lm.detect(self._mp.Image(image_format=self._mp.ImageFormat.SRGB, data=rgb))
+        if not res.pose_landmarks:
+            return None
+        lm = res.pose_landmarks[0]
+        out = {}
+        for k, i in self._index.items():
+            p = lm[i]
+            if (getattr(p, "visibility", 1.0) or 0.0) < self.min_visibility:
+                return None
+            out[k] = (float(p.x), float(p.y))
+        return out
 
     def close(self) -> None:
         self._lm.close()
