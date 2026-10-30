@@ -5,6 +5,7 @@
     npm run models                                         # the MediaPipe hand model
     python tools/dollarpy/record_templates.py              # the moving letters of the active alphabet (config/alphabets)
     python tools/dollarpy/record_templates.py --letters J Z --per-letter 6
+    python tools/dollarpy/record_templates.py --no-pose            # fingertip only, no body tracking
 
 For each letter: the prompt and a 3 second countdown, then draw the letter in the air with your index finger. A take is
 accepted when the movement ends (finger slows down). Keys in the window: q quit, s skip this letter."""
@@ -17,12 +18,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from dollar_logic import INDEX_TIP, Segmenter, load_alphabet, save_templates  # noqa: E402
+from dollar_logic import DEFAULT_POSE_PARTS, INDEX_TIP, POSE_PARTS, Segmenter, load_alphabet, pose_keys, save_templates  # noqa: E402
 
 DEFAULT_OUT = Path(__file__).parent / "templates.json"
 
 
-def take(tracker, cap, cv2, label, n, total, seg_cfg=None, window=True, timeout_s=8.0):
+def take(tracker, cap, cv2, label, n, total, pose_tracker=None, window=True, timeout_s=8.0):
     """Countdown, then wait for one movement. Returns a path, 'skip', 'quit' or None (no movement seen)."""
     t0 = time.monotonic()
     seg = Segmenter()
@@ -32,9 +33,11 @@ def take(tracker, cap, cv2, label, n, total, seg_cfg=None, window=True, timeout_
             raise SystemExit("the camera gave no picture")
         now = (time.monotonic() - t0) * 1000
         h, w = frame.shape[:2]
-        lm = tracker.track(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        lm = tracker.track(rgb)
         counting = now < 3000
-        state, path = (None, None) if counting else seg.feed(now, lm, w, h)
+        pose = pose_tracker.track(rgb) if pose_tracker else None
+        state, path = (None, None) if counting else seg.feed(now, lm, w, h, pose)
         if window:
             view = cv2.flip(frame, 1)  # a mirror is easier to draw in; the landmarks above come from the un-mirrored picture
             if lm is not None:
@@ -61,6 +64,9 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default=str(DEFAULT_OUT))
     ap.add_argument("--camera", type=int, default=0)
     ap.add_argument("--model", help="hand_landmarker.task (default: public/models)")
+    ap.add_argument("--pose", action=argparse.BooleanOptionalAction, default=True, help="also track the body (MediaPipe Pose) and keep it in the template points (default on; --no-pose for the fingertip alone)")
+    ap.add_argument("--pose-parts", nargs="+", default=list(DEFAULT_POSE_PARTS), choices=list(POSE_PARTS), help="which pose landmarks to add (default: shoulders elbows wrists)")
+    ap.add_argument("--pose-model", help="pose_landmarker_lite.task (default: public/models)")
     ap.add_argument("--no-window", action="store_true", help="no preview window (progress only on the terminal)")
     a = ap.parse_args(argv)
     alphabet = load_alphabet(a.alphabet)
@@ -77,20 +83,25 @@ def main(argv=None) -> int:
     except ImportError:
         print("error: OpenCV is not installed: pip install -r tools/dollarpy/requirements.txt", file=sys.stderr)
         return 2
-    from hand_tracker import DEFAULT_MODEL, HandTracker
+    from hand_tracker import DEFAULT_MODEL, DEFAULT_POSE_MODEL, HandTracker, PoseTracker
 
     tracker = HandTracker(a.model or DEFAULT_MODEL)
+    parts = tuple(a.pose_parts) if a.pose else ()
+    pose_tracker = PoseTracker(pose_keys(parts), a.pose_model or DEFAULT_POSE_MODEL) if parts else None
     cap = cv2.VideoCapture(a.camera)
     if not cap.isOpened():
         print(f"error: camera {a.camera} cannot be opened", file=sys.stderr)
         return 2
     print(f"tracker: {tracker.describe()}")
+    print(pose_tracker.describe() if pose_tracker else "pose: off (fingertip only)")
+    if pose_tracker:
+        print("Stand so that your shoulders, elbows and wrists are in the picture.")
     saved: list = []
     try:
         for letter in letters:
             n = 0
             while n < a.per_letter:
-                r = take(tracker, cap, cv2, letter, n + 1, a.per_letter, window=not a.no_window)
+                r = take(tracker, cap, cv2, letter, n + 1, a.per_letter, pose_tracker, window=not a.no_window)
                 if r == "quit":
                     raise KeyboardInterrupt
                 if r == "skip":
@@ -100,13 +111,15 @@ def main(argv=None) -> int:
                     continue
                 saved.append((letter, r))
                 n += 1
-                save_templates(a.out, saved, alphabet.id)
+                save_templates(a.out, saved, alphabet.id, pose_parts=parts)
                 print(f"{letter}: saved take {n}/{a.per_letter} ({len(r)} points)")
     except KeyboardInterrupt:
         print("stopped")
     finally:
         cap.release()
         tracker.close()
+        if pose_tracker:
+            pose_tracker.close()
         if not a.no_window:
             cv2.destroyAllWindows()
     print(f"{len(saved)} templates in {a.out}")

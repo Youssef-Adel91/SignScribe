@@ -118,6 +118,8 @@ How to demonstrate it: `tools/demo-all.md` (`npm run demo`, FAKE by default). Ro
 | MediaPipe hand tracker (Python) returns 21 landmarks | verified here (3 still photographs of hands) and finds nothing in a blank picture | `test_real_mediapipe_tracker_...`, one manual run |
 | `letter` message: strict fields, own rate limit, relayed to apps, not stored or logged | verified here (real TCP + WebSocket) | `tests/letter-relay.test.ts` |
 | App offers the letter and adds it by point-and-hold; labelled simulated; ignored outside the alphabet | verified here (synthetic hand) | `tests/letter-relay.test.ts`, `npm run e2e:context` |
+| MediaPipe Pose (shoulders, elbows, wrists) next to the hand in the template points, optional (`--no-pose`), default on; template file v2, v1 still loads | verified here (generated arm; the real pose tracker on one still photograph of a person and on a blank picture) | `tools/dollarpy/test_dollarpy.py` |
+| Whether the pose improves recognition | not met | needs real recordings: compare `--pose` with `--no-pose` |
 | Recording and live classification from a webcam | needs real hardware | `record_templates.py`, `classify_live.py` |
 | Recognition accuracy on real moving letters | not met | no recorded templates; `--simulate` scores mean nothing |
 | Moving letters of ArSL | not met | `arsl.json` lists none; the team must decide them |
