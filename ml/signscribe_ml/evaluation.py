@@ -232,13 +232,87 @@ def provenance(argv, dataset_name, dataset_version, sha, takes, alphabet):
     }
 
 
+def run_train_test(train: list[Take], test: list[Take], models=("knn", "mlp"), k: int = 5, augment: AugmentConfig | None = None, seed: int = 0, shared_classes: bool = False):
+    """Train on `train`, test on `test`, which is NEVER mixed into training (for example the team's own webcam recordings).
+
+    The same rule as everywhere: a class that only the test set has cannot be recognised, so such a run is refused unless
+    `shared_classes` restricts both sides to the classes they share (the report then says so)."""
+    if set(t.id for t in train) & set(t.id for t in test):
+        raise EvaluationError("the same take is in both the training and the test files: a test take must never be part of training")
+    X, y, _ = knn.build_samples(train)
+    Xt, yt, tkt = knn.build_samples(test)
+    only_test = sorted(set(yt) - set(y))
+    restricted = None
+    if only_test:
+        if not shared_classes:
+            raise EvaluationError(
+                f"the test recordings have {len(only_test)} class(es) the training data does not have ({', '.join(only_test[:8])}{' ...' if len(only_test) > 8 else ''}): a model cannot be right about a class it never saw. "
+                "Add them to the training data, or pass --shared-classes to evaluate only the classes both have (the report says which)."
+            )
+        common = set(y) & set(yt)
+        if len(common) < 2:
+            raise EvaluationError(f"the training and test data share only {len(common)} class(es): nothing to evaluate on")
+        keep_t = np.asarray([lab in common for lab in yt])
+        Xt, tkt, yt = Xt[keep_t], tkt[keep_t], [lab for lab, kp in zip(yt, keep_t) if kp]
+        restricted = {"classes_kept": len(common), "classes_total": len(set(y) | set(yt) | set(only_test)), "dropped": only_test}
+    aug = augmented_samples(train, augment, seed) if augment and augment.enabled else None
+    Xtr, ytr = X, list(y)
+    if aug is not None and len(aug[2]):
+        Xtr = np.vstack([X, aug[0]])
+        ytr = ytr + list(aug[1])
+    out = {m: {"truth": [], "pred": [], "conf": [], "second": [], "conf2": [], "group": []} for m in models}
+    desc = {}
+    for m in models:
+        if m == "knn":
+            p, c, p2, c2 = _predict_knn(Xtr, ytr, Xt, k)
+            desc["knn"] = f"k-NN, k={k}, distance-weighted vote on the 60 hand features (same as the browser)"
+        elif m == "mlp":
+            (p, c, p2, c2), desc["mlp"] = _predict_mlp(Xtr, ytr, Xt, seed)
+        else:
+            raise EvaluationError(f"unknown model {m}")
+        o = out[m]
+        o["truth"], o["pred"] = list(yt), list(p)
+        o["conf"], o["second"], o["conf2"] = [float(v) for v in c], list(p2), [float(v) for v in c2]
+        o["group"] = ["test"] * len(yt)
+    labels = sorted(set(yt) | set(ytr))
+    # one answer per recording: the most frequent letter among its frames (a take is a short recording of one sign)
+    takes_n = len(set(tkt.tolist()))
+    res_models = {}
+    for m in models:
+        o = out[m]
+        votes: dict = defaultdict(lambda: defaultdict(int))
+        truth_of: dict = {}
+        for ti, tr, pr in zip(tkt.tolist(), o["truth"], o["pred"]):
+            votes[ti][pr] += 1
+            truth_of[ti] = tr
+        right = sum(1 for ti, v in votes.items() if max(sorted(v), key=lambda c: v[c]) == truth_of[ti])
+        res_models[m] = {**o, "description": desc[m], "metrics": metrics(o, labels), "take_vote_accuracy": right / takes_n if takes_n else None, "takes": takes_n}
+    return {
+        "mode": "train_test",
+        "method": "trained on one set of recordings and tested on another that is never part of training (not leave-one-out: it measures how a model from other people works on these recordings)",
+        "generalises": True,
+        "n_groups": 1,
+        "n_minor_groups": 0,
+        "restricted": restricted,
+        "labels": labels,
+        "test": {"takes": takes_n, "frames": len(yt), "signers": len({t.signer for t in test}), "classes": len(set(yt))},
+        "models": res_models,
+        "augment": augment.describe() if augment else "none",
+        "k": k,
+        "seed": seed,
+    }
+
+
 def pct(x):
     return "n/a" if x is None else f"{x * 100:.1f}%"
 
 
 def markdown(res: dict, prov: dict, min_confidence: float = DEFAULT_MIN_CONFIDENCE) -> str:
     L = []
-    L.append("### Static letters: leave-one-group-out evaluation" if res["generalises"] else "### Static letters: SAME-PERSON evaluation (optimistic)")
+    if res.get("mode") == "train_test":
+        L.append("### Static letters: trained on a dataset, tested on separate recordings")
+    else:
+        L.append("### Static letters: leave-one-group-out evaluation" if res["generalises"] else "### Static letters: SAME-PERSON evaluation (optimistic)")
     L.append("")
     if prov["synthetic"]:
         L += ["> **SYNTHETIC DATA. This run only tests the pipeline. The numbers say nothing about real hands and must not be quoted.**", ""]
@@ -247,22 +321,32 @@ def markdown(res: dict, prov: dict, min_confidence: float = DEFAULT_MIN_CONFIDEN
     L += [
         f"- command: `{prov['command']}`",
         f"- date (UTC): {prov['date']}" + (f", git commit {prov['git_commit']}" if prov["git_commit"] else ""),
-        f"- dataset: **{prov['dataset_name'] or '(not named)'}**, version **{prov['dataset_version'] or '(not given)'}**, sha256 `{prov['dataset_sha256']}`",
+        f"- {'training dataset' if res.get('mode') == 'train_test' else 'dataset'}: **{prov['dataset_name'] or '(not named)'}**, version **{prov['dataset_version'] or '(not given)'}**, sha256 `{prov['dataset_sha256']}`",
         f"- alphabet: {prov['alphabet']}; takes: {prov['takes']}; persons: {prov['persons']}, sources: {prov['sources']}, signers: {prov['signers']}",
-        f"- split: **{res['method']}**, {res['n_groups']} held-out groups, the same folds for every model"
+        (f"- split: **{res['method']}**" if res.get("mode") == "train_test" else f"- split: **{res['method']}**, {res['n_groups']} held-out groups, the same folds for every model")
         + (f". {res['n_minor_groups']} of them are persons under 18: they are included in the pooled numbers and in the mean over groups, and are only counted here; the worst and best group below cover the other {res['n_groups'] - res['n_minor_groups']} groups" if res["n_minor_groups"] else ""),
-        *([f"- **restricted to the {res['restricted']['classes_kept']} classes that every held-out group has, out of {res['restricted']['classes_total']}** (not evaluated: {', '.join(res['restricted']['dropped'])}). The numbers below say nothing about those classes."] if res.get("restricted") else []),
+        *([f"- **restricted to the {res['restricted']['classes_kept']} classes that {'the training and the test data both have' if res.get('mode') == 'train_test' else 'every held-out group has'}, out of {res['restricted']['classes_total']}** (not evaluated: {', '.join(res['restricted']['dropped'])}). The numbers below say nothing about those classes."] if res.get("restricted") else []),
         f"- augmentation (training side only): {res['augment']}",
         f"- python {prov['python']}, numpy {prov['numpy']}",
         "",
     ]
     names = list(res["models"])
-    L += ["| model | description | samples | pooled accuracy | mean over held-out groups | worst group | best group | macro recall |", "| --- | --- | --- | --- | --- | --- | --- | --- |"]
-    for n in names:
-        m = res["models"][n]
-        mm = m["metrics"]
-        L.append(f"| {n} | {m['description']} | {mm['samples']} | {pct(mm['pooled_accuracy'])} | {pct(mm['mean_group_accuracy'])} | {pct(mm['min_group_accuracy'])} | {pct(mm['max_group_accuracy'])} | {pct(mm['macro_recall'])} |")
-    L += ["", "Pooled = every held-out sample counted once (large groups weigh more). Mean over groups = each held-out person/source counts once.", ""]
+    if res.get("mode") == "train_test":
+        t = res["test"]
+        L += [f"- test recordings: {t['takes']} takes, {t['frames']} frames, {t['classes']} classes, {t['signers']} signer code(s); they are only ever tested on, never trained on", ""]
+        L += ["| model | description | frames tested | accuracy over frames | recordings | accuracy by recording (most frequent letter of its frames) | macro recall |", "| --- | --- | --- | --- | --- | --- | --- |"]
+        for n in names:
+            m = res["models"][n]
+            mm = m["metrics"]
+            L.append(f"| {n} | {m['description']} | {mm['samples']} | {pct(mm['pooled_accuracy'])} | {m['takes']} | {pct(m['take_vote_accuracy'])} | {pct(mm['macro_recall'])} |")
+        L += ["", "This is the accuracy on these recordings only (one camera, these signers): it is not a leave-one-person-out result and says nothing about other cameras or people.", ""]
+    else:
+        L += ["| model | description | samples | pooled accuracy | mean over held-out groups | worst group | best group | macro recall |", "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+        for n in names:
+            m = res["models"][n]
+            mm = m["metrics"]
+            L.append(f"| {n} | {m['description']} | {mm['samples']} | {pct(mm['pooled_accuracy'])} | {pct(mm['mean_group_accuracy'])} | {pct(mm['min_group_accuracy'])} | {pct(mm['max_group_accuracy'])} | {pct(mm['macro_recall'])} |")
+        L += ["", "Pooled = every held-out sample counted once (large groups weigh more). Mean over groups = each held-out person/source counts once.", ""]
     L += ["#### Per letter (precision / recall)", "", "| letter | support | " + " | ".join(f"{n} precision | {n} recall" for n in names) + " |", "| --- | --- | " + " | ".join("--- | ---" for _ in names) + " |"]
     for l in res["labels"]:
         row = [l, str(res["models"][names[0]]["metrics"]["per_label"][l]["support"])]
