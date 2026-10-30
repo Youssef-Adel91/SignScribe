@@ -36,6 +36,7 @@ def main(argv=None) -> int:
     ap.add_argument("--label-column", help="column (a number from 0, or a header name) with the class itself: a class name or an Arabic letter (resolved through the alphabet's aliases)")
     ap.add_argument("--numeric-label-column", help="column with a class number. With a name column too, the numbering is learned from the names and must be one to one (the report lists it)")
     ap.add_argument("--numeric-label-names", help="comma-separated class names for 0, 1, 2 ... (needed when the number is the only label; the order is NOT known, so it is never assumed). Cross-checked against --name-column when both are given")
+    ap.add_argument("--strip-class-suffix", metavar="REGEX", help="OPT-IN: remove this from a class name that is not in the alphabet when what is left IS a class, so 'haa+' and 'haa++' are imported as 'haa' (example: '\\++$'). Off by default: do not use it until it is confirmed what the suffixes mean. The report lists what was merged")
     ap.add_argument("--hand", default="right", choices=["right", "left"])
     ap.add_argument("--width", type=int, default=1000, help="ASSUMED picture width (the aspect ratio is not in the file)")
     ap.add_argument("--height", type=int, default=1000, help="ASSUMED picture height")
@@ -55,7 +56,7 @@ def main(argv=None) -> int:
             a.csv, alphabet, a.source, a.layout, a.name_column, a.name_regex, a.label_column, a.numeric_label_column,
             [s.strip() for s in a.numeric_label_names.split(",")] if a.numeric_label_names else None,
             a.coords, a.header, a.delimiter, a.hand, a.width, a.height, a.max_per_class, a.seed, a.dataset_name, a.force,
-            skip_rows=a.skip_rows, decimal_comma=a.decimal_comma,
+            skip_rows=a.skip_rows, decimal_comma=a.decimal_comma, strip_suffix=a.strip_class_suffix,
         )
     except (lc.CsvError, AlphabetError, OSError) as e:
         print(f"error: {e}", file=sys.stderr)

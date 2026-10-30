@@ -116,6 +116,7 @@ class CsvStats:
     label_conflicts: list = field(default_factory=list)
     learned_numbers: dict = field(default_factory=dict)  # number -> class, learned from a file-name column; checked to be one-to-one
     skipped_header_lines: int = 0
+    merged: dict = field(default_factory=dict)  # original class name -> rows merged into its base class by --strip-class-suffix
 
 
 def to_float(text: str, decimal_comma: bool = False) -> float:
@@ -177,6 +178,7 @@ def import_csv(
     now: str | None = None,
     skip_rows: int = 0,
     decimal_comma: bool = False,
+    strip_suffix: str | None = None,
 ):
     """Returns (takes as dicts, stats). Rows whose class is not a label of the alphabet are counted, not imported."""
     import datetime
@@ -195,6 +197,7 @@ def import_csv(
         raise CsvError(f"layout {layout} needs {n} coordinate columns, --coords gives {len(cols)}")
     iname, ilabel, inum = column_index(name_column, header), column_index(label_column, header), column_index(numeric_label_column, header)
     rx = re.compile(name_regex) if name_column else None
+    sufrx = re.compile(strip_suffix) if strip_suffix else None
     stats = CsvStats(layout=layout)
 
     numbers, meta = [], []
@@ -245,6 +248,8 @@ def import_csv(
     if inum is not None and (iname is not None or ilabel is not None) and not numeric_label_names:
         seen: dict = {}
         for _, _, names, num in meta:
+            if sufrx is not None:
+                names = [(src, sufrx.sub("", v) if alphabet.resolve(v) is None else v) for src, v in names]
             cls = next((alphabet.resolve(v) for _, v in names if alphabet.resolve(v) is not None), None)
             if num is not None and cls is not None:
                 seen.setdefault(num, set()).add(cls)
@@ -254,6 +259,8 @@ def import_csv(
             for c in v:
                 classes_numbers.setdefault(c, set()).add(k)
         bad_classes = {c: sorted(v) for c, v in classes_numbers.items() if len(v) > 1}
+        if sufrx is not None:
+            bad_classes = {}  # merging suffix classes makes several numbers one class on purpose
         if (bad or bad_classes) and not force:
             raise CsvError(f"the class numbers and the class names in the file do not match one to one (numbers with several names: {len(bad)}, names with several numbers: {len(bad_classes)}): the numbering is not what the names say. Check the columns or pass --force.")
         stats.learned_numbers = {k: sorted(v)[0] for k, v in sorted(seen.items()) if len(v) == 1}
@@ -261,6 +268,16 @@ def import_csv(
     # the class of every row; when several sources of the class are given they must agree
     by_label: dict = {}
     for idx, (i, fname, names, num) in enumerate(meta):
+        if sufrx is not None:
+            # OPT-IN: a class such as 'haa++' is imported as its base class 'haa'. Off by default: nobody has confirmed what the suffixes mean
+            fixed = []
+            for src, v in names:
+                base = sufrx.sub("", v)
+                if base != v and alphabet.resolve(v) is None and alphabet.resolve(base) is not None:
+                    stats.merged[v] = stats.merged.get(v, 0) + 1
+                    v = base
+                fixed.append((src, v))
+            names = fixed
         resolved = {alphabet.resolve(v) for _, v in names if alphabet.resolve(v) is not None}
         unresolved = [v for _, v in names if alphabet.resolve(v) is None]
         if len(resolved) > 1:
@@ -310,6 +327,10 @@ def import_csv(
     return takes, stats
 
 
+def sufrx_base(name: str) -> str:
+    return name.rstrip("+")
+
+
 def report_markdown(stats: CsvStats, alphabet: Alphabet, meta: dict) -> str:
     L = ["# Landmark CSV import report", ""]
     for k, v in meta.items():
@@ -330,6 +351,9 @@ def report_markdown(stats: CsvStats, alphabet: Alphabet, meta: dict) -> str:
     L += ["", f"**Total imported: {sum(stats.per_label.values())} rows.**", ""]
     if stats.learned_numbers:
         L.append("Class numbers learned from the names in the file (check them against what you know about the file): " + ", ".join(f"{k} = {v}" for k, v in list(stats.learned_numbers.items())[:40]) + (" ..." if len(stats.learned_numbers) > 40 else ""))
+        L.append("")
+    if stats.merged:
+        L.append("Classes merged into their base class by --strip-class-suffix (check that this is what they are before using the result): " + ", ".join(f"{n} -> {sufrx_base(n)} ({c} rows)" for n, c in sorted(stats.merged.items())))
         L.append("")
     if stats.ignored:
         L += ["Classes skipped, with their row counts (not a label of this alphabet; nothing was guessed. Letters in the `todo` of the alphabet file are skipped until the team decides):", "", "| skipped class | rows |", "| --- | --- |"]
