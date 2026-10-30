@@ -9,7 +9,7 @@ export function AboutCredits() {
         About and credits
       </h2>
       <p className={styles.text}>
-        SignScribe is a course project. Its letter models learned from open data:{' '}
+        Letter models made with open data:{' '}
         {CREDITS.map((c, i) => (
           <span key={c.id}>
             {i > 0 && ' '}

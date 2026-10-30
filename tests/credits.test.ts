@@ -18,7 +18,7 @@ describe('credits for the datasets', () => {
   it('ASLAD is credited as a test-only dataset, not in the shipped model', () => {
     const c = CREDITS.find((x) => x.id === 'aslad')!;
     expect(c.inShippedModel).toBe(false);
-    expect(c.use).toMatch(/not in the shipped model/);
+    expect(c.use).toMatch(/not in the models/);
   });
   it('every credit is also in docs/CREDITS.md, with its licence and the licence address', () => {
     for (const c of CREDITS) {

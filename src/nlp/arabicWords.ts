@@ -84,7 +84,8 @@ export function normalizeArabic(s: string): string {
 const HELPERS = new Set(ARABIC_HELPER_WORDS.map(normalizeArabic));
 
 /** the small words that are written joined to the next word: wa or fa, then bi / li / ka and the article (bi+al = bial), or li+al = lil */
-const PREFIXES = /^(?:[\u0648\u0641])?(?:\u0644\u0644|[\u0628\u0644\u0643](?:\u0627\u0644)?|\u0627\u0644)?/;
+const PREFIXES =
+  /^(?:[\u0648\u0641])?(?:\u0644\u0644|[\u0628\u0644\u0643](?:\u0627\u0644)?|\u0627\u0644)?/;
 
 /**
  * Is `token` allowed in a sentence made from the `chosen` words? Yes when it is a helper word, or one of the chosen words,

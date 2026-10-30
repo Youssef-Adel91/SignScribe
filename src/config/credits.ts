@@ -26,19 +26,18 @@ const CC_BY_4 = {
 export const CREDITS: readonly Credit[] = [
   {
     id: 'arsl21l',
-    name: 'ArSL21L (Arabic Sign Language letters dataset)',
+    name: 'ArSL21L (Arabic sign language letters)',
     ...CC_BY_4,
-    use: 'trains and tests the Arabic (ArSL) letter model',
-    changes:
-      'the pictures were reduced to 21 hand points with MediaPipe; the model files hold numbers made from them, not pictures',
+    use: 'trains and tests the Arabic letter model',
+    changes: 'pictures reduced to hand points; the models hold numbers, not pictures',
     inShippedModel: true,
   },
   {
     id: 'aslad',
-    name: 'ASLAD-96K (Arabic sign language landmark dataset)',
+    name: 'ASLAD-96K (Arabic sign language landmarks)',
     ...CC_BY_4,
-    use: 'only used to test the model on other data; not in the shipped model',
-    changes: 'none to the data; only its hand points were read',
+    use: 'only used for testing, not in the models',
+    changes: 'none',
     inShippedModel: false,
   },
 ];
