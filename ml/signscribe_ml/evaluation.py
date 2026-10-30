@@ -55,8 +55,37 @@ def _predict_mlp(Xtr, ytr, Xte, seed):
     return m.predict(Xte), m.describe()
 
 
-def run(takes: list[Take], models=("knn", "mlp"), k: int = 5, augment: AugmentConfig | None = None, seed: int = 0, group_by: str = "auto", allow_optimistic: bool = False):
-    """Same folds for every model. Returns a plain dict (it is what gets written to the JSON report)."""
+def class_coverage(y, groups) -> dict:
+    """For each held-out group: the classes it has that NO other group has. A model cannot be right about a class it never saw,
+    so a group with such classes would make the result meaningless (a held-out source that covers 32 classes against training
+    sources that cover 21 can score only a small share, whatever the model)."""
+    by: dict = defaultdict(set)
+    for lab, g in zip(y, groups):
+        by[g].add(lab)
+    out = {}
+    for g, cls in by.items():
+        others = set().union(*(c for h, c in by.items() if h != g)) if len(by) > 1 else set()
+        missing = sorted(cls - others)
+        if missing:
+            out[g] = missing
+    return out
+
+
+def _describe_coverage_problem(method: str, problems: dict) -> str:
+    # group ids are printed only for datasets (sources) and sittings: a person's id is never put in a message
+    named = method in ("leave-one-source-out", "leave-one-session-out")
+    parts = []
+    for g, miss in sorted(problems.items(), key=lambda kv: str(kv[0])):
+        who = f"held-out source '{g}'" if method == "leave-one-source-out" else (f"held-out {method.split('-')[2]} '{g}'" if named else "a held-out group")
+        parts.append(f"{who} has {len(miss)} class(es) no training group has ({', '.join(miss[:8])}{' ...' if len(miss) > 8 else ''})")
+    return "; ".join(parts[:4]) + (f"; and {len(parts) - 4} more" if len(parts) > 4 else "")
+
+
+def run(takes: list[Take], models=("knn", "mlp"), k: int = 5, augment: AugmentConfig | None = None, seed: int = 0, group_by: str = "auto", allow_optimistic: bool = False, shared_classes: bool = False):
+    """Same folds for every model. Returns a plain dict (it is what gets written to the JSON report).
+
+    Every held-out group must have only classes that the training groups have. Otherwise the run is refused, or with
+    `shared_classes` restricted to the classes that EVERY group has (and the report says so)."""
     X, y, tk = knn.build_samples(takes)
     method, take_groups, generalises = make_groups(takes, "static", group_by)
     if not generalises and not allow_optimistic:
@@ -68,6 +97,26 @@ def run(takes: list[Take], models=("knn", "mlp"), k: int = 5, augment: AugmentCo
     groups = np.asarray([take_groups[i] for i in tk])
     aug = augmented_samples(takes, augment, seed) if augment and augment.enabled else None
     aug_groups = np.asarray([take_groups[i] for i in aug[2]]) if aug is not None and len(aug[2]) else None
+    restricted = None
+    problems = class_coverage(y, groups)
+    if problems:
+        if not shared_classes:
+            raise EvaluationError(
+                "this split is not valid: " + _describe_coverage_problem(method, problems) + ". A model cannot be right about a class it never saw, so the number would be small whatever the model is. "
+                "Add data that covers those classes, or pass --shared-classes to evaluate only the classes every group has (the report then says which)."
+            )
+        common = set.intersection(*[set(l for l, g in zip(y, groups) if g == h) for h in set(groups)])
+        if len(common) < 2:
+            raise EvaluationError(f"the groups share only {len(common)} class(es): nothing to evaluate on")
+        total = sorted(set(y))
+        keep = np.asarray([lab in common for lab in y])
+        X, tk, groups = X[keep], tk[keep], groups[keep]
+        y = [lab for lab, kp in zip(y, keep) if kp]
+        if aug is not None and len(aug[2]):
+            akeep = np.asarray([lab in common for lab in aug[1]])
+            aug = (aug[0][akeep], [lab for lab, kp in zip(aug[1], akeep) if kp], aug[2][akeep])
+            aug_groups = aug_groups[akeep]
+        restricted = {"classes_kept": len(common), "classes_total": len(total), "dropped": sorted(set(total) - common)}
     out = {m: {"truth": [], "pred": [], "conf": [], "second": [], "conf2": [], "group": []} for m in models}
     desc = {}
     for g in sorted(set(groups)):
@@ -106,6 +155,7 @@ def run(takes: list[Take], models=("knn", "mlp"), k: int = 5, augment: AugmentCo
         "generalises": generalises,
         "n_groups": len(set(groups)),
         "n_minor_groups": len(minor_groups),
+        "restricted": restricted,
         "labels": labels,
         "models": {m: {**out[m], "description": desc[m], "metrics": metrics(out[m], labels, minor_groups)} for m in models},
         "augment": augment.describe() if augment else "none",
@@ -201,6 +251,7 @@ def markdown(res: dict, prov: dict, min_confidence: float = DEFAULT_MIN_CONFIDEN
         f"- alphabet: {prov['alphabet']}; takes: {prov['takes']}; persons: {prov['persons']}, sources: {prov['sources']}, signers: {prov['signers']}",
         f"- split: **{res['method']}**, {res['n_groups']} held-out groups, the same folds for every model"
         + (f". {res['n_minor_groups']} of them are persons under 18: they are included in the pooled numbers and in the mean over groups, and are only counted here; the worst and best group below cover the other {res['n_groups'] - res['n_minor_groups']} groups" if res["n_minor_groups"] else ""),
+        *([f"- **restricted to the {res['restricted']['classes_kept']} classes that every held-out group has, out of {res['restricted']['classes_total']}** (not evaluated: {', '.join(res['restricted']['dropped'])}). The numbers below say nothing about those classes."] if res.get("restricted") else []),
         f"- augmentation (training side only): {res['augment']}",
         f"- python {prov['python']}, numpy {prov['numpy']}",
         "",

@@ -14,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from signscribe_ml import evaluation as ev  # noqa: E402
+from signscribe_ml import results_md as rm  # noqa: E402
 from signscribe_ml.alphabet import AlphabetError, load_alphabet  # noqa: E402
 from signscribe_ml.augment import parse_augment  # noqa: E402
 from signscribe_ml.dataset import DatasetError  # noqa: E402
@@ -38,6 +39,7 @@ def main(argv=None) -> int:
     ap.add_argument("--out-dir", default="ml/reports")
     ap.add_argument("--results-md", help="append this run to this Markdown file (e.g. docs/MODEL_RESULTS.md); refused for synthetic data")
     ap.add_argument("--allow-synthetic", action="store_true", help="pipeline tests only")
+    ap.add_argument("--shared-classes", action="store_true", help="when a held-out group has classes no training group has (for example a CSV that covers 21 of 32 classes), evaluate only the classes every group has, and say so in the report. Without it such a run is refused")
     ap.add_argument("--allow-optimistic", action="store_true", help="allow the same-person fallback (labelled as optimistic)")
     a = ap.parse_args(argv)
     try:
@@ -60,7 +62,7 @@ def main(argv=None) -> int:
             runs.append(("no augmentation", parse_augment("none")))
         results = []
         for label, cfg in runs:
-            r = ev.run(takes, models, a.k, cfg, a.seed, a.group_by, a.allow_optimistic)
+            r = ev.run(takes, models, a.k, cfg, a.seed, a.group_by, a.allow_optimistic, a.shared_classes)
             results.append((label, r))
     except (DatasetError, AlphabetError, FoldError, ev.EvaluationError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
@@ -86,8 +88,7 @@ def main(argv=None) -> int:
             print("not appended to the results file: synthetic or same-person run", file=sys.stderr)
         else:
             p = Path(a.results_md)
-            old = p.read_text(encoding="utf-8") if p.exists() else ""
-            p.write_text(old.rstrip("\n") + f"\n\n---\n\n## {a.dataset_name} {a.dataset_version} ({prov['date'][:10]})\n\n{body}", encoding="utf-8")
+            rm.update_file(p, lambda old: rm.append_section(old, f"{a.dataset_name} {a.dataset_version} ({prov['date'][:10]})", body))
             print(f"appended to {p}")
     return 0
 
