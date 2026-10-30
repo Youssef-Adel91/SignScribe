@@ -58,6 +58,14 @@ How to read it:
 2. `npm run dev`, open `/`, go to the spelling screen: the grey "No letter model yet" notice is gone when the file loads; a broken file shows a plain message.
 3. Sign a letter and hold it. A candidate appears after `LETTER.stableMs`, the ring fills, the letter is written after `LETTER.holdMs`. Check the same sign is not written twice.
 
+### Optional: the neural network (`letters-mlp.json`)
+    python ml/export_mlp.py --data all-takes.jsonl --alphabet asl --out public/models/letters-mlp.json
+It trains on ALL takes (nothing held out), so its `.report.md` has no accuracy. The honest number is `ml/evaluate.py` (leave-one-person-out) on the same takes; pass its JSON with `--evaluation-json` to record the headline in the model. The app uses this file first, `letters-knn.json` is the fallback, so keep both. `ArSL` models stay out of `public/models/` for now (see `ml/README.md`). The confidence scale differs from the k-NN: re-check `LETTER` with the camera.
+
+### Your own webcam as a test (never as training)
+    python ml/evaluate.py --train ml/data/arsl21l.jsonl --test my-takes.jsonl --test-name "team webcam"
+Reports accuracy on your recordings only; they are never mixed into the training side (the script refuses a take id that is on both sides, or a letter that only the test has, unless `--shared-classes`). It is not a leave-one-person-out result and the report says so.
+
 ## Step 5: tune the thresholds with the model in hand
 `LETTER` in `src/recognition/letterController.ts`: `minConfidence`, `confirmConfidence`, `stableMs`, `holdMs`, `releaseMs` and the motion constants. They are first guesses. The report gives per-letter precision; use it. When a letter misfires, write a test that reproduces it in `tests/letters.test.ts` first, then change the value, and note it in `docs/KNOWN_ISSUES.md`.
 

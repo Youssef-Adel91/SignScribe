@@ -144,6 +144,18 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Analysis: SUS row, careless-answer flags (identical answers, contradicting reverse items), `--exclude-flagged` | 7 | verified here (made-up exports) | `npm run ml:test` |
 | SUS results on real participants | 7 | not met | no study run yet |
 
+## Evaluation guards, neural-network browser model (branch feat/mlp-and-eval-guards)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Leave-one-source/session-out refused when a held-out group has classes the training side lacks; `--shared-classes` restricts and says so | verified here (generated groups) | `ml/tests/test_eval_guards.py` |
+| `ml/results_md.py` removes / lists sections of `docs/MODEL_RESULTS.md`; the repo copy has no results (numbers live in the files you ran on your machine) | verified here | `ml/tests/test_eval_guards.py` |
+| `--train A --test B`: accuracy on separate recordings, never trained on (swapped-label canary gives 0%) | verified here (generated takes) | `ml/tests/test_eval_guards.py` |
+| `--strip-class-suffix` imports ASLAD `haa+`-style classes as the base class, off by default | verified here | `ml/tests/test_arsl_datasets.py` |
+| `letters-mlp.json`: TypeScript forward pass equals the Python one on the same inputs; broken/missing falls back to k-NN | verified here (golden file, fake fetch) | `tests/mlp.test.ts`, `ml/tests/test_mlp_model.py` |
+| `ml/export_mlp.py` trains on all takes, no accuracy in its report | verified here (generated takes) | `ml/tests/test_mlp_model.py` |
+| Accuracy / speed of the network in the browser; `LETTER` thresholds for softmax confidence | needs my camera | thresholds were set for k-NN and not retuned |
+| `pytest` pinned `>=8,<9` in `ml/requirements.txt` | verified here | file |
+
 ## ArSL datasets (branch feat/arsl-datasets)
 | Item | Status | Evidence |
 | --- | --- | --- |

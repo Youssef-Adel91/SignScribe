@@ -7,6 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from signscribe_ml.features import FEATURES_ID, FEATURE_LENGTH  # noqa: E402
+from signscribe_ml import mlp_model  # noqa: E402
 
 
 def check(m) -> list:
@@ -20,7 +21,9 @@ def check(m) -> list:
         errs.append("meta is missing")
     elif meta.get("synthetic"):
         errs.append("WARNING: trained on synthetic data, must not be used for a real study")
-    if m.get("type") == "knn":
+    if m.get("type") == "mlp":
+        errs += [e for e in mlp_model.check(m) if e not in errs]
+    elif m.get("type") == "knn":
         if m.get("features") != FEATURES_ID:
             errs.append(f"features must be {FEATURES_ID}")
         if not isinstance(m.get("labels"), list) or len(m["labels"]) < 2:
@@ -44,7 +47,7 @@ def check(m) -> list:
         elif any(len(x.get("points", [])) < 2 for x in t):
             errs.append("every template needs at least 2 points")
     else:
-        errs.append("type must be 'knn' or 'dollarP'")
+        errs.append("type must be 'knn', 'mlp' or 'dollarP'")
     return errs
 
 
