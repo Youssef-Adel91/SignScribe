@@ -22,7 +22,8 @@ export default function S07SpellRecognizing() {
   const text = [...words, word].filter(Boolean).join(' ');
   const letter = candidate ? glyph(candidate.letter).text : '';
   const caption = `Looks like "${letter}". Hold still…`;
-  useAnnounceOnChange(letter ? caption : null);
+  // a guess that changes quickly is spoken at most every 2 s
+  useAnnounceOnChange(letter ? caption : null, { minGapMs: 2000 });
   const guesses = candidate
     ? [
         { letter: candidate.letter, confidence: candidate.confidence },

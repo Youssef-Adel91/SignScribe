@@ -1,4 +1,4 @@
-import { getAlphabet, type AlphabetConfig } from '../config/alphabet';
+import { getAlphabet, REJECT_LABEL, type AlphabetConfig } from '../config/alphabet';
 import { DollarRecognizer, parseDollarModel } from './dollarP';
 import { KnnRecognizer, parseKnnModel } from './knn';
 import { MlpRecognizer, parseMlpModel } from './mlp';
@@ -25,7 +25,7 @@ export function letterModelUrls(alphabetId: string): { mlp: string; knn: string 
 
 /** a model must only know letters of the alphabet it is loaded for */
 function checkLabels(labels: readonly string[], a: AlphabetConfig): void {
-  const known = new Set([...a.static, ...a.dynamic]);
+  const known = new Set([...a.static, ...a.dynamic, REJECT_LABEL]);
   const stranger = labels.find((l) => !known.has(l));
   if (stranger !== undefined)
     throw new ModelError(

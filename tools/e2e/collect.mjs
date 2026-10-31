@@ -54,6 +54,12 @@ try {
     await panel.getByPlaceholder('lamp-60cm').fill('lamp-60cm');
     await panel.getByRole('radio', { name: /^Letter B,/ }).check();
     check('Record becomes available', await rec.isEnabled());
+    const noneButtons = panel.getByRole('button', { name: /^None take:/ });
+    check('four kinds of "none" take can be recorded', (await noneButtons.count()) === 4);
+    check(
+      'they are enabled with signer and session filled in',
+      await noneButtons.first().isEnabled(),
+    );
     await rec.click();
     await play([{ pose: 'fist', cx: 0.5, cy: 0.5, size: 0.2 }], 3300);
     check(

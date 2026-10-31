@@ -26,9 +26,10 @@ const DWELL: { key: DwellSetting; title: string; sub: string }[] = [
   { key: 'normal', title: 'Normal', sub: 'Hold 0.8 s' },
   { key: 'fast', title: 'Faster', sub: 'Hold 0.6 s' },
 ];
-const VOICE: { key: 'on' | 'off'; title: string; sub: string }[] = [
-  { key: 'on', title: 'Read aloud', sub: 'Tips and sentences' },
-  { key: 'off', title: 'Silent', sub: 'Text only' },
+const VOICE: { key: string; title: string; sub: string; voice: boolean; feedback: boolean }[] = [
+  { key: 'all', title: 'Read aloud', sub: 'Speech and sounds', voice: true, feedback: true },
+  { key: 'sounds', title: 'Sounds only', sub: 'A tick per letter', voice: false, feedback: true },
+  { key: 'off', title: 'Silent', sub: 'Text only', voice: false, feedback: false },
 ];
 
 /**
@@ -36,7 +37,7 @@ const VOICE: { key: 'on' | 'off'; title: string; sub: string }[] = [
  * the same layout, hints and gestures, so it works like the screens before it.
  */
 export default function S14Comfort() {
-  const { textSize, contrast, dwell, voice, alphabet } = useCtx();
+  const { textSize, contrast, dwell, voice, feedback, alphabet } = useCtx();
   const holdMs = useVision((s) => s.ui?.dwell.ms ?? null);
   const live = holdMs !== null;
   useAnnounceOnChange(
@@ -118,17 +119,17 @@ export default function S14Comfort() {
         </ul>
 
         <h2 className={common.h2} id="q-voice">
-          Should the screen speak?
+          Speech and sounds
         </h2>
         <ul className={common.row} aria-labelledby="q-voice">
           {VOICE.map((o) => (
             <Tile
               key={o.key}
-              selected={(o.key === 'on') === voice}
+              selected={o.voice === voice && o.feedback === feedback}
               title={o.title}
               sub={o.sub}
               className={styles.small}
-              dwell={{ type: 'CHOOSE_VOICE', voice: o.key === 'on' }}
+              dwell={{ type: 'CHOOSE_OUTPUT', voice: o.voice, feedback: o.feedback }}
             />
           ))}
         </ul>

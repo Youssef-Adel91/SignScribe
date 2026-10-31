@@ -53,10 +53,10 @@ def check(m) -> list:
 
 def check_alphabet(m, name) -> list:
     """The browser refuses a model with a letter its alphabet does not have; so does this."""
-    from signscribe_ml.alphabet import AlphabetError, load_alphabet
+    from signscribe_ml.alphabet import REJECT_LABEL, AlphabetError, load_alphabet
 
     try:
-        known = set(load_alphabet(name).labels)
+        known = set(load_alphabet(name).labels) | {REJECT_LABEL}
     except AlphabetError as e:
         return [str(e)]
     stranger = [l for l in (m.get("labels") or []) if l not in known]
