@@ -368,7 +368,7 @@ export function CollectPanel() {
                     setState(rec.current.state);
                   }}
                 >
-                  Record none: {c.text} ({noneCount(takes, c.tag)})
+                  None take: {c.text} ({noneCount(takes, c.tag)})
                 </button>
               ))}
             </fieldset>
