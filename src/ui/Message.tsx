@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { UNCONFIRMED_CLOSE, UNCONFIRMED_OPEN } from '../config/alphabet';
 import styles from './Message.module.css';
 
 interface Props {
@@ -12,23 +13,55 @@ interface Props {
   placeholder?: string;
   /** red underline for a word that is not in the list (screen 09) */
   flagged?: boolean;
+  /** ArSL: the text reads right to left (the caret and the rest of the row stay where they are) */
+  rtl?: boolean;
   children?: ReactNode;
 }
 
-export function Message({ text, candidate, caret, placeholder, flagged, children }: Props) {
+/** letters nobody has confirmed yet are written as ⟨id⟩: shown dashed, with the marks as the cue that is not colour */
+function Marked({ text }: { text: string }) {
+  const parts = text.split(
+    new RegExp(`(${UNCONFIRMED_OPEN}[^${UNCONFIRMED_CLOSE}]*${UNCONFIRMED_CLOSE})`),
+  );
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.startsWith(UNCONFIRMED_OPEN) ? (
+          <span key={i} className={styles.unconfirmed} data-testid="unconfirmed-letter">
+            {p}
+          </span>
+        ) : (
+          p
+        ),
+      )}
+    </>
+  );
+}
+
+export function Message({ text, candidate, caret, placeholder, flagged, rtl, children }: Props) {
+  const dir = rtl ? ({ dir: 'rtl', lang: 'ar' } as const) : {};
   const empty = !text && !candidate;
   return (
-    <div className={styles.row}>
+    <div className={styles.row} {...dir}>
       {empty && placeholder ? (
         <>
           {caret && <span className={styles.caret} aria-hidden="true" />}
-          <p className={styles.placeholder}>{placeholder}</p>
+          {/* the placeholder is screen text, not the person's writing: it stays left to right */}
+          <p className={styles.placeholder} dir="ltr" lang="en">
+            {placeholder}
+          </p>
         </>
       ) : (
         <>
-          {text && <p className={`${styles.letters} ${flagged ? styles.flagged : ''}`}>{text}</p>}
+          {text && (
+            <p
+              className={`${styles.letters} ${rtl ? styles.rtl : ''} ${flagged ? styles.flagged : ''}`}
+            >
+              <Marked text={text} />
+            </p>
+          )}
           {candidate && (
-            <p className={`${styles.letters} ${styles.candidate}`}>
+            <p className={`${styles.letters} ${rtl ? styles.rtl : ''} ${styles.candidate}`}>
               <span aria-label={`Recognising ${candidate}`}>{candidate}</span>
             </p>
           )}

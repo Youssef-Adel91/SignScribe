@@ -9,16 +9,18 @@ import { BuilderBody } from '../ui/Builder';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
 import { useCtx } from '../state/MachineProvider';
+import { useStrings } from '../output/strings';
 import styles from './S09WordSuggestion.module.css';
 import { HandChip } from '../vision/bits';
 import { CommandRing } from '../vision/bits';
 
 export default function S09WordSuggestion() {
   const { hand, place, suggestion } = useCtx();
+  const strings = useStrings();
   const original = suggestion?.original ?? '';
   const match = suggestion?.match ?? '';
   useAnnounceOnChange(
-    match ? `Did you mean ${match}? ${original} is not in the ${place} word list.` : null,
+    match ? strings.wordSuggestionAnnounce(match, original, place) : null,
   );
   return (
     <Screen
@@ -58,21 +60,17 @@ export default function S09WordSuggestion() {
               <div className={styles.word}>
                 <Message text={original} flagged />
               </div>
+              <p className={styles.warn}>
+                <Icon name="warn" size="var(--s-20)" />
+                Not in the {place} word list
+              </p>
             </Card>
-            <section className={styles.suggest} aria-label="Suggestion">
-              <p className={styles.kicker}>
-                <Icon name="sparkle" size="var(--s-22)" />
-                DID YOU MEAN
-              </p>
-              <p className={styles.match}>{match}</p>
-              <p className={styles.why}>
-                "{original}" is not in the {place} word list. "{match}" is the closest match.
-              </p>
-              <ul className={styles.hints}>
-                <Hint gesture="up" label={`Yes, use ${match}`} suggested />
-                <Hint gesture="down" label={`No, keep ${original}`} />
-              </ul>
-            </section>
+            <Card title="Suggested word">
+              <div className={styles.word}>
+                <Message text={match} />
+              </div>
+              <p className={styles.match}>Matches your letters best</p>
+            </Card>
           </>
         }
       />

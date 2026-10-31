@@ -1,7 +1,7 @@
 // Checks that none of the 14 screens scrolls or overflows at 1280x720, 1440x900 and 1920x1080 (with and without live vision).
 // Usage: npm run build && npm run layout
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
+import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '../..');
@@ -74,4 +74,4 @@ for (const textSize of ['normal', 'large', 'xlarge'])
 console.log('screens checked per text size:', 2 * 3 * 14, 'overflowing:', JSON.stringify(bySize));
 process.exitCode = bad ? 1 : 0;
 await b.close();
-server.kill();
+stopTool(server);

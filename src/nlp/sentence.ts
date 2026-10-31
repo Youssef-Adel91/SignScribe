@@ -5,7 +5,14 @@ import type { Place } from './words';
  * Phase 6 replaces this with the LLM client + validation and keeps this as the fallback.
  * Rules: never add facts, keep every content word.
  */
-export function offlineSentence(words: readonly string[], _place: Place, attempt: number): string {
+export function offlineSentence(
+  words: readonly string[],
+  _place: Place,
+  attempt: number,
+  alphabet: string = 'english',
+): string {
+  // no Arabic sentence rules yet: the chosen words are shown as they are, nothing is added
+  if (alphabet === 'arabic') return words.join(' ');
   const lower = words.map((w) => w.toLowerCase());
   if (lower.length === 0) return '';
   const hello = lower[0] === 'hello';

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { alphabetOfSetting } from '../config/alphabet';
 import { Machine } from '../state/MachineProvider';
 import { screenOf } from '../state/machine';
 import { evaluateChecks, FpsMeter, meanLuma } from './checks';
@@ -11,10 +12,13 @@ import { OnnxCardDetector } from '../cards/onnx';
 import { SortTracker } from '../cards/sort';
 import type { CardDetector, Detection } from '../cards/types';
 import { LetterController } from '../recognition/letterController';
+import { letterLog, rowOf } from '../recognition/letterLog';
+import { commandState, dropLettersWithCommand } from '../recognition/priority';
+import { onTuningSaved, resolveTuning } from '../recognition/tuning';
 import { loadModels, type LoadedModels } from '../recognition/models';
 import { createHandTracker, ModelMissingError, type HandTracker } from './hands';
 import { getTargets, setHot } from './targets';
-import { VISION_MODE as MODE, visionStore } from './store';
+import { LETTER_DEBUG, VISION_MODE as MODE, visionStore } from './store';
 import { getMockCards } from './mock';
 import type { HandFrame } from './types';
 
@@ -132,9 +136,28 @@ export function VisionProvider() {
         .finally(() => (cardBusy = false));
     };
     // letter models are optional files; the app works (with a clear notice) when they are absent
-    void loadModels().then((m: LoadedModels) => {
-      if (disposed) return;
-      letters = new LetterController(m.letters.recognizer, m.motion.recognizer);
+    let loadedFor = '';
+    const loadFor = (setting: string) => {
+      loadedFor = setting;
+      // no letters are read with the old alphabet's model while the new one loads
+      letters = new LetterController(null, null);
+      visionStore.set({ letters: { ...visionStore.state.letters, status: 'idle', message: '' } });
+      void loadModels(fetch, alphabetOfSetting(setting).id).then((m: LoadedModels) => {
+        // the alphabet was changed again while this was loading: that load wins
+        if (disposed || loadedFor !== setting) return;
+        applyModels(m);
+      });
+    };
+    const tuningFor = (modelId: string | undefined) =>
+      resolveTuning(alphabetOfSetting(loadedFor).id, modelId);
+    const applyModels = (m: LoadedModels) => {
+      const tuning = tuningFor(m.letters.recognizer?.id);
+      letters = new LetterController(
+        m.letters.recognizer,
+        m.motion.recognizer,
+        tuning,
+        alphabetOfSetting(loadedFor).controls,
+      );
       visionStore.set({
         letters: {
           ...visionStore.state.letters,
@@ -142,8 +165,22 @@ export function VisionProvider() {
           message: m.letters.status === 'ready' ? '' : m.letters.message,
           synthetic: m.letters.synthetic || m.motion.synthetic,
           motionStatus: m.motion.status,
+          tuning,
+          alphabetId: alphabetOfSetting(loadedFor).id,
+          modelId: m.letters.recognizer?.id ?? '',
         },
       });
+    };
+    // values saved from the debug overlay apply from the next frame
+    const tuningSub = onTuningSaved(() => {
+      const modelId = visionStore.state.letters.modelId || undefined;
+      const tuning = tuningFor(modelId);
+      letters.setTuning(tuning);
+      visionStore.set({ letters: { ...visionStore.state.letters, tuning } });
+    });
+    loadFor(actor.getSnapshot().context.alphabet);
+    const alphabetSub = actor.subscribe((snap) => {
+      if (snap.context.alphabet !== loadedFor) loadFor(snap.context.alphabet);
     });
     let lastHot: string | null = null;
 
@@ -165,11 +202,31 @@ export function VisionProvider() {
         viewport: { w: window.innerWidth, h: window.innerHeight },
         checks,
       });
-      const lr = letters.step(frame, { screen, signingHand: snap.context.hand });
+      // a control gesture, or the pointer / a posing hand in the command zone, has priority over every letter on this very frame
+      const command = commandState(
+        ui,
+        events.map((e) => e.type),
+        snap.context.hand,
+        window.innerWidth,
+      );
+      const lr = letters.step(frame, { screen, signingHand: snap.context.hand, command });
       // a command given while a letter is held must not let that letter come straight back
       if (events.some((e) => e.type === 'NO' || e.type === 'DELETE' || e.type === 'SPACE'))
         letters.notifyCommand();
-      for (const e of [...events, ...lr.events]) actor.send(e);
+      // one frame never sends a command and a letter
+      const letterEvents = dropLettersWithCommand(events, lr.events);
+      if (LETTER_DEBUG && (screen === 6 || screen === 7))
+        letterLog.record(
+          rowOf(
+            frame.t,
+            screen,
+            lr.ui,
+            { ...command, label: command.label ?? '' },
+            [...events, ...letterEvents].map((e) => e.type),
+            `${visionStore.state.letters.alphabetId}/${visionStore.state.letters.modelId || '-'}`,
+          ),
+        );
+      for (const e of [...events, ...letterEvents]) actor.send(e);
 
       // ---- picture cards: the mock camera is driven by frames, the real one by its own timer (cardTick)
       if (MODE === 'mock') cardTick(frame.t, getMockCards());
@@ -211,6 +268,8 @@ export function VisionProvider() {
       });
       return () => {
         disposed = true;
+        alphabetSub.unsubscribe();
+        tuningSub();
         cleanup();
         visionStore.reset();
       };
@@ -230,10 +289,12 @@ export function VisionProvider() {
         visionStore.set({
           status: e.kind === 'denied' ? 'denied' : e.kind === 'nocamera' ? 'nocamera' : 'error',
           message: e.message,
+          cameraProblem: e.problem,
         });
       } else {
         visionStore.set({
           status: 'error',
+          cameraProblem: null,
           message: `Hand tracking could not start: ${e instanceof Error ? e.message : String(e)}`,
         });
       }
@@ -295,6 +356,8 @@ export function VisionProvider() {
 
     return () => {
       disposed = true;
+      alphabetSub.unsubscribe();
+      tuningSub();
       cancelAnimationFrame(raf);
       clearInterval(lumaTimer);
       clearInterval(cardTimer);

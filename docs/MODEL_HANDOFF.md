@@ -14,7 +14,7 @@ For Youssef and the team. Everything the app needs around the model is built and
 | Wizard of Oz letters (`/?woz=1`) | `src/dev/WozPanel.tsx` | built; lets a facilitator type letters for a study with no model |
 
 ## Decisions you must make first
-1. **Which fingerspelling alphabet?** The app assumes one signing hand (the command zone is for the other hand), which fits ASL fingerspelling (J and Z are drawn in the air). British (BSL) fingerspelling uses two hands and does not fit this design. Arabic sign letters are a separate model and screen 03 shows them as "Coming soon".
+1. **Which fingerspelling alphabet?** Say ASL or ArSL, then set `config/alphabet.json` (and check the label file in `config/alphabets/`: the ArSL one is an unchecked template). The app assumes one signing hand (the command zone is for the other hand), which fits ASL fingerspelling (J and Z are drawn in the air). British (BSL) fingerspelling uses two hands and does not fit this design. Arabic sign letters are a separate model and screen 03 shows them as "Coming soon".
 2. **Who signs for the dataset?** The most valuable thing is several different people. See step 2.
 3. **Do you keep k-NN?** It is the baseline asked for. The app only knows the `StaticRecognizer` interface (`src/recognition/types.ts`): a better classifier trained in Python only has to export a model the TypeScript side can read, or add a new class next to `KnnRecognizer`.
 
@@ -23,12 +23,15 @@ For Youssef and the team. Everything the app needs around the model is built and
     pip install -r ml/requirements.txt
     python -m pytest ml/tests       # must pass; it also checks our $P against the dollarpy package
 
+## Step 0b: a public picture dataset instead of (or before) your own recordings
+`ml/import_images.py` turns a folder of labelled pictures into takes with MediaPipe, and `ml/evaluate.py` measures it by leaving whole people (or sources) out. Commands and flags: `ml/README.md`. Read the import report first: letters with few pictures, how many pictures had no hand, folders that were ignored. Datasets whose pictures show one person each work best with `--person-regex`; with no person ids use `--source` and add more than one source, or the evaluation refuses to run. Check the dataset's licence. Results go to `docs/MODEL_RESULTS.md` through the script only.
+
 ## Step 1: check the camera side first
 Open `/?dev=1` and use the checklist in `docs/PHASE2_CHECKLIST.md`. If hand tracking itself is poor in your room (dark, backlit, hand too close), a model cannot fix it. Collection refuses frames that are too dark/far/close/cut off, but fix the room first.
 
 ## Step 2: collect (`npm run dev`, open `/?collect=1`)
 1. Enter an **anonymous signer code** (`s01`, `s02`, …) and a **session note** (`lamp-60cm`). Choose the signing hand.
-2. Pick a letter, press Record, get the sign ready during the 3-second countdown, hold it still (J and Z: draw it once during the recording). The screen says why a take was refused; refused takes are not saved.
+2. **Fast way:** set "Takes per letter" (default 5) and press **Start guided run**. The letter to sign is shown big, the first take of a letter has a 3 s countdown, the next ones 1.5 s, takes are saved and the run moves on by itself; letters that already have enough takes are skipped, refused takes are retried, 3 in a row stop the run. The letter grid is red / amber / green against the target and "Still needed" lists the gaps. Or, one at a time: pick a letter, press Record, get the sign ready during the 3-second countdown, hold it still (J and Z: draw it once during the recording). The screen says why a take was refused; refused takes are not saved.
 3. Record **many takes per letter, in different positions, distances and tilts**, not many identical ones. A take is 1.5 s; each one is a separate chance for the sign to look slightly different.
 4. **Change something between sittings** (light, distance, time of day) and use a new session note.
 5. **More than one person.** This is the single most important rule: with one signer the evaluation can only measure how repeatable that person is.
@@ -51,9 +54,34 @@ How to read it:
 - `--tune` picks k by cross-validation on the same data: its result is slightly optimistic. The report says so.
 
 ## Step 4: install and try
-1. Commit `public/models/letters-knn.json` (and `motion-dollar.json`) so the team shares it. `tests/models-guard.test.ts` fails if a model trained on synthetic data is there.
+1. Share the small MLP model (`public/models/letters-mlp.json` / `letters-arsl-mlp.json`) and `motion-dollar.json` through the repository. **Do not commit a k-NN model** (`public/models/*-knn.json`): it stores thousands of real landmark samples of real people, a copy of the data in another shape. `.gitignore` keeps it out, `npm run check:staged` (and the pre-commit hook from `npm run hooks:install`) refuse it, and `tests/forbidden-files.test.ts` fails if one is already committed. Share a k-NN file by hand with the people who may have the data. `tests/models-guard.test.ts` fails if a model trained on synthetic data is in `public/models/`.
 2. `npm run dev`, open `/`, go to the spelling screen: the grey "No letter model yet" notice is gone when the file loads; a broken file shows a plain message.
 3. Sign a letter and hold it. A candidate appears after `LETTER.stableMs`, the ring fills, the letter is written after `LETTER.holdMs`. Check the same sign is not written twice.
+
+### Optional: the neural network (`letters-mlp.json`)
+    python ml/export_mlp.py --data all-takes.jsonl --alphabet asl --out public/models/letters-mlp.json
+It trains on ALL takes (nothing held out), so its `.report.md` has no accuracy. The honest number is `ml/evaluate.py` (leave-one-person-out) on the same takes; pass its JSON with `--evaluation-json` to record the headline in the model. The app uses this file first, `letters-knn.json` is the fallback, so keep both. `ArSL` models stay out of `public/models/` for now (see `ml/README.md`). The confidence scale differs from the k-NN: re-check `LETTER` with the camera.
+
+### Your own webcam as a test (never as training)
+    python ml/evaluate.py --train ml/data/arsl21l.jsonl --test my-takes.jsonl --test-name "team webcam"
+Reports accuracy on your recordings only; they are never mixed into the training side (the script refuses a take id that is on both sides, or a letter that only the test has, unless `--shared-classes`). It is not a leave-one-person-out result and the report says so.
+
+### Why a letter fires, and the settings that stop it (`?letterdebug=1`)
+Open the app with `?letterdebug=1` (the camera as usual). The panel shows the state of the letter logic on the spelling screens (`moving`, `settling`, `rejected`, `candidate`, `holding`, `committed`, `wait-release`, `cooldown`, `command`, `no-hand`), the top 3 letters with confidence, hand speed against its limit, the still-frame counter, how long the same letter has been the strong guess, and the control gesture being held. **Download log** writes `signscribe-letterdebug-*.csv` (one row per camera frame, numbers and letter names only, git-ignored). **Settings** edits the values in force for the current alphabet and model type and saves them in this browser.
+
+What decides a letter, in this order, every frame:
+1. **Command first.** A recognised control gesture (delete, space, finish, cancel), a command just sent, the pointer in the command zone, or a posing hand in the command zone: no letter is shown or written, and not for `commandHoldoffMs` after. The same frame never sends a command and a letter.
+2. **Still hand.** Hand speed (mean of the 21 landmarks, palm lengths per second) must stay under `maxSpeed` (with hysteresis) for `stillFrames` frames in a row; the model is not even asked while the hand moves.
+3. **Strong guess.** Not `none`, confidence at least `minConfidence`, and best minus second best at least `minMargin`.
+4. **Hold.** The same letter for `stableMs` shows it, for `holdMs` (and `confirmConfidence`) writes it.
+5. **After a written letter.** Nothing is shown for `cooldownMs`, and the hand must change, move or leave for `releaseMs` before the same sign can be written again. One sound and one vibration, once per written letter (screen 14: "Sounds only" / "Silent").
+
+All of these are settings per model type (k-NN / MLP) and alphabet (`src/recognition/tuning.ts`). **The defaults are first guesses, not measured.** Record `none` takes (hand moving, relaxed, command zone) with several people, retrain with them, then use the log and `ml/calibrate.py` to choose the values, and save them from the panel.
+
+### Choosing a threshold per model: `ml/calibrate.py`
+    python ml/calibrate.py --data all-takes.jsonl --alphabet asl
+    python ml/calibrate.py --train all-takes.jsonl --test my-takes.jsonl --test-name "team webcam" --alphabet asl
+For the k-NN vote share and the MLP softmax, separately, it prints how many predictions would be shown at each threshold and how many of those are right (with a 95% interval), from held-out predictions only. It never changes `LETTER`; read the table of the model that will ship, then change the value by hand with a test (Step 5). The two tables are not comparable.
 
 ## Step 5: tune the thresholds with the model in hand
 `LETTER` in `src/recognition/letterController.ts`: `minConfidence`, `confirmConfidence`, `stableMs`, `holdMs`, `releaseMs` and the motion constants. They are first guesses. The report gives per-letter precision; use it. When a letter misfires, write a test that reproduces it in `tests/letters.test.ts` first, then change the value, and note it in `docs/KNOWN_ISSUES.md`.

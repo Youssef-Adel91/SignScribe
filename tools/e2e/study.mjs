@@ -3,7 +3,7 @@
 // and the comparison; then the exported CSV is checked. Synthetic hands prove the logic, not real tracking.
 // Usage: npm run build && npm run e2e:study
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
+import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -229,7 +229,7 @@ try {
   await ctx.close();
 } finally {
   await browser.close();
-  server.kill();
+  stopTool(server);
 }
 console.log(failed ? `\n${failed} check(s) FAILED` : '\nall study checks passed');
 process.exit(failed ? 1 : 0);

@@ -1,9 +1,15 @@
 export type CameraErrorKind = 'denied' | 'nocamera' | 'error';
 
+/** what went wrong, as a code the screen turns into a sentence in the person's language (strings.ts: cameraProblem*) */
+export type CameraProblem =
+  'denied' | 'nocamera' | 'inuse' | 'unsupported' | 'insecure' | 'unknown';
+
 export class CameraError extends Error {
   constructor(
     readonly kind: CameraErrorKind,
     message: string,
+    /** same situation as `kind` but finer; the banner uses it for the translated text */
+    readonly problem: CameraProblem = 'unknown',
   ) {
     super(message);
   }
@@ -25,6 +31,7 @@ export function classifyCameraError(e: unknown): CameraError {
     return new CameraError(
       'denied',
       'Camera access is blocked. Allow the camera for this page in the browser, then reload.',
+      'denied',
     );
   if (
     name === 'NotFoundError' ||
@@ -38,8 +45,20 @@ export function classifyCameraError(e: unknown): CameraError {
       name === 'NotReadableError'
         ? 'The camera is in use by another app. Close it and reload.'
         : 'No camera found. Connect a camera and reload.',
+      name === 'NotReadableError' ? 'inuse' : 'nocamera',
     );
-  return new CameraError('error', `The camera could not start (${name || 'unknown error'}).`);
+  // NotSupportedError (some browsers, or a page that is not secure) and anything we do not know: one plain, specific sentence
+  if (name === 'NotSupportedError' || name === 'TypeError')
+    return new CameraError(
+      'error',
+      'The camera is not available in this browser or on this page. Open the app at localhost or https, or use a normal browser window.',
+      'unsupported',
+    );
+  return new CameraError(
+    'error',
+    'The camera could not start for an unknown reason. Reload the page, or try another browser window.',
+    'unknown',
+  );
 }
 
 export async function openCamera(): Promise<OpenCamera> {
@@ -47,6 +66,7 @@ export async function openCamera(): Promise<OpenCamera> {
     throw new CameraError(
       'error',
       'This browser cannot use the camera here. Use https or localhost in a current browser.',
+      'insecure',
     );
   }
   let stream: MediaStream;

@@ -1,0 +1,40 @@
+{
+  "_readme": "Copy to devices.json (git-ignored) and put your own devices in it. Device addresses live ONLY in this local file: the scanner never logs them and never sends them to the server.",
+  "server": { "host": "127.0.0.1", "port": 8788 },
+  "scan": {
+    "seconds": 4,
+    "pause_seconds": 1,
+    "min_rssi": -85,
+    "confirm_scans": 2,
+    "lost_after_scans": 3,
+    "heartbeat_seconds": 5
+  },
+  "devices": [
+    {
+      "label": "my-band",
+      "match": { "name": "Mi Smart Band 6" },
+      "userId": "youssef"
+    },
+    {
+      "label": "friend-phone",
+      "match": { "address": "AA:BB:CC:DD:EE:01" },
+      "userId": "sara"
+    },
+    {
+      "label": "clinic-beacon",
+      "match": { "name_prefix": "SS-CLINIC" },
+      "place": "Clinic"
+    },
+    {
+      "label": "shop-beacon",
+      "match": { "name": "SS-SHOP-1" },
+      "place": "Shop"
+    },
+    {
+      "label": "desk-tag-at-work",
+      "match": { "address": "AA:BB:CC:DD:EE:02" },
+      "userId": "youssef",
+      "place": "Work"
+    }
+  ]
+}

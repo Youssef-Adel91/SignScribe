@@ -4,7 +4,7 @@
 //     model file) the app says so clearly instead of crashing.
 // Usage: npm run build && npm run e2e
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
+import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -53,6 +53,10 @@ try {
     const page = await ctx.newPage();
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e)));
+    const svgErrors = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error' && /<svg>/.test(m.text())) svgErrors.push(m.text().slice(0, 100));
+    });
     await page.goto(`${base}?dev=1&vision=mock`);
     await page.waitForFunction(() => window.__signscribe !== undefined);
     const screen = () =>
@@ -127,12 +131,21 @@ try {
       () => JSON.parse(localStorage.getItem('signscribe.settings.v2') || '{}').hand,
     );
     check('point-and-hold on "Left hand" selects it (03)', hand === 'left', `saved hand = ${hand}`);
-    await pointAtTile(3, 'Arabic', true);
-    check(
-      '"Coming soon" alphabet cannot be chosen',
-      (await page.evaluate(
+    const alphabetSaved = () =>
+      page.evaluate(
         () => JSON.parse(localStorage.getItem('signscribe.settings.v2') || '{}').alphabet,
-      )) === 'english',
+      );
+    await pointAtTile(3, 'More…', true);
+    check('"Coming soon" alphabet cannot be chosen', (await alphabetSaved()) === 'english');
+    await pointAtTile(3, 'Arabic');
+    check(
+      'point-and-hold on "Arabic" (ArSL) selects it and saves it with the settings',
+      (await alphabetSaved()) === 'arabic',
+    );
+    await pointAtTile(3, 'English'); // the rest of this flow spells English words
+    check(
+      'point-and-hold on "English" (ASL) selects it again',
+      (await alphabetSaved()) === 'english',
     );
 
     await play([{ pose: 'thumbsUp' }], 900);
@@ -184,6 +197,25 @@ try {
 
     await play([], 1300);
     check('no hand for 1 s: hand lost overlay (08)', await waitScreen(8));
+    const hints = await page.evaluate(() => document.querySelector('footer')?.textContent ?? '');
+    check(
+      'hand lost (08): the hint bar offers only "Bring your hand back", not commands that do nothing',
+      /Bring your hand back/.test(hints) && !/Space|Delete|Done|Cancel/.test(hints),
+      hints.slice(0, 80),
+    );
+    check(
+      'hand lost: the camera advice is not shown at first',
+      !(await page.evaluate(() => /Still no hand/.test(document.body.textContent ?? ''))),
+    );
+    await play([], 10500);
+    check(
+      'hand lost for 10 s: the screen also says what to check',
+      await page.evaluate(() =>
+        /Still no hand\? Check that nothing covers the camera/.test(
+          document.body.textContent ?? '',
+        ),
+      ),
+    );
     await play([{ pose: 'open', cx: 0.8 }], 500);
     check('hand back: 08 -> 06, message kept', await waitScreen(6));
     await play([], 500);
@@ -237,6 +269,40 @@ try {
       `${sBefore} -> ${sAfter}`,
     );
 
+    // "Need to add more?": two point-and-hold targets take the person back with the words kept
+    const more = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-screen="11"] [aria-label="Add more words"] li')].map(
+        (e) => e.textContent.trim(),
+      ),
+    );
+    check(
+      'screen 11 offers "Add a card" and "Spell more"',
+      more.join('|') === 'Add a card|Spell more',
+      more.join('|'),
+    );
+    await pointAtTile(11, 'Add a card');
+    check('point and hold "Add a card": 11 -> 10', await waitScreen(10));
+    const kept = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-screen="10"] li')].map((e) => e.textContent).join('|'),
+    );
+    check(
+      'the words chosen before are still there',
+      /price/i.test(kept) && /help/i.test(kept),
+      kept.slice(0, 100),
+    );
+    await pointAtTile(10, 'Thank you');
+    await play([{ pose: 'thumbsUp', cx: 0.2, cy: 0.5 }], 900);
+    check(
+      'thumbs up in the zone: 10 -> 11 again, with the new card in the sentence',
+      await waitScreen(11),
+    );
+    await play([], 500);
+    await pointAtTile(11, 'Spell more');
+    check('point and hold "Spell more": 11 -> 06', await waitScreen(6));
+    await play([{ pose: 'thumbsUp', cx: 0.2, cy: 0.5 }], 900);
+    check('nothing new spelt, thumbs up: 06 -> 11 (the words are kept)', await waitScreen(11));
+    await play([], 500);
+
     await play([{ pose: 'thumbsUp' }], 900);
     check('thumbs up: 11 -> 12 (share) only after the thumbs up', await waitScreen(12));
     await play([], 600);
@@ -244,6 +310,11 @@ try {
     await play([{ pose: 'thumbsUp' }], 900);
     check('thumbs up on 12 = Finish: 12 -> 01 (session reset)', await waitScreen(1));
 
+    check(
+      'no <svg> attribute errors in the console in the whole run',
+      svgErrors.length === 0,
+      [...new Set(svgErrors)].join(' ; '),
+    );
     check('no page errors in the whole run', errors.length === 0, errors.join(' ; ').slice(0, 200));
     await page.screenshot({ path: resolve(root, 'tools/e2e/last-run-mock.png') });
     await ctx.close();
@@ -294,12 +365,28 @@ try {
   }
 
   /* ------------------------------------------------------------ 3. camera problems are explained */
-  for (const [name, args, perms, want] of [
-    ['permission refused', ['--use-fake-device-for-media-stream'], [], /denied/],
-    ['no camera at all', [], ['camera'], /nocamera|denied/],
+  // The error comes from an injected getUserMedia, NOT from the browser: Chromium on some systems (seen on Windows) throws
+  // NotSupportedError for both "refused" and "no camera", which would make this check depend on the machine.
+  const failWith = (errName) => `
+    (() => {
+      const md = navigator.mediaDevices || {};
+      md.getUserMedia = () => Promise.reject(new DOMException('injected by the test', ${JSON.stringify(errName)}));
+      if (!navigator.mediaDevices) Object.defineProperty(navigator, 'mediaDevices', { value: md, configurable: true });
+    })();`;
+  for (const [name, errName, want, bannerWant] of [
+    ['permission refused', 'NotAllowedError', /denied/, /blocked/i],
+    ['no camera at all', 'NotFoundError', /nocamera/, /no camera/i],
+    [
+      'browser says "not supported"',
+      'NotSupportedError',
+      /statuserror/,
+      /not available in this browser/i,
+    ],
+    ['an error nobody knows', 'WeirdError', /statuserror/, /unknown reason/i],
   ]) {
-    const b = await chromium.launch({ executablePath: exe, args });
-    const ctx = await b.newContext({ viewport: { width: 1280, height: 720 }, permissions: perms });
+    const b = await chromium.launch({ executablePath: exe, args: [] });
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 720 }, permissions: [] });
+    await ctx.addInitScript(failWith(errName));
     const page = await ctx.newPage();
     await page.goto(`${base}?dev=1`);
     await page
@@ -320,14 +407,14 @@ try {
     );
     check(
       `${name}: the app shows a plain message`,
-      want.test(text) && banner.length > 10,
+      want.test(text) && bannerWant.test(banner) && !banner.includes(errName),
       banner.slice(0, 120),
     );
     await b.close();
   }
 } finally {
   await browser.close();
-  server.kill();
+  stopTool(server);
 }
 console.log(`\n${results.length - failed}/${results.length} checks passed`);
 process.exit(failed ? 1 : 0);

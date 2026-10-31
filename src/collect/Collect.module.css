@@ -109,3 +109,43 @@
   padding: 8px 12px;
   font-weight: 600;
 }
+.letters label.none {
+  border-color: #b91c1c;
+  background: #fee2e2;
+}
+.letters label.part {
+  border-color: #b45309;
+  background: #fef3c7;
+}
+.letters label.full {
+  border-color: #15803d;
+  background: #dcfce7;
+}
+.gaps {
+  font-weight: 600;
+  margin: 4px 0 8px;
+}
+.prompt {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 8px 0;
+}
+.promptLetter {
+  font-size: 72px;
+  line-height: 1;
+  color: #0f766e;
+}
+.prompt small {
+  flex-basis: 100%;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+.letters label.on {
+  outline: 3px solid #0f172a;
+  outline-offset: 1px;
+}

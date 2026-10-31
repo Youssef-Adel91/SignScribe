@@ -3,7 +3,18 @@
  * per line ("JSONL"), one TAKE per object. Documented in docs/DATASET.md; ml/signscribe_ml/dataset.py
  * checks the same rules.
  */
+import {
+  ALPHABET,
+  ALPHABET_LABELS,
+  REJECT_LABEL,
+  controlClasses,
+  letterLabels,
+} from '../config/alphabet';
+
 export type TakeKind = 'static' | 'dynamic';
+/** what a 'none' take shows: a hand that is moving, a relaxed hand, a hand in the command zone, or something else */
+export const NONE_TAGS = ['moving', 'relaxed', 'command-zone', 'other'] as const;
+export type NoneTag = (typeof NONE_TAGS)[number];
 export type SigningHand = 'left' | 'right';
 
 export interface TakeFrame {
@@ -16,7 +27,7 @@ export interface TakeFrame {
 export interface Take {
   v: 1;
   id: string;
-  /** one letter A-Z */
+  /** one label of the active alphabet (config/alphabets) */
   label: string;
   kind: TakeKind;
   /** who signed: an anonymous code such as "s01" (never a name) */
@@ -29,14 +40,25 @@ export interface Take {
   width: number;
   height: number;
   createdAt: string;
+  /** who is in the pictures, when the dataset says (imported pictures). Whole persons are held out when testing */
+  person?: string;
+  /** which recording/sub-dataset the take comes from; used instead of `person` when the dataset has no person ids */
+  source?: string;
   /** true only for generated test data */
   synthetic?: boolean;
+  /** only on 'none' takes: what the hand was doing (see NONE_TAGS) */
+  tag?: NoneTag;
   frames: TakeFrame[];
 }
 
-export const LETTERS = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
-/** letters that are drawn in the air in ASL: recorded as dynamic takes by default */
-export const MOVING_LETTERS = ['J', 'Z'];
+/** every label of the active alphabet, letters and control classes; see src/config/alphabet.ts */
+export const ALL_LABELS: readonly string[] = ALPHABET_LABELS;
+/** the letters only: the letter list of the collection page, the guided run and the Wizard of Oz panel */
+export const LETTERS: readonly string[] = letterLabels(ALPHABET);
+/** the control classes of the active alphabet (none in ASL): recorded in their own section of the collection page */
+export const CONTROLS = controlClasses(ALPHABET);
+/** labels that are drawn in the air (J and Z in ASL): recorded as dynamic takes by default */
+export const MOVING_LETTERS: readonly string[] = ALPHABET.dynamic;
 export const defaultKind = (label: string): TakeKind =>
   MOVING_LETTERS.includes(label) ? 'dynamic' : 'static';
 
@@ -64,8 +86,14 @@ export function validateTake(raw: unknown): Take {
     if (!(k in t)) fail(`missing field '${k}'`);
   if (t.kind !== 'static' && t.kind !== 'dynamic') fail("kind must be 'static' or 'dynamic'");
   if (t.hand !== 'left' && t.hand !== 'right') fail("hand must be 'left' or 'right'");
-  if (typeof t.label !== 'string' || !LETTERS.includes(t.label))
-    fail('label must be one letter A-Z');
+  if (typeof t.label !== 'string' || !(ALL_LABELS.includes(t.label) || t.label === REJECT_LABEL))
+    fail(`label must be one letter of the alphabet (${ALL_LABELS.join(' ')}) or '${REJECT_LABEL}'`);
+  if (t.label === REJECT_LABEL && t.kind !== 'static') fail(`'${REJECT_LABEL}' takes are static`);
+  if ('tag' in t && !NONE_TAGS.includes(t.tag as NoneTag))
+    fail(`'tag' must be one of ${NONE_TAGS.join(', ')}`);
+  for (const k of ['person', 'source'] as const)
+    if (k in t && (typeof t[k] !== 'string' || t[k]!.trim() === ''))
+      fail(`'${k}' must be a non-empty string`);
   if (!((t.width as number) > 0 && (t.height as number) > 0))
     fail('width and height must be positive');
   const frames = t.frames;
@@ -139,4 +167,18 @@ export function coverage(takes: readonly Take[]): Coverage[] {
     const mine = takes.filter((t) => t.label === label);
     return { label, takes: mine.length, frames: mine.reduce((s, t) => s + t.frames.length, 0) };
   });
+}
+
+export interface Gap {
+  label: string;
+  takes: number;
+  /** takes still missing to reach the target */
+  missing: number;
+}
+
+/** letters below the target number of takes, in alphabet order (counts only) */
+export function gaps(takes: readonly Take[], target: number): Gap[] {
+  return coverage(takes)
+    .map((c) => ({ label: c.label, takes: c.takes, missing: Math.max(0, target - c.takes) }))
+    .filter((g) => g.missing > 0);
 }

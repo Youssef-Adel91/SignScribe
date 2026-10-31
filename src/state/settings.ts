@@ -12,7 +12,7 @@ export function parseSettings(p: Record<string, unknown>): Settings {
   const legacy = p.display;
   return {
     hand: pick(p.hand, ['left', 'right'], d.hand),
-    alphabet: 'english', // the other alphabets are "Coming soon"
+    alphabet: pick(p.alphabet, ['english', 'arabic'], d.alphabet), // 'more' is still "Coming soon"
     textSize: pick(
       p.textSize ?? (legacy === 'large' || legacy === 'contrast' ? 'large' : undefined),
       ['normal', 'large', 'xlarge'],
@@ -25,6 +25,7 @@ export function parseSettings(p: Record<string, unknown>): Settings {
     ),
     dwell: pick(p.dwell, ['auto', 'slow', 'normal', 'fast'], d.dwell),
     voice: typeof p.voice === 'boolean' ? p.voice : d.voice,
+    feedback: typeof p.feedback === 'boolean' ? p.feedback : d.feedback,
   };
 }
 

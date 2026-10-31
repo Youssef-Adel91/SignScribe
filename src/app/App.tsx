@@ -4,6 +4,8 @@ import { MachineProvider, useSend } from '../state/MachineProvider';
 import { PATH_TO_SCREEN } from '../state/paths';
 import { DevPanel } from '../dev/DevPanel';
 import { VisionDebug } from '../dev/VisionDebug';
+import { ContextBridge } from '../nlp/ContextBridge';
+import { RemoteLetterCard } from '../nlp/RemoteLetterCard';
 import { SentenceBridge } from '../nlp/SentenceBridge';
 import { WsSentenceClient, resolveSentenceUrl } from '../nlp/sentenceClient';
 import { PerfPanel } from '../perf/PerfPanel';
@@ -14,8 +16,10 @@ import { ContextNotice } from '../vision/ContextNotice';
 import { PointerOverlay } from '../vision/PointerOverlay';
 import { StatusBanner } from '../vision/StatusBanner';
 import { VisionProvider } from '../vision/VisionProvider';
+import { LETTER_DEBUG } from '../vision/store';
 import { ScreenHost } from './ScreenHost';
 import { CollectPanel } from '../collect/CollectPanel';
+import { LetterDebug } from '../dev/LetterDebug';
 import { WozPanel } from '../dev/WozPanel';
 import { StudyPanel } from '../study/StudyPanel';
 import { StudyProvider } from '../study/StudyProvider';
@@ -71,6 +75,8 @@ function Body() {
         {WOZ && <WozPanel />}
         {PERF && <PerfPanel />}
         {sentenceClient && <SentenceBridge client={sentenceClient} />}
+        {SENTENCE_URL && !COLLECT && <ContextBridge url={SENTENCE_URL} />}
+        {SENTENCE_URL && !COLLECT && <RemoteLetterCard />}
         {CARD_SHEET && <CardSheet />}
         <ScreenHost />
         <VisionProvider />
@@ -81,6 +87,7 @@ function Body() {
         <CardNotice />
         {DEV && <DevPanel goTo={(screen) => setBoot((b) => ({ key: b.key + 1, screen }))} />}
         {DEV && <VisionDebug />}
+        {LETTER_DEBUG && <LetterDebug />}
       </MachineProvider>
     </>
   );

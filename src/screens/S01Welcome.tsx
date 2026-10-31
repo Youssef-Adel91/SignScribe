@@ -6,19 +6,23 @@ import { HoldRing } from '../ui/HoldRing';
 import { Icon } from '../ui/Icon';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
+import { useStrings } from '../output/strings';
 import styles from './S01Welcome.module.css';
 import { Demo, useLive } from '../vision/bits';
 import { useVision } from '../vision/store';
 
-const CAPTION = 'Hand detected. Keep holding…';
-
 export default function S01Welcome() {
+  const strings = useStrings();
   const live = useLive();
   const wake = useVision((s) => s.ui?.wake ?? 0);
   const hands = useVision((s) => s.ui?.hands ?? 0);
   const caption =
-    !live || wake > 0 ? CAPTION : hands > 0 ? 'Open your hand fully' : 'Raise your open hand';
-  useAnnounceOnChange(wake > 0 || !live ? CAPTION : null);
+    !live || wake > 0
+      ? strings.welcomeCaptionDetected
+      : hands > 0
+        ? strings.welcomeOpenHandFully
+        : strings.welcomeRaiseOpenHand;
+  useAnnounceOnChange(wake > 0 || !live ? strings.welcomeCaptionDetected : null);
   return (
     <Screen
       chips={
@@ -58,10 +62,10 @@ export default function S01Welcome() {
             Video is processed on this device. Nothing is recorded.
           </p>
         </div>
-        <CameraView label="Camera preview. Raise an open hand to start." className={styles.cam}>
-          {(!live || wake > 0) && (
-            <div className={styles.ring}>
-              <HoldRing progress={live ? wake : 0.7} size="100%" label="Wake gesture hold" />
+        <CameraView label="Camera preview. Raise your open hand and hold it still to start.">
+          {wake > 0 && (
+            <div className={styles.wakeRing}>
+              <HoldRing progress={wake} size="100%" label="Keep holding your hand up to start" />
             </div>
           )}
           <Demo>
