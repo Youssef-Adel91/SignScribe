@@ -42,7 +42,7 @@ Without it the app writes sentences with simple offline rules. With it, a langua
 
     npm run check      # typecheck, lint, unit tests, production build
     npm run e2e        # needs a build: whole flow driven by synthetic hands, no mouse or keyboard; camera error messages
-    npm run layout     # needs a build: no scrolling or overflow on any screen at 1280x720, 1440x900, 1920x1080 (reports Normal, Large and Extra large text)
+    npm run layout     # needs a build: no scrolling or overflow on any screen at 1280x720, 1440x900, 1920x1080 (fails on any Normal or Large text overflow; Extra large is only counted, KNOWN_ISSUES #3)
     npm run axe        # needs a build: axe-core (WCAG A / AA) on 62 pages and states
     npm run bench      # CPU time of our own code per frame (no camera)
     npm run e2e:server # needs a build: the app with a real sentence server, a dead one and a hostile one

@@ -19,9 +19,7 @@ export default function S09WordSuggestion() {
   const strings = useStrings();
   const original = suggestion?.original ?? '';
   const match = suggestion?.match ?? '';
-  useAnnounceOnChange(
-    match ? strings.wordSuggestionAnnounce(match, original, place) : null,
-  );
+  useAnnounceOnChange(match ? strings.wordSuggestionAnnounce(match, original, place) : null);
   return (
     <Screen
       steps={['done', 'active', 'todo', 'todo']}
@@ -69,7 +67,7 @@ export default function S09WordSuggestion() {
               <div className={styles.word}>
                 <Message text={match} />
               </div>
-              <p className={styles.match}>Matches your letters best</p>
+              <p className={styles.caption}>Matches your letters best</p>
             </Card>
           </>
         }
