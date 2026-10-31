@@ -9,6 +9,7 @@ import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import net from 'node:net';
 import { WebSocketServer } from 'ws';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -55,6 +56,52 @@ const check = (name, ok, detail = '') => {
   if (!ok) failed++;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? '  -> ' + detail : ''}`);
 };
+// a Bluetooth scanner's message over the plain TCP door is acknowledged; one with a device address is refused
+const tcpLines = (payload, n) =>
+  new Promise((resolve, reject) => {
+    const out = [];
+    const sock = net.createConnection(8792, '127.0.0.1');
+    let buf = '';
+    sock.setEncoding('utf8');
+    sock.on('data', (d) => {
+      buf += d;
+      let i;
+      while ((i = buf.indexOf('\n')) >= 0) {
+        out.push(JSON.parse(buf.slice(0, i)));
+        buf = buf.slice(i + 1);
+      }
+      if (out.length === n) {
+        sock.end();
+        resolve(out);
+      }
+    });
+    sock.on('error', reject);
+    sock.write(payload);
+  });
+{
+  const pres = {
+    id: 'p1',
+    type: 'presence',
+    userId: 'youssef',
+    place: 'Clinic',
+    rssi: -58,
+    demo: true,
+  };
+  const answers = await tcpLines(
+    JSON.stringify(pres) +
+      '\n' +
+      JSON.stringify({ ...pres, id: 'p2', address: 'AA:BB:CC:DD:EE:01' }) +
+      '\n',
+    2,
+  );
+  const ok = answers.find((a) => a.id === 'p1');
+  const bad = answers.find((a) => a.id === 'p2');
+  check('presence over TCP is acknowledged', ok.ok === true && ok.type === 'presence', JSON.stringify(ok));
+  check(
+    'a presence with a device address is refused',
+    bad.ok === false && bad.error === 'bad_request' && !JSON.stringify(bad).includes('AA:BB'),
+  );
+}
 const browser = await chromium.launch({
   executablePath:
     process.env.CHROMIUM_PATH ||

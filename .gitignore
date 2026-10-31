@@ -53,3 +53,9 @@ ml/reports/
 
 # the datasets themselves (pictures, landmark CSVs): keep them outside the repository or here, never commit them
 datasets/
+
+
+# BLUETOOTH: your own device addresses (tools/bluetooth/README.md). Only devices.example.json is committed.
+tools/bluetooth/devices.json
+tools/bluetooth/devices.*.json
+!tools/bluetooth/devices.example.json

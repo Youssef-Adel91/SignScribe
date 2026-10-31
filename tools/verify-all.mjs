@@ -37,6 +37,11 @@ const steps = [
     cmd: [python, ['-m', 'pytest', '-q'], { cwd: resolve(root, 'ml') }],
     skip: hasPytest ? null : 'pytest not found: pip install -r ml/requirements.txt, set PYTHON=…',
   },
+  {
+    name: 'Python tools (tools/bluetooth)',
+    cmd: [python, ['-m', 'pytest', '-q', 'tools/bluetooth']],
+    skip: hasPytest ? null : 'pytest not found: pip install -r tools/bluetooth/requirements.txt',
+  },
 ];
 
 // npm must be startable (on Windows it is npm.cmd). If it is not, say why once, before 8 steps fail.

@@ -67,5 +67,5 @@ Without it the app writes sentences with simple offline rules. With it, a langua
     src/perf/      performance recording (?perf=1)
     src/dev/       developer panels, mounted only with ?dev=1
     tests/         unit tests (machine, gestures, controller, dwell, pointer, contrast, dictionary ...)
-    tools/         models download, screenshot compare, e2e and layout checks
+    tools/         models download, screenshot compare, e2e and layout checks; tools/bluetooth (BLE presence scanner)
     docs/          DONE.md (evidence), KNOWN_ISSUES.md, PHASE3.md, STUDY.md, PHASE4.md, DATASET.md, MODEL_FORMAT.md, MODEL_HANDOFF.md, MODEL_RESULTS.md (only numbers written by ml/evaluate.py), CARDS.md, PERF.md, WHATS_LEFT.md, A11Y.md, PHASE2.md (how the gesture layer works), PHASE2_CHECKLIST.md (what to measure on your camera)
