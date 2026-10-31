@@ -48,6 +48,13 @@ Pushed to every connected app over the WebSocket (no `id`, nobody asked for it; 
 
 The app checks every pushed message strictly (`parseContextPush`) and ignores anything that does not fit. The comparison study (`?study=1`) and the collection mode never listen to it.
 
+Letter (from the dollarpy client `tools/dollarpy/classify_live.py`, TCP, one JSON line):
+
+    {"id":"l1","type":"letter","letter":"J","score":0.83,"source":"dollarpy","demo":false}
+    {"id":"l1","ok":true,"type":"letter"}
+
+`letter`: exactly one letter of any script. `score`: 0 to 1. `source`: a short lowercase label. `demo`: true for simulated input. Only these fields are allowed. The server pushes `{"type":"letter","letter":"J","score":0.83,"source":"dollarpy","demo":false}` to every connected app, stores nothing, does not log the letter (it is the person's text) and has its own limit, `LETTER_RATE_LIMIT` (10 per 10 s for everyone). A late app does not get an old letter. The app only shows it; the person adds it by pointing and holding.
+
 Trust: whoever can reach the TCP door can claim any presence. Keep the server on `127.0.0.1` (the default); a presence only chooses the place and loads settings the person already saved, and the app shows it and lets the person override it.
 
 Errors: `bad_request`, `too_large` (over 4096 bytes), `rate_limited` (default 20 messages per 10 s per connection, bad messages count too), `server_error`.

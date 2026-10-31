@@ -1,0 +1,6 @@
+dollarpy>=0.1.1
+mediapipe>=0.10.14
+opencv-python>=4.8
+numpy>=1.26
+# tests
+pytest>=8

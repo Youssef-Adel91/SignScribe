@@ -27,3 +27,6 @@ What the app does (`src/state/machine.ts`, `src/ui/DetectedChip.tsx`, `src/nlp/C
 
 Verified here: the machine rules (`tests/bluetooth-context.test.ts`), the push over a real WebSocket and TCP socket (`tests/presence.test.ts`), the whole chain in a browser with the scanner in FAKE mode (`npm run e2e:context`). Not verified: real Bluetooth hardware, and what it feels like to override by pointing with a real camera.
 
+## Moving letters from the dollarpy client (branch feat/dollarpy-demo)
+`tools/dollarpy/` (see its README) recognises a moving letter from a webcam with MediaPipe + the `dollarpy` package and sends it to the server (`letter` message). The server relays it over the WebSocket; on screens 6 and 7 the app shows a card "dollarpy: J" (with "(simulated)" for generated input) that is added to the message only when the person points at it and holds (`LETTER_ADD`). A letter that is not in the active alphabet is ignored; the card disappears after 8 s or after it was added. Not used in the study or collection modes.
+

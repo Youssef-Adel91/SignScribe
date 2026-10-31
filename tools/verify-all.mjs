@@ -15,6 +15,7 @@ const python =
   process.env.PYTHON ||
   (existsSync(venvPython) ? venvPython : process.platform === 'win32' ? 'python' : 'python3');
 const hasPytest = spawnSync(python, ['-c', 'import pytest'], { stdio: 'ignore' }).status === 0;
+const hasDollarpy = spawnSync(python, ['-c', 'import dollarpy'], { stdio: 'ignore' }).status === 0;
 const hasModels =
   existsSync(resolve(root, 'public/models/hand_landmarker.task')) &&
   existsSync(resolve(root, 'public/models/ort/ort-wasm-simd-threaded.wasm'));
@@ -40,6 +41,14 @@ const steps = [
   {
     name: 'Bluetooth context, scanner (FAKE) to app',
     cmd: ['npm', ['run', 'e2e:context'], { env: { ...process.env, PYTHON: python } }],
+  },
+  {
+    name: 'Python tools (tools/dollarpy)',
+    cmd: [python, ['-m', 'pytest', '-q', 'tools/dollarpy']],
+    skip:
+      hasPytest && hasDollarpy
+        ? null
+        : 'needs pytest and dollarpy: pip install -r tools/dollarpy/requirements.txt',
   },
   {
     name: 'Python tools (tools/bluetooth)',

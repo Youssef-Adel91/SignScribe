@@ -59,7 +59,25 @@ export interface PresenceRequest {
   /** true when the device is simulated (scan.py --fake): the app says so */
   demo: boolean;
 }
-export type ClientMessage = SuggestRequest | PingRequest | PresenceRequest;
+
+/** a letter recognised by another program (tools/dollarpy/classify_live.py): the app shows it and the person adds it by pointing */
+export const LETTER_MSG = {
+  /** who recognised it: a short lowercase label such as 'dollarpy' */
+  sourcePattern: /^[a-z][a-z0-9_-]{1,23}$/,
+  fields: ['id', 'type', 'letter', 'score', 'source', 'demo'],
+} as const;
+export interface LetterRequest {
+  id: string;
+  type: 'letter';
+  /** exactly one letter of any script; the app checks it against its alphabet */
+  letter: string;
+  /** match score 0..1 (for $P: (2 - distance) / 2). Not a probability of being right */
+  score: number;
+  source: string;
+  /** true when the input is simulated (tools/dollarpy/classify_live.py --simulate): the app says so */
+  demo: boolean;
+}
+export type ClientMessage = SuggestRequest | PingRequest | PresenceRequest | LetterRequest;
 
 export type Source = 'llm' | 'offline';
 
@@ -82,13 +100,18 @@ export interface PresenceOk {
   ok: true;
   type: 'presence';
 }
+export interface LetterOk {
+  id: string;
+  ok: true;
+  type: 'letter';
+}
 export interface Failure {
   id: string;
   ok: false;
   error: 'bad_request' | 'too_large' | 'rate_limited' | 'server_error';
   message: string;
 }
-export type ServerMessage = SuggestOk | PongOk | PresenceOk | Failure;
+export type ServerMessage = SuggestOk | PongOk | PresenceOk | LetterOk | Failure;
 
 /** pushed by the server to every connected app (no id: nobody asked for it) when the Bluetooth presence changes */
 export interface ContextPush {
@@ -122,6 +145,36 @@ export function parseContextPush(text: string): ContextPush | null {
   };
 }
 
+/** pushed to the apps when another program recognised a letter (not stored: a late app does not get an old letter) */
+export interface LetterPush {
+  type: 'letter';
+  letter: string;
+  score: number;
+  source: string;
+  demo: boolean;
+}
+
+export function parseLetterPush(text: string): LetterPush | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!raw || typeof raw !== 'object' || (raw as { type?: unknown }).type !== 'letter') return null;
+  const o = raw as Record<string, unknown>;
+  const p = parseLetter({ ...o, id: 'x' }, 'x');
+  return p.ok && p.msg.type === 'letter'
+    ? {
+        type: 'letter',
+        letter: p.msg.letter,
+        score: p.msg.score,
+        source: p.msg.source,
+        demo: p.msg.demo,
+      }
+    : null;
+}
+
 export type Parsed = { ok: true; msg: ClientMessage } | { ok: false; id: string; message: string };
 
 /** strict parsing of untrusted input: anything that does not fit is refused with a plain reason */
@@ -140,8 +193,9 @@ export function parseRequest(text: string): Parsed {
   if (!id) return { ok: false, id: '', message: "'id' must be a string of at most 64 characters" };
   if (o.type === 'ping') return { ok: true, msg: { id, type: 'ping' } };
   if (o.type === 'presence') return parsePresence(o, id);
+  if (o.type === 'letter') return parseLetter(o, id);
   if (o.type !== 'suggest')
-    return { ok: false, id, message: "'type' must be 'suggest', 'presence' or 'ping'" };
+    return { ok: false, id, message: "'type' must be 'suggest', 'presence', 'letter' or 'ping'" };
   const words = o.words;
   if (!Array.isArray(words) || words.length < 1 || words.length > LIMITS.maxWords)
     return { ok: false, id, message: `'words' must be 1 to ${LIMITS.maxWords} words` };
@@ -238,4 +292,22 @@ function parsePresence(o: Record<string, unknown>, id: string): Parsed {
       demo: o.demo === true,
     },
   };
+}
+
+function parseLetter(o: Record<string, unknown>, id: string): Parsed {
+  const bad = (message: string): Parsed => ({ ok: false, id, message });
+  const extra = Object.keys(o).find((k) => !(LETTER_MSG.fields as readonly string[]).includes(k));
+  if (extra !== undefined) return bad(`unknown field '${extra.slice(0, 20)}'`);
+  const letter = o.letter;
+  if (typeof letter !== 'string' || [...letter].length !== 1 || !/^\p{L}$/u.test(letter))
+    return bad("'letter' must be exactly one letter");
+  const score = o.score;
+  if (typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > 1)
+    return bad("'score' must be a number from 0 to 1");
+  const source = o.source;
+  if (typeof source !== 'string' || !LETTER_MSG.sourcePattern.test(source))
+    return bad("'source' must be a short lowercase label such as 'dollarpy'");
+  if (o.demo !== undefined && typeof o.demo !== 'boolean')
+    return bad("'demo' must be true or false");
+  return { ok: true, msg: { id, type: 'letter', letter, score, source, demo: o.demo === true } };
 }

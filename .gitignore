@@ -59,3 +59,5 @@ datasets/
 tools/bluetooth/devices.json
 tools/bluetooth/devices.*.json
 !tools/bluetooth/devices.example.json
+# DOLLARPY: recorded movement templates are a person's data too (tools/dollarpy/README.md)
+tools/dollarpy/templates*.json

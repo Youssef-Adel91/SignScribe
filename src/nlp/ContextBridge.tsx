@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useSend } from '../state/MachineProvider';
 import { loadProfile } from '../state/profiles';
 import { ContextFeed } from './contextFeed';
+import { receiveLetter } from './remoteLetter';
 
 /**
  * Turns what the Bluetooth scanner found (pushed by the sentence server) into machine events: the detected
@@ -12,17 +13,24 @@ import { ContextFeed } from './contextFeed';
 export function ContextBridge({ url }: { url: string }) {
   const send = useSend();
   useEffect(() => {
-    const feed = new ContextFeed(url, (c) => {
-      if (!c) send({ type: 'CONTEXT_CLEARED' });
-      else
-        send({
-          type: 'CONTEXT_DETECTED',
-          userId: c.userId,
-          place: c.place,
-          demo: c.demo,
-          profile: c.userId ? loadProfile(c.userId) : null,
-        });
-    });
+    const feed = new ContextFeed(
+      url,
+      (c) => {
+        if (!c) send({ type: 'CONTEXT_CLEARED' });
+        else
+          send({
+            type: 'CONTEXT_DETECTED',
+            userId: c.userId,
+            place: c.place,
+            demo: c.demo,
+            profile: c.userId ? loadProfile(c.userId) : null,
+          });
+      },
+      undefined,
+      undefined,
+      undefined,
+      receiveLetter,
+    );
     return () => feed.close();
   }, [url, send]);
   return null;

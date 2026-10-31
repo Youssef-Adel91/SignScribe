@@ -5,6 +5,7 @@ import { PATH_TO_SCREEN } from '../state/paths';
 import { DevPanel } from '../dev/DevPanel';
 import { VisionDebug } from '../dev/VisionDebug';
 import { ContextBridge } from '../nlp/ContextBridge';
+import { RemoteLetterCard } from '../nlp/RemoteLetterCard';
 import { SentenceBridge } from '../nlp/SentenceBridge';
 import { WsSentenceClient, resolveSentenceUrl } from '../nlp/sentenceClient';
 import { PerfPanel } from '../perf/PerfPanel';
@@ -75,6 +76,7 @@ function Body() {
         {PERF && <PerfPanel />}
         {sentenceClient && <SentenceBridge client={sentenceClient} />}
         {SENTENCE_URL && !COLLECT && <ContextBridge url={SENTENCE_URL} />}
+        {SENTENCE_URL && !COLLECT && <RemoteLetterCard />}
         {CARD_SHEET && <CardSheet />}
         <ScreenHost />
         <VisionProvider />

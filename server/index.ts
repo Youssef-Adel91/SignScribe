@@ -5,6 +5,7 @@ import { LIMITS, type ContextPush } from '../src/nlp/protocol.ts';
 import { loadConfig, type Config } from './config.ts';
 import { RateLimiter, both, handleMessage } from './handler.ts';
 import { AnthropicProvider, FakeProvider, type SentenceProvider } from './llm.ts';
+import { LetterRelay } from './letters.ts';
 import { PresenceStore } from './presence.ts';
 import { SentenceService } from './sentences.ts';
 import { selfTest, type SelfTest } from './selftest.ts';
@@ -48,6 +49,7 @@ export async function start(
   });
 
   const presence = new PresenceStore(config.presenceTtlMs, config.presenceRateLimit, log);
+  const letters = new LetterRelay(config.letterRateLimit);
 
   // ---- WebSocket (+ /health)
   const http = createServer((req, res) => {
@@ -83,6 +85,9 @@ export async function start(
   presence.subscribe((p) => {
     for (const c of wss.clients) pushContext(c, p);
   });
+  letters.subscribe((l) => {
+    for (const c of wss.clients) if (c.readyState === c.OPEN) c.send(JSON.stringify(l));
+  });
   const expiry = setInterval(() => presence.tick(), 1000);
   expiry.unref();
   wss.on('connection', (socket) => {
@@ -93,7 +98,7 @@ export async function start(
     if (presence.current().userId || presence.current().place) pushContext(socket);
     const limiter = both(new RateLimiter(config.rateLimit), globalLimiter);
     socket.on('message', (data) => {
-      void handleMessage(data.toString(), service, limiter, Date.now(), { presence }).then(
+      void handleMessage(data.toString(), service, limiter, Date.now(), { presence, letters }).then(
         (out) => socket.readyState === socket.OPEN && socket.send(JSON.stringify(out)),
       );
     });
@@ -131,7 +136,7 @@ export async function start(
         const line = buf.slice(0, nl).trim();
         buf = buf.slice(nl + 1);
         if (line)
-          void handleMessage(line, service, limiter, Date.now(), { presence }).then(
+          void handleMessage(line, service, limiter, Date.now(), { presence, letters }).then(
             (out) => !socket.destroyed && socket.write(JSON.stringify(out) + '\n'),
           );
       }
