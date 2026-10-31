@@ -1,3 +1,4 @@
+import { READ_ALOUD_ENGLISH_ONLY } from '../ui/readAloudNote';
 import { Chip } from '../ui/Chip';
 import { Hint } from '../ui/HintBar';
 import { Screen } from '../ui/Screen';
@@ -35,7 +36,7 @@ const VOICE: { key: 'on' | 'off'; title: string; sub: string }[] = [
  * the same layout, hints and gestures, so it works like the screens before it.
  */
 export default function S14Comfort() {
-  const { textSize, contrast, dwell, voice } = useCtx();
+  const { textSize, contrast, dwell, voice, alphabet } = useCtx();
   const holdMs = useVision((s) => s.ui?.dwell.ms ?? null);
   const live = holdMs !== null;
   useAnnounceOnChange(
@@ -131,6 +132,11 @@ export default function S14Comfort() {
             />
           ))}
         </ul>
+        {alphabet === 'arabic' && (
+          <p className={common.lede} data-testid="read-aloud-note">
+            {READ_ALOUD_ENGLISH_ONLY}
+          </p>
+        )}
       </div>
     </Screen>
   );

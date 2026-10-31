@@ -16,6 +16,8 @@ public/models/*
 !public/models/*.json
 !public/models/cards.onnx
 !public/models/README.md
+# a k-NN model stores real landmark samples of real people (a copy of the data): never committed. The MLP JSON (weights only) may be.
+public/models/*-knn.json
 tools/**/__pycache__
 tools/train/data/
 tools/cards/dataset/

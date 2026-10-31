@@ -17,6 +17,8 @@
     "models": "node tools/get-models.mjs",
     "e2e": "node tools/e2e/flow.mjs",
     "layout": "node tools/e2e/layout.mjs",
+    "check:staged": "node tools/check-staged.mjs",
+    "hooks:install": "node tools/install-hooks.mjs",
     "e2e:study": "node tools/e2e/study.mjs",
     "e2e:collect": "node tools/e2e/collect.mjs",
     "ml:test": "cd ml && python3 -m pytest -q",

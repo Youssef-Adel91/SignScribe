@@ -2,6 +2,7 @@ import { Chip } from '../ui/Chip';
 import { HandGlyph, type Glyph } from '../ui/HandGlyph';
 import { Hint } from '../ui/HintBar';
 import { Screen } from '../ui/Screen';
+import { AboutCredits } from '../ui/AboutCredits';
 import { useAnnounceOnChange } from '../output/announcer';
 import styles from './S13GestureGuide.module.css';
 
@@ -97,6 +98,7 @@ export default function S13GestureGuide() {
           </li>
         ))}
       </ul>
+      <AboutCredits />
     </Screen>
   );
 }

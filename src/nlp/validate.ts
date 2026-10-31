@@ -9,8 +9,10 @@
  *   3. short, one or two sentences, plain letters and punctuation, no links
  *
  * This file must stay free of imports and of syntax Node's type stripping cannot run (no enums, no
- * constructor parameter properties): the Node server imports it directly.
+ * constructor parameter properties): the Node server imports it directly. Its only import is arabicWords.ts, which obeys the same rule.
  */
+import { arabicTokenAllowed } from './arabicWords.ts';
+
 export type Validation = { ok: true } | { ok: false; reason: string };
 
 export const MAX_SENTENCE_CHARS = 200;
@@ -118,8 +120,9 @@ const ARABIC_TEXT =
  * mode 'english' (default): the full rule above.
  * mode 'arabic' (ArSL is the active alphabet): the English-only parts are skipped, because they work on English words and
  * endings and there is no Arabic word list yet. What stays: length, number of words and sentences, no links, only Arabic
- * letters and punctuation (so no digits, times or other characters can be added), and every word the person chose must
- * appear unchanged. What is NOT checked is "nothing else is added": see docs/KNOWN_ISSUES.md.
+ * letters and punctuation (so no digits, times or other characters can be added), every word the person chose must appear
+ * unchanged, and every other word must be in the small helper list (arabicWords.ts, docs/ARABIC_WORDS.md). The list is tiny, so
+ * some good sentences are refused and the plain words are used: that is the safe side of the trade.
  */
 export type ValidationMode = 'english' | 'arabic';
 
@@ -134,6 +137,8 @@ function validateArabic(chosen: readonly string[], text: string): Validation {
   const wanted = chosen.flatMap((c) => c.split(/\s+/).filter(Boolean));
   const missing = wanted.filter((w) => !text.includes(w));
   if (missing.length) return { ok: false, reason: 'missing a chosen word' };
+  // nothing else is added: every word is a chosen word (also with joined small words) or one of the helper words in arabicWords.ts
+  if (toks.some((t) => !arabicTokenAllowed(t, chosen))) return { ok: false, reason: 'added word' };
   return { ok: true };
 }
 

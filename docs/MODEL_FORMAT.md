@@ -14,6 +14,9 @@ Both are JSON, written by `ml/` and loaded by the browser from `public/models/` 
 
 Recognition: each of the k nearest samples votes for its letter with weight `1/(distance + 1e-6)`. **Confidence is the winner's share of the votes. It is not a probability of being right.** Whether a given threshold (`LETTER` in `src/recognition/letterController.ts`) is a good one is only known by measuring on real data.
 
+## Which file may be committed
+The MLP JSON holds weights only and may be committed. A **k-NN JSON stores real landmark samples** (`vectors`), so it is a copy of the training data: `public/models/*-knn.json` is git-ignored and refused by the pre-commit check (`npm run hooks:install`, `npm run check:staged`). The app still reads a local k-NN file as the fallback.
+
 ## Which file belongs to which alphabet
 ASL: `letters-mlp.json` and `letters-knn.json` (the original names). Any other alphabet `<id>` from `config/alphabets/<id>.json`: `letters-<id>-mlp.json` and `letters-<id>-knn.json` (ArSL: `letters-arsl-*.json`). The browser reads the pair of the alphabet chosen on screen 03, the network first, the k-NN as fallback, and refuses a model that has a letter the alphabet does not have. Do not copy an ArSL model into `public/models/` under the ASL names.
 
