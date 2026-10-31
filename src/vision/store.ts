@@ -37,6 +37,8 @@ export type VisionStatus =
 export interface VisionState {
   status: VisionStatus;
   message: string;
+  /** set with a camera error: which situation, so the banner can say it in the person's language */
+  cameraProblem: import('./camera').CameraProblem | null;
   source: 'camera' | 'mock' | 'none';
   stream: MediaStream | null;
   /** camera frames per second (measured) */
@@ -74,6 +76,7 @@ export interface VisionState {
 const initial: VisionState = {
   status: VISION_MODE === 'off' ? 'off' : 'asking',
   message: '',
+  cameraProblem: null,
   source: 'none',
   stream: null,
   fps: 0,

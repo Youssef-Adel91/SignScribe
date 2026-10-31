@@ -79,6 +79,12 @@ export interface AppStrings {
   contextFar: string;
   contextClose: string;
 
+  // Camera problems (the banner picks one by the error situation)
+  cameraProblem: Record<
+    'denied' | 'nocamera' | 'inuse' | 'unsupported' | 'insecure' | 'unknown',
+    string
+  >;
+
   // Commands
   commandSpace: string;
   commandDelete: string;
@@ -164,6 +170,19 @@ export const STRINGS: Record<Lang, AppStrings> = {
     contextFar: 'Your hand is far from the camera. Move a little closer.',
     contextClose: 'Your hand is very close. Move back a little.',
 
+    cameraProblem: {
+      denied:
+        'Camera access is blocked. Allow the camera for this page in the browser, then reload.',
+      nocamera: 'No camera found. Connect a camera and reload.',
+      inuse: 'The camera is in use by another app. Close it and reload.',
+      unsupported:
+        'The camera is not available in this browser or on this page. Open the app at localhost or https, or use a normal browser window.',
+      insecure:
+        'This browser cannot use the camera here. Open the app at localhost or https in a current browser.',
+      unknown:
+        'The camera could not start for an unknown reason. Reload the page, or try another browser window.',
+    },
+
     commandSpace: 'Space',
     commandDelete: 'Delete',
     commandDone: 'Done',
@@ -199,8 +218,7 @@ export const STRINGS: Record<Lang, AppStrings> = {
     checksHandOutside: 'جزء من يدك خارج الصورة',
     checksAllGoodTip: 'كل شيء يبدو جيداً. اثبت في مكانك.',
 
-    handLostAnnounce:
-      'فقدنا يدك. أعدها داخل الإطار. رسالتك في أمان. لا أستطيع رؤية يدك.',
+    handLostAnnounce: 'فقدنا يدك. أعدها داخل الإطار. رسالتك في أمان. لا أستطيع رؤية يدك.',
     handLostBannerTitle: 'فقدنا يدك',
     handLostBannerSub: 'أعدها داخل الإطار. رسالتك في أمان.',
     handLostPill: 'ضع يدك هنا',
@@ -216,8 +234,7 @@ export const STRINGS: Record<Lang, AppStrings> = {
 
     shareMessageForYou: (sentence: string) => `رسالة لك: ${sentence}`,
     readingAloud: 'جاري القراءة بصوت عالٍ…',
-    readAloudEnglishOnly:
-      'القراءة الصوتية بالإنجليزية فقط. الجملة العربية معروضة على الشاشة فقط.',
+    readAloudEnglishOnly: 'القراءة الصوتية بالإنجليزية فقط. الجملة العربية معروضة على الشاشة فقط.',
     readAloudNoArabicVoice: 'لا يوجد صوت عربي مثبت على هذا الجهاز.',
 
     gestureGuideOpen: 'دليل الإشارات مفتوح. إبهام لأعلى للإغلاق.',
@@ -245,6 +262,17 @@ export const STRINGS: Record<Lang, AppStrings> = {
     contextBright: 'إضاءة شديدة خلفك. واجه الضوء وابتعد عن النافذة.',
     contextFar: 'يدك بعيدة عن الكاميرا. اقترب قليلاً.',
     contextClose: 'يدك قريبة جداً. ابتعد قليلاً.',
+
+    cameraProblem: {
+      denied: 'الوصول إلى الكاميرا محظور. اسمح بالكاميرا لهذه الصفحة في المتصفح ثم أعد التحميل.',
+      nocamera: 'لم يتم العثور على كاميرا. وصّل كاميرا ثم أعد التحميل.',
+      inuse: 'الكاميرا مستخدمة في تطبيق آخر. أغلقه ثم أعد التحميل.',
+      unsupported:
+        'الكاميرا غير متاحة في هذا المتصفح أو هذه الصفحة. افتح التطبيق على localhost أو https، أو استخدم نافذة متصفح عادية.',
+      insecure:
+        'هذا المتصفح لا يستطيع استخدام الكاميرا هنا. افتح التطبيق على localhost أو https في متصفح حديث.',
+      unknown: 'تعذّر تشغيل الكاميرا لسبب غير معروف. أعد تحميل الصفحة أو جرّب نافذة متصفح أخرى.',
+    },
 
     commandSpace: 'مسافة',
     commandDelete: 'حذف',

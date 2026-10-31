@@ -5,15 +5,10 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { probe, runStep } from './lib/run-step.mjs';
+import { resolvePython } from './lib/python.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const venvPython = resolve(
-  root,
-  process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python',
-);
-const python =
-  process.env.PYTHON ||
-  (existsSync(venvPython) ? venvPython : process.platform === 'win32' ? 'python' : 'python3');
+const python = resolvePython(root);
 const hasPytest = spawnSync(python, ['-c', 'import pytest'], { stdio: 'ignore' }).status === 0;
 const hasDollarpy = spawnSync(python, ['-c', 'import dollarpy'], { stdio: 'ignore' }).status === 0;
 const hasModels =

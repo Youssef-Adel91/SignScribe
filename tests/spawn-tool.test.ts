@@ -226,3 +226,39 @@ describe('linking a path in a test (symlink / junction / copy)', () => {
     expect(readFileSync(to, 'utf8')).toBe('x');
   });
 });
+
+describe('python resolver (tools/lib/python.mjs)', () => {
+  it('PYTHON wins, then the repo venv, then python on win32 / python3 elsewhere', async () => {
+    const { resolvePython } = await import('../tools/lib/python.mjs');
+    const none = () => false;
+    const yes = () => true;
+    expect(resolvePython('/r', { platform: 'win32', env: { PYTHON: 'X' }, exists: yes })).toBe('X');
+    expect(resolvePython('/r', { platform: 'win32', env: {}, exists: none })).toBe('python');
+    expect(resolvePython('/r', { platform: 'linux', env: {}, exists: none })).toBe('python3');
+    expect(resolvePython('/r', { platform: 'darwin', env: {}, exists: none })).toBe('python3');
+    expect(resolvePython('/r', { platform: 'win32', env: {}, exists: yes })).toMatch(
+      /Scripts[\\/]python\.exe$/,
+    );
+    expect(resolvePython('/r', { platform: 'linux', env: {}, exists: yes })).toMatch(
+      /bin[\\/]python$/,
+    );
+  });
+
+  it('children read through a pipe get unbuffered output; waitUntil times out cleanly', async () => {
+    const { pythonEnv, waitUntil } = await import('../tools/lib/python.mjs');
+    expect(pythonEnv({ A: '1' })).toMatchObject({ A: '1', PYTHONUNBUFFERED: '1' });
+    let n = 0;
+    expect(await waitUntil(() => ++n > 3, 1000, 5)).toBe(true);
+    expect(await waitUntil(() => false, 40, 5)).toBe(false);
+  });
+
+  it('no launcher hard-codes python3 any more', async () => {
+    const { readFileSync, readdirSync } = await import('node:fs');
+    const files = [
+      ...readdirSync('tools/e2e').map((f) => `tools/e2e/${f}`),
+      'tools/demo-all.mjs',
+      'tools/verify-all.mjs',
+    ].filter((f) => f.endsWith('.mjs'));
+    for (const f of files) expect(readFileSync(f, 'utf8'), f).not.toMatch(/\|\|\s*'python3'/);
+  });
+});

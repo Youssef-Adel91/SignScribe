@@ -8,6 +8,7 @@
 // Walkthrough and what to say for each grading row: tools/demo-all.md
 import { spawnTool as spawn, spawnToolSync as spawnSync, stopTool } from './lib/spawn-tool.mjs';
 import { existsSync } from 'node:fs';
+import { resolvePython, pythonEnv } from './lib/python.mjs';
 import { resolve } from 'node:path';
 import { WebSocket } from 'ws';
 
@@ -23,10 +24,7 @@ if (REAL && CHECK) {
   );
   process.exit(2);
 }
-const python =
-  val('--python') ||
-  process.env.PYTHON ||
-  (existsSync(resolve(root, '.venv/bin/python')) ? resolve(root, '.venv/bin/python') : 'python3');
+const python = val('--python') || resolvePython(root);
 const device = val('--fake-device', 'youssef:Clinic');
 const letters = val('--letters', 'J Z').split(/\s+/).filter(Boolean);
 const WS = 8787;
@@ -54,7 +52,7 @@ function say(name, line) {
 function run(name, cmd, cmdArgs, env = {}) {
   const p = spawn(cmd, cmdArgs, {
     cwd: root,
-    env: { ...process.env, ...env },
+    env: { ...pythonEnv(), ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   const pipe = (s) => {

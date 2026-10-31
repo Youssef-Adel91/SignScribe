@@ -372,3 +372,24 @@ def test_cli_fake_end_to_end_against_a_fake_server(capsys):
     out = capsys.readouterr().out
     assert code == 0 and "FAKE BLE DEVICE" in out
     assert srv.got and all(m["demo"] is True and m["userId"] == "youssef" for m in srv.got)
+
+
+def test_fake_banner_is_flushed_when_stdout_is_a_pipe():
+    """A launcher reads the banner through a pipe; Python must not hold it back in its buffer (it is flushed at once)."""
+    import os, subprocess, sys, time
+    from pathlib import Path
+
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONUNBUFFERED"}
+    scan = Path(__file__).with_name("scan.py")
+    p = subprocess.Popen(
+        [sys.executable, str(scan), "--fake", "x:Shop", "--port", "59999"],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env,
+    )
+    try:
+        t0 = time.time()
+        first = p.stdout.readline()  # blocks until the line is really in the pipe
+        assert "FAKE BLE DEVICE" in first, first
+        assert time.time() - t0 < 8
+    finally:
+        p.kill()
+        p.wait()

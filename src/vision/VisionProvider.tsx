@@ -289,10 +289,12 @@ export function VisionProvider() {
         visionStore.set({
           status: e.kind === 'denied' ? 'denied' : e.kind === 'nocamera' ? 'nocamera' : 'error',
           message: e.message,
+          cameraProblem: e.problem,
         });
       } else {
         visionStore.set({
           status: 'error',
+          cameraProblem: null,
           message: `Hand tracking could not start: ${e instanceof Error ? e.message : String(e)}`,
         });
       }

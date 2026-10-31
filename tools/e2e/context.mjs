@@ -5,6 +5,7 @@
 import { chromium } from 'playwright';
 import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { existsSync } from 'node:fs';
+import { resolvePython, pythonEnv, waitUntil } from '../lib/python.mjs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -12,7 +13,7 @@ const previewPort = 4184;
 const wsPort = 8795;
 const tcpPort = 8796;
 const base = `http://localhost:${previewPort}/`;
-const python = process.env.PYTHON || 'python3';
+const python = resolvePython(root);
 const preview = spawn('npx', ['vite', 'preview', '--port', String(previewPort), '--strictPort'], {
   cwd: root,
   stdio: 'ignore',
@@ -26,8 +27,11 @@ const server = spawn('node', ['server/index.ts'], {
     TCP_PORT: String(tcpPort),
     ALLOWED_ORIGINS: base.slice(0, -1),
   },
-  stdio: 'ignore',
+  stdio: ['ignore', 'pipe', 'pipe'],
 });
+let serverOut = '';
+server.stdout.on('data', (d) => (serverOut = (serverOut + d).slice(-4000)));
+server.stderr.on('data', (d) => (serverOut = (serverOut + d).slice(-4000)));
 for (let i = 0; i < 60; i++) {
   try {
     if ((await fetch(base)).ok && (await fetch(`http://127.0.0.1:${wsPort}/health`)).ok) break;
@@ -106,6 +110,7 @@ try {
     ],
     {
       cwd: root,
+      env: pythonEnv(),
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
@@ -127,10 +132,12 @@ try {
     (await selectedPlace()) === 'Shop',
   );
   check("the person's saved settings are loaded (large text)", (await textSize()) === 'large');
+  // the banner is printed (and flushed) when the scanner starts: wait for it, do not look at one fixed moment
+  const sawBanner = await waitUntil(() => /FAKE BLE DEVICE/.test(scannerOut), 10000);
   check(
     'the scanner said it is FAKE',
-    /FAKE BLE DEVICE/.test(scannerOut),
-    scannerOut.split('\n')[0],
+    sawBanner,
+    scannerOut.split('\n')[0] || '(no output at all)',
   );
 
   // override by pointing and holding on the visible "ignore" target (no mouse, no keyboard)
@@ -170,6 +177,14 @@ try {
   // a letter recognised by the dollarpy client (SIMULATED here) is offered on the spelling screen and added by pointing
   {
     const spell = await ctx.newPage();
+    // log what the app really receives over the WebSocket, so a timeout below says what was missing
+    const wsLog = [];
+    spell.on('websocket', (ws) => {
+      wsLog.push(`open ${ws.url()}`);
+      ws.on('framereceived', (f) => wsLog.push(`recv ${String(f.payload).slice(0, 160)}`));
+      ws.on('close', () => wsLog.push('closed'));
+      ws.on('socketerror', (e) => wsLog.push(`error ${e}`));
+    });
     await spell.goto(`${base}?dev=1&vision=mock&server=ws://localhost:${wsPort}#6`);
     await spell.waitForSelector('[data-screen="6"]');
     const client = spawn(
@@ -185,13 +200,28 @@ try {
       ],
       {
         cwd: root,
+        env: pythonEnv(),
         stdio: ['ignore', 'pipe', 'pipe'],
       },
     );
     let clientOut = '';
     client.stdout.on('data', (d) => (clientOut += d));
     client.stderr.on('data', (d) => (clientOut += d));
-    await spell.waitForSelector('[data-testid="remote-letter"]', { timeout: 15000 });
+    try {
+      await spell.waitForSelector('[data-testid="remote-letter"]', { timeout: 15000 });
+    } catch (e) {
+      console.log('\nremote-letter did NOT appear within 15 s. What was seen:');
+      console.log(
+        `  app WebSocket frames (${wsLog.length}):\n    ${wsLog.join('\n    ') || '(none: the page never opened a WebSocket)'}`,
+      );
+      console.log(
+        `  python client output:\n    ${clientOut.trim().split('\n').join('\n    ') || '(nothing)'}`,
+      );
+      console.log(
+        `  server output:\n    ${(serverOut || '(not captured)').trim().split('\n').join('\n    ')}`,
+      );
+      throw e;
+    }
     const offer = await spell.getByTestId('remote-letter').textContent();
     check(
       'the recognised letter is offered, labelled as simulated',

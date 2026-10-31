@@ -121,7 +121,7 @@ def main(argv=None) -> int:
         return 2
     demo = a.fake is not None
     if demo:
-        print(FAKE_BANNER)
+        print(FAKE_BANNER, flush=True)
         started = [None]
 
         async def scan(seconds):
@@ -134,10 +134,10 @@ def main(argv=None) -> int:
     else:
         scan = bleak_scan
     link = ServerLink(cfg.host, cfg.port)
-    reporter = Reporter(link, demo, cfg.settings.heartbeat_seconds, log=print)
-    print(f"{'FAKE ' if demo else ''}scanner running; sending to {cfg.host}:{cfg.port}. Ctrl+C to stop.")
+    reporter = Reporter(link, demo, cfg.settings.heartbeat_seconds, log=lambda *a, **k: print(*a, flush=True, **k))
+    print(f"{'FAKE ' if demo else ''}scanner running; sending to {cfg.host}:{cfg.port}. Ctrl+C to stop.", flush=True)
     try:
-        asyncio.run(run(cfg, scan, reporter, print, a.scans, a.verbose))
+        asyncio.run(run(cfg, scan, reporter, lambda *a, **k: print(*a, flush=True, **k), a.scans, a.verbose))
     except KeyboardInterrupt:
         pass
     finally:

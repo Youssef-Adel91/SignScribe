@@ -365,12 +365,28 @@ try {
   }
 
   /* ------------------------------------------------------------ 3. camera problems are explained */
-  for (const [name, args, perms, want] of [
-    ['permission refused', ['--use-fake-device-for-media-stream'], [], /denied/],
-    ['no camera at all', [], ['camera'], /nocamera|denied/],
+  // The error comes from an injected getUserMedia, NOT from the browser: Chromium on some systems (seen on Windows) throws
+  // NotSupportedError for both "refused" and "no camera", which would make this check depend on the machine.
+  const failWith = (errName) => `
+    (() => {
+      const md = navigator.mediaDevices || {};
+      md.getUserMedia = () => Promise.reject(new DOMException('injected by the test', ${JSON.stringify(errName)}));
+      if (!navigator.mediaDevices) Object.defineProperty(navigator, 'mediaDevices', { value: md, configurable: true });
+    })();`;
+  for (const [name, errName, want, bannerWant] of [
+    ['permission refused', 'NotAllowedError', /denied/, /blocked/i],
+    ['no camera at all', 'NotFoundError', /nocamera/, /no camera/i],
+    [
+      'browser says "not supported"',
+      'NotSupportedError',
+      /statuserror/,
+      /not available in this browser/i,
+    ],
+    ['an error nobody knows', 'WeirdError', /statuserror/, /unknown reason/i],
   ]) {
-    const b = await chromium.launch({ executablePath: exe, args });
-    const ctx = await b.newContext({ viewport: { width: 1280, height: 720 }, permissions: perms });
+    const b = await chromium.launch({ executablePath: exe, args: [] });
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 720 }, permissions: [] });
+    await ctx.addInitScript(failWith(errName));
     const page = await ctx.newPage();
     await page.goto(`${base}?dev=1`);
     await page
@@ -391,7 +407,7 @@ try {
     );
     check(
       `${name}: the app shows a plain message`,
-      want.test(text) && banner.length > 10,
+      want.test(text) && bannerWant.test(banner) && !banner.includes(errName),
       banner.slice(0, 120),
     );
     await b.close();
