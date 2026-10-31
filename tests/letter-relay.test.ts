@@ -191,6 +191,123 @@ describe('letters through the real server', () => {
   });
 });
 
+describe('a letter that reached no app is held briefly for the next one (KNOWN_ISSUES #24)', () => {
+  const req = {
+    type: 'letter',
+    id: 'x',
+    letter: 'J',
+    score: 0.8,
+    source: 'dollarpy',
+  } as LetterRequest;
+  it('is handed once to the next app, only while fresh', () => {
+    const lines: string[] = [];
+    const r = new LetterRelay(10, 5000, (l) => lines.push(l));
+    r.subscribe(() => 0); // an app listener that sent it to nobody
+    expect(r.accept(req, 1000)).toBe(true);
+    expect(r.takeHeld(3000)).toMatchObject({ type: 'letter', letter: 'J' });
+    expect(r.takeHeld(3000)).toBeNull(); // once
+    r.accept(req, 10_000);
+    expect(r.takeHeld(15_001)).toBeNull(); // older than the hold time
+    expect(lines.join('\n')).toMatch(
+      /letter #1 received; sent to 0 WebSocket clients; held 5000 ms/,
+    );
+    expect(lines.join('\n')).not.toMatch(/\bJ\b/); // counts only, never the letter
+  });
+  it('is not held when an app received it, or when holding is off', () => {
+    const got = new LetterRelay(10, 5000);
+    got.subscribe(() => 1);
+    got.accept(req, 1000);
+    expect(got.takeHeld(1500)).toBeNull();
+    const off = new LetterRelay(10, 0);
+    off.subscribe(() => 0);
+    off.accept(req, 1000);
+    expect(off.takeHeld(1001)).toBeNull();
+  });
+  it('a refused (rate limited) letter is not held and is counted in the log', () => {
+    const lines: string[] = [];
+    const r = new LetterRelay(1, 5000, (l) => lines.push(l));
+    r.subscribe(() => 0);
+    expect(r.accept(req, 1000)).toBe(true);
+    r.takeHeld(1001);
+    expect(r.accept(req, 1002)).toBe(false);
+    expect(r.takeHeld(1003)).toBeNull();
+    expect(lines.join('\n')).toMatch(/over the letter limit \(1 refused so far\)/);
+  });
+});
+
+describe('the late-app rule through the real server', () => {
+  let srv: Running;
+  const log: string[] = [];
+  beforeAll(async () => {
+    srv = await start(
+      {
+        ...loadConfig({}),
+        provider: 'fake',
+        wsPort: 0,
+        tcpPort: 0,
+        origins: ['http://localhost:5173'],
+      },
+      (l) => log.push(l),
+    );
+  });
+  afterAll(async () => srv.close());
+  const sendTcp = (line: string) =>
+    new Promise<void>((resolve, reject) => {
+      const s = net.createConnection(srv.tcpPort, '127.0.0.1');
+      s.setEncoding('utf8');
+      s.on('data', () => {
+        s.end();
+        resolve();
+      });
+      s.on('error', reject);
+      s.write(line + '\n');
+    });
+  const connect = async () => {
+    const got: unknown[] = [];
+    const ws = new WebSocket(`ws://127.0.0.1:${srv.wsPort}`, { origin: 'http://localhost:5173' });
+    ws.on('message', (d) => got.push(JSON.parse(d.toString())));
+    await new Promise((r) => ws.on('open', r));
+    await new Promise((r) => setTimeout(r, 100));
+    return { ws, got };
+  };
+  const health = async () =>
+    (await (await fetch(`http://127.0.0.1:${srv.wsPort}/health`)).json()) as {
+      webSocketClients: number;
+      lettersRelayed: number;
+    };
+
+  it('a letter sent before any app connected reaches the first app that connects, once, and is not logged', async () => {
+    expect((await health()).webSocketClients).toBe(0);
+    await sendTcp(msg({ id: 'early', letter: 'Q' }));
+    const first = await connect();
+    expect(first.got).toEqual([
+      { type: 'letter', letter: 'Q', score: 0.83, source: 'dollarpy', demo: false },
+    ]);
+    const second = await connect(); // a second app does not get it again
+    expect(second.got).toEqual([]);
+    const h = await health();
+    expect(h.webSocketClients).toBe(2);
+    expect(h.lettersRelayed).toBe(1);
+    const text = log.join('\n');
+    expect(text).toMatch(/letter #1 received; sent to 0 WebSocket clients; held/);
+    expect(text).toMatch(/handed to an app that connected/);
+    expect(text).not.toMatch(/\bQ\b/);
+    first.ws.close();
+    second.ws.close();
+  });
+  it('a letter that was delivered is not replayed to an app that connects later', async () => {
+    const a = await connect();
+    await sendTcp(msg({ id: 'seen', letter: 'W' }));
+    await new Promise((r) => setTimeout(r, 100));
+    expect(a.got).toHaveLength(1);
+    expect(log.join('\n')).toMatch(/sent to 1 WebSocket client(?!s)/);
+    const b = await connect();
+    expect(b.got).toEqual([]);
+    a.ws.close();
+    b.ws.close();
+  });
+});
+
 describe('LETTER_ADD in the state machine', () => {
   const send = (...e: Ev[]) => {
     const a = createActor(signScribeMachine);
