@@ -18,7 +18,7 @@
 
 ---
 
-This file is the long reference for the whole project. It is built from the repository (code, tests, docs, `npm run verify` results) and from measured results pasted by Youssef (marked as such). Where nothing was measured it says **NOT MEASURED**. It never states a camera result: **nothing in this repository has been verified on a real camera with a real hand.**
+This file is the long reference for the whole project. It is built from the repository (code, tests, docs, `npm run verify` results) and from `docs/MODEL_RESULTS.md` (written by `ml/evaluate.py`; the single source for accuracy numbers) plus the two numbers Youssef supplied for an invalid run (marked as invalid). Where nothing was measured it says **NOT MEASURED**. It never states a camera result: **nothing in this repository has been verified on a real camera with a real hand.**
 
 Status words used everywhere: **verified here** (an automatic test or run proves the logic, with synthetic hands, fake devices or generated data), **needs a real camera / device** (only checkable on real hardware), **not met / not built**.
 
@@ -168,7 +168,7 @@ Safety and limits: per-connection and global rate limits, a connection cap, a me
 
 ## 6. Models
 
-**Rule: a model is TRAINED only if a file made from real data exists and the command is known. Every number below is "image data, leave-one-person-out, not webcam" and was pasted by Youssef from his machine; none of it is in a generated results file in git (`docs/MODEL_RESULTS.md` still says "(none yet)").**
+**Rule: a model is TRAINED only if a file made from real data exists and the command is known. Every number below is "image data, leave-one-person-out, not webcam". The accuracy numbers are copied from `docs/MODEL_RESULTS.md`, which `ml/evaluate.py --results-md` wrote (that file is the single source of truth: if it and this document ever disagree, `docs/MODEL_RESULTS.md` is right and `tests/project-status.test.ts` fails).**
 
 | Model | Status | Dataset | Command | Date | Dataset hash |
 | --- | --- | --- | --- | --- | --- |
@@ -183,14 +183,16 @@ Safety and limits: per-connection and global rate limits, a connection cap, a me
 
 The k-NN file stores thousands of real landmark samples (a copy of the data), so it is never committed (`.gitignore`, pre-commit hook, `npm run check:staged`, and a tracked-file test). The MLP file holds only weights and may be committed once the team decides; it is **not** in git today.
 
-**Measured results** (ArSL21L as published, dataset sha256 `6b2726e04c4e89747c828cd1fe51b4f738e8d72a3bfbc4abb861d8c2ab0b059c`, 50 persons, 13,662 held-out predictions, 540 images without a detected hand excluded; **image data, leave-one-person-out, not webcam**; pasted by Youssef, not reproducible from this repository alone):
+**Measured results** (source: `docs/MODEL_RESULTS.md`, section "ArSL21L as published (2026-10-31)", written by `ml/evaluate.py` at git commit `7cbb5df`; ArSL21L as published, dataset sha256 `6b2726e04c4e89747c828cd1fe51b4f738e8d72a3bfbc4abb861d8c2ab0b059c`, 50 persons, 13,662 held-out predictions, 540 images without a detected hand excluded at import; **image data, leave-one-person-out, not webcam**; 7 of the 50 persons are under 18 and only counted). The command in that file is `python ml/evaluate.py --data ml/data/arsl21l.jsonl --alphabet arsl --dataset-name ArSL21L --dataset-version "as published" --augment all --augment-ablation --results-md docs/MODEL_RESULTS.md`. Per-letter tables, the worst letter pairs and the controls section are in that file.
 
 | | k-NN | MLP |
 | --- | --- | --- |
 | pooled accuracy, with augmentation | 91.1% | 94.9% |
 | pooled accuracy, without augmentation | 88.9% | 93.8% |
 
-Calibration (augment all; "shown" = share of predictions shown at that confidence threshold, "precision" = share of shown predictions that are right; held-out predictions only):
+The "without augmentation" row is the `--augment-ablation` run of the same command (same folds, same seed, augmentation none).
+
+**What the app would show** (also from `docs/MODEL_RESULTS.md`, with augmentation; "shown" = share of predictions at or above the confidence threshold, "precision" = share of the shown predictions that are right; held-out predictions only):
 
 | Model | Threshold | Shown | Precision |
 | --- | --- | --- | --- |
@@ -200,6 +202,8 @@ Calibration (augment all; "shown" = share of predictions shown at that confidenc
 | MLP | 0.60 | 97.6% | 96.3% |
 | MLP | 0.80 | 94.1% | 97.5% |
 | MLP | 0.90 | 90.6% | 98.2% |
+
+**`ml/calibrate.py` is a separate table with its own definition.** It reports, for a list of thresholds, how many predictions would be shown and how many of those are right; it runs the same `evaluation.run` (same takes, k, seed and folds) and writes to `ml/reports/` (git-ignored), not to `docs/MODEL_RESULTS.md`. Its default is `--augment all`; with `--augment none` its threshold-0 row (everything shown) equals the pooled accuracy of the no-augmentation run above, which `ml/tests/test_calibration.py` checks on generated data. Do not mix numbers between the two files: cite `docs/MODEL_RESULTS.md` for accuracy.
 
 **Invalid result, do not use:** an earlier leave-one-source-out run of ASLAD against `ArSL_dataset.csv` (reported as 13.4% for k-NN and 9.3% for the MLP) is **INVALID**: the two files cover different class sets, so the held-out source contained classes the training source never saw. `ml/evaluate.py` now refuses such a run unless `--shared-classes` is given. It says nothing about the models.
 

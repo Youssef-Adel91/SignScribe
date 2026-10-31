@@ -159,3 +159,38 @@ def test_identical_high_threshold_rows_are_marked():
     md = cal.markdown(table, {"knn": "a vote share"}, "test")
     assert md.count("same predictions as the row above") == 2  # 0.90 and 0.99 repeat 0.80
     assert "A threshold between two such rows changes nothing" in md
+
+
+def test_calibrate_with_no_augmentation_and_evaluate_ablation_compute_the_same_pooled_accuracy(data, tmp_path):
+    """GENERATED data. evaluate.py --augment all --augment-ablation (its "no augmentation" run) and calibrate.py --augment none both call
+    evaluation.run with the same takes, k, seed, folds and AugmentConfig("none"), so the pooled accuracy of a model must equal the precision
+    of calibrate's threshold-0 row (every prediction shown). If this ever fails, the two scripts have started to compute different things."""
+    import evaluate
+
+    ev_out, cal_out = tmp_path / "ev", tmp_path / "cal"
+    common = ["--alphabet", "arsl", "--dataset-name", "GEN", "--dataset-version", "0", "--allow-synthetic"]
+    assert evaluate.main(["--data", str(data), *common, "--augment", "all", "--augment-ablation", "--out-dir", str(ev_out)]) == 0
+    assert calibrate.main(["--data", str(data), *common, "--augment", "none", "--thresholds", "0", "--out-dir", str(cal_out)]) == 0
+    ev_json = json.loads(next(ev_out.glob("*.json")).read_text(encoding="utf-8"))
+    cal_json = json.loads(next(cal_out.glob("*.json")).read_text(encoding="utf-8"))
+    none_run = next(r for r in ev_json["runs"] if r["name"] == "no augmentation")
+    assert none_run["augment"] == "none"
+    for m in ("knn", "mlp"):
+        pooled = none_run["models"][m]["metrics"]["pooled_accuracy"]
+        row = cal_json["models"][m]["rows"][0]
+        assert row["threshold"] == 0.0 and row["coverage"] == 1.0
+        assert row["precision"] == pytest.approx(pooled, abs=0, rel=0), m
+
+
+def test_the_same_run_twice_gives_the_same_predictions(data):
+    """No hidden randomness: same takes, k, seed, no augmentation -> identical predictions for both models."""
+    from signscribe_ml import evaluation as ev
+    from signscribe_ml.alphabet import load_alphabet
+    from signscribe_ml.augment import parse_augment
+
+    takes, _ = ev.read_many([str(data)], load_alphabet("arsl"))
+    a = ev.run(takes, ("knn", "mlp"), 5, parse_augment("none"), 0, "auto")
+    b = ev.run(takes, ("knn", "mlp"), 5, parse_augment("none"), 0, "auto")
+    for m in ("knn", "mlp"):
+        assert a["models"][m]["pred"] == b["models"][m]["pred"]
+        assert a["models"][m]["conf"] == b["models"][m]["conf"]

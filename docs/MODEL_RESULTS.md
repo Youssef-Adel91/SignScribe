@@ -9,6 +9,7 @@
 - The headline is always the held-out-group result (pooled and mean over groups, with worst and best group). A random split is never reported.
 - Augmentation is shown against no augmentation on the same folds (`--augment-ablation`); it stays only if it does not hurt on the held-out groups.
 - The k-NN number is the one that applies to the app (the browser loads the k-NN). The MLP is a comparison.
+- `ml/calibrate.py` is a separate report with its own definition: for a list of confidence thresholds it counts how many held-out predictions would be shown and how many of those are right, and it writes to `ml/reports/` (git-ignored), never to this file. It calls the same `evaluation.run` as `evaluate.py` (same takes, `k`, seed and folds), so with the same augmentation its threshold-0 row (everything shown) is the pooled accuracy of the matching run here (`ml/tests/test_calibration.py` checks this on generated data). The defaults differ: `calibrate.py` uses `--augment all`, `evaluate.py` uses `--augment none` unless told otherwise. Cite this file for accuracy; use a calibration report only for its threshold table.
 - Camera behaviour (fps, latency, how it feels) is not in this file: it needs a real camera and goes in `docs/DONE.md`.
 
 ## How to add a result
