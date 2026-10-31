@@ -2,6 +2,24 @@
 
 Status values: **verified here** (a test or screenshot in the cloud proves it), **needs your camera** (only checkable on a real machine with a webcam), **not met** (later phase).
 
+## Phase II grading sheet (HCI_Project_Phase_II_Fall_2026.docx) mapped to the repository
+
+Status: **verified here** (tests or a run in the build environment prove the logic), **needs real hardware / my camera** (only checkable on a real machine), **not met**. "FAKE" = a simulated Bluetooth device or simulated hand paths, always labelled as such on screen and in every message. Nothing below states an accuracy: none was measured on real data.
+
+| Sheet row | Pts | Files | Tests / checks | Status |
+| --- | --- | --- | --- | --- |
+| Scenario | 1 | in the Phase I PDF (**not in this repo**; to keep it here put it in `docs/phase1/`) | none | **covered by the Phase I PDF**, not by anything in this repository, so it is not checked here |
+| PACT (People, Activities, Context, Technologies) | 1 | in the Phase I PDF (**not in this repo**; to keep it here put it in `docs/phase1/`) | none | **covered by the Phase I PDF**, not by anything in this repository, so it is not checked here |
+| Survey | 1 | `src/study/` (survey, protocol, export), `docs/STUDY.md`, `ml/analysis/study_report.py` | `tests/study.test.ts`, `npm run e2e:study` | **verified here** (closed, balanced 5-point items with a neutral middle, covering satisfaction, engagement, usability and the 7 Lab 2 heuristics; export and analysis). **Not met:** no participant has answered it, and the wording needs a human review |
+| Figma interface | 1 | `public/design/*.png` (13 frames), `src/screens/S01..S14`, `tools/compare/screens.mjs`; `docs/FLOW_AUDIT.md` (branch `docs/flow-audit`) lists the differences | `npm run compare`, `npm run layout`, `npm run axe`, `tests/machine.test.ts` | **verified here** with listed differences (see FLOW_AUDIT: e.g. an extra screen 14, oversized icons from two missing size tokens, hints that do nothing on screens 6, 8, 13) |
+| Track the skeleton with MediaPipe and classify the movement with DollarPy | 1 | `tools/dollarpy/` (`hand_tracker.py`, `dollar_logic.py`, `record_templates.py`, `classify_live.py`, `simulate.py`); the same $P in `ml/signscribe_ml/dollar.py` and `src/recognition/dollarP.ts` | `tools/dollarpy/test_dollarpy.py` (real `dollarpy` package on generated paths; real MediaPipe on three still photographs of hands and on a blank picture), `ml/tests` (our $P equals dollarpy) | **verified here** for the logic. **Needs real hardware:** recording and live classification from a webcam. **Not met:** accuracy on real moving letters; ArSL moving letters (none decided). It tracks the hand skeleton and, by default, the shoulders, elbows and wrists (`--no-pose` for the fingertip alone) |
+| Use Bluetooth to capture UserID and discover | 1 | `tools/bluetooth/` (`scan.py`, `ble_logic.py`, `devices.example.json`), server `presence` message (`src/nlp/protocol.ts`, `server/presence.ts`) | `tools/bluetooth/test_ble.py`, `tests/presence.test.ts`, `npm run e2e:context` | **verified here** with fake scans and a FAKE device. **Needs real hardware:** a real adapter, real devices (phones may rotate their address; use a band, beacon or tag) |
+| Socket programming between the parts of the project | 1 | `server/` (WebSocket for the app + plain TCP for Python), `tools/common/server_link.py`, `server/examples/client.py`, `src/nlp/contextFeed.ts`, `src/nlp/sentenceClient.ts` | `tests/server.test.ts`, `tests/presence.test.ts`, `tests/letter-relay.test.ts` (real TCP and WebSocket), `npm run e2e:server`, `npm run e2e:context`, `npm run demo -- --check` | **verified here**: scanner -> server -> app, dollarpy client -> server -> app, app -> server -> sentence, with limits, origin checks and no device address anywhere |
+| Load different content based on context | 2 | `src/state/machine.ts` (`CONTEXT_*`), `src/nlp/ContextBridge.tsx`, `src/ui/DetectedChip.tsx`, `src/state/profiles.ts`; place packs in `src/data/contexts.json`, `src/nlp/words.ts`, `src/nlp/sentence.ts`; light/distance advice in `src/vision/context.ts` | `tests/bluetooth-context.test.ts`, `tests/context.test.ts`, `tests/dictionary.test.ts`, `npm run e2e:context` | **verified here** (place from FAKE Bluetooth loads that place's words, cards and sentence style; the person's saved settings load; visible override; nothing detected = as before). **Needs real hardware:** real Bluetooth detection, and override by pointing with a real camera |
+
+How to demonstrate it: `tools/demo-all.md` (`npm run demo`, FAKE by default). Rows still open need work by the team, not code: the filled-in survey and the real-hardware runs. Scenario and PACT are in the Phase I PDF, which is not in this repository.
+
+
 | Item                                                                       | Phase | Status                                  | Evidence                                                                                     |
 | -------------------------------------------------------------------------- | ----- | --------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Single state machine owns the screen; all events/transitions tested        | 1     | verified here                           | `tests/machine.test.ts` (85 tests)                                                           |
@@ -10,6 +28,7 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Safety rule: screen 12 only after 11 + thumbs up                           | 1     | verified here                           | machine tests                                                                                |
 | 13 screens are responsive components (no atomic CSS, no pixel coordinates) | 1     | verified here                           | `npm run compare` screenshots 1280x720, 1440x900, 1920x1080; no page overflow at those sizes |
 | Visual match with the Figma export                                         | 1     | verified here (with listed differences) | `tools/compare/out/*/NN-*.compare.png`                                                       |
+| No `<svg>` attribute errors in the browser console (icon sizes are CSS, not `width="var(...)"`) | 1 | verified here | `tests/icon.test.tsx`, `npm run e2e` (console check) |
 | Contrast pairs match PLAN.md numbers                                       | 1     | verified here                           | `tests/contrast.test.ts`                                                                     |
 | No font below 14px; labels 16px                                            | 1     | verified here                           | `tests/a11y-source.test.ts`                                                                  |
 | No click/key handlers in screens or UI kit; simulator only with `?dev=1`   | 1     | verified here                           | `tests/a11y-source.test.ts`                                                                  |
@@ -22,7 +41,7 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | One-Euro pointer smooths jitter and follows fast moves | 2 | verified here (synthetic noise) | `tests/pointer.test.ts`; how it FEELS needs your camera |
 | Dwell engine: fires after the hold, once, cancels, flicker grace, 96 px hit area, adaptive time | 2 | verified here | `tests/dwell.test.ts` |
 | Controller: wake 2 s, help 1 s, thumbs, fist, palm, zone rules for right and left-handed signers, hand lost / back, setup checks, no double fire across screens | 2 | verified here | `tests/controller.test.ts` (38 tests) |
-| Whole flow 01 -> 12 -> 01 with no mouse and no keyboard (mouse click and keys proven to do nothing) | 2 | verified here (synthetic landmarks) | `npm run e2e` (31 checks) |
+| Whole flow 01 -> 12 -> 01 with no mouse and no keyboard (mouse click and keys proven to do nothing) | 2 | verified here (synthetic landmarks) | `npm run e2e` (43 checks) |
 | Fake camera opens, its picture is shown, a missing model gives a clear message, refused permission and no camera give clear messages | 2 | verified here | `npm run e2e` |
 | MediaPipe HandLandmarker runs on a real webcam; fps and inference ms | 2 | **needs your camera** | `npm run models`, then read "camera fps" and "inference ms" in the Vision debug panel |
 | Distance, light and command-zone thresholds feel right | 2 | **needs your camera** | constants in `src/vision/checks.ts`, `zones.ts`, `controller.ts` |
@@ -80,6 +99,50 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Moving-letter (J, Z) accuracy | 4 | not met | same |
 | Threshold values (`LETTER`) feel right | 4 | needs my camera | tune after a model exists |
 
+## Alphabet pipeline (pictures -> honest evaluation -> model; tooling only, no model, no results)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Label set is a config file (`config/alphabets/*.json`) read by Python and the web app; no letter list in code | verified here | `ml/tests/test_alphabet_import_eval.py`, `tests/alphabet.test.ts` |
+| ArSL label set | not met | `arsl.json` is an unchecked TEMPLATE; the team must confirm it against their dataset |
+| `ml/import_images.py`: folder of letter sub-folders -> takes, skips pictures with no hand, per-letter counts, `person` or `source` | verified here (fake detector for the logic; real MediaPipe on a blank picture, a broken file and 3 real hand photos: finds no hand / unreadable / 21 landmarks) | `ml/tests`, one smoke run |
+| Import on a real labelled alphabet dataset | not met | no dataset chosen yet |
+| `ml/evaluate.py`: leave-one-person/source/signer/session-out, per-letter precision/recall, 10 worst pairs, threshold view; refuses a same-person split | verified here (generated data; a leakage test proves a held-out person never reaches training, with and without augmentation) | `ml/tests` |
+| k-NN against a small MLP on identical folds | verified here (logic) | `ml/tests` |
+| Augmentation (rotate, x/y scale, mirror) keeps the shape: exact distances under rotation/mirror, bounded angle and ratio, same-factor scale is a no-op, extended fingers unchanged in 300 random draws; training side only | verified here | `ml/tests` |
+| Whether augmentation helps on real hands | not met | run `evaluate.py --augment-ablation` on real data |
+| Letter accuracy for the whole alphabet | not met | no real run: `docs/MODEL_RESULTS.md` is empty on purpose |
+| Collection mode: guided run (letter prompt, countdown, auto-advance, retry, skip, stop) and per-letter gap view | verified here (synthetic hands) | `tests/guided.test.ts`, `npm run e2e:collect` |
+| Collection mode: speed and comfort of a guided run with a real person | needs my camera | `/?collect=1` |
+| Letter controller shows nothing below `LETTER.minConfidence`; the two best raw guesses appear only in the dev panel | verified here | `tests/letters.test.ts` |
+| Exported model JSON format unchanged | verified here | `ml/tests`, `ml/validate_model.py` |
+
+## Bluetooth presence (branch feat/ble-presence)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Scanner config, matching of address / name / prefix to UserID and place, smoothing, heartbeat, back-off | verified here (fake scans) | `tools/bluetooth/test_ble.py` |
+| `presence` message: strict fields, validation, own rate limit, memory-only store with 15 s expiry | verified here (real TCP socket) | `tests/presence.test.ts` |
+| A device address or name never reaches a log line, a message, or the server | verified here | `tools/bluetooth/test_ble.py`, `tests/presence.test.ts` |
+| Bleak scan on a real adapter with real devices | needs real hardware | `python tools/bluetooth/scan.py -v` |
+| Server pushes who/where to every connected app (also to a late one, and when a presence expires) | verified here (real WebSocket + TCP) | `tests/presence.test.ts` |
+| App loads the detected place and the person's saved settings before the message starts; shows who/where on every screen | verified here | `tests/bluetooth-context.test.ts`, `npm run e2e:context` |
+| Visible override by point-and-hold; choosing a place yourself wins; ignore restores place and settings | verified here (synthetic hand) | `tests/bluetooth-context.test.ts`, `npm run e2e:context` |
+| No Bluetooth / no scanner / no server: the app behaves as before | verified here | `npm run e2e:context` |
+| Override with a real camera and hand | needs my camera | screens 1-5, 14 |
+| FAKE device for demos, labelled in the banner and in every message | verified here | `scan.py --fake` |
+
+## DollarPy demo (branch feat/dollarpy-demo)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Movement cut out of a fingertip path with the web app's numbers; templates; classification with the real `dollarpy` package | verified here (generated paths) | `tools/dollarpy/test_dollarpy.py` |
+| MediaPipe hand tracker (Python) returns 21 landmarks | verified here (3 still photographs of hands) and finds nothing in a blank picture | `test_real_mediapipe_tracker_...`, one manual run |
+| `letter` message: strict fields, own rate limit, relayed to apps, not stored or logged | verified here (real TCP + WebSocket) | `tests/letter-relay.test.ts` |
+| App offers the letter and adds it by point-and-hold; labelled simulated; ignored outside the alphabet | verified here (synthetic hand) | `tests/letter-relay.test.ts`, `npm run e2e:context` |
+| MediaPipe Pose, the twelve Lab 5 landmarks (11-20, 23, 24; x and y), one stroke each with its whole trajectory, plus the hand fingertip as one extra stroke; optional (`--no-pose`), default on; template file v2, v1 still loads | verified here (generated arm; the real pose tracker on one still photograph of a person and on a blank picture) | `tools/dollarpy/test_dollarpy.py` |
+| Whether the pose improves recognition (the weighting is dollarpy's own resampling of the cloud, a guess) | not met | needs real recordings: compare `--pose` with `--no-pose` |
+| Recording and live classification from a webcam | needs real hardware | `record_templates.py`, `classify_live.py` |
+| Recognition accuracy on real moving letters | not met | no recorded templates; `--simulate` scores mean nothing |
+| Moving letters of ArSL | not met | `arsl.json` lists no moving letters (its two dynamic classes are the dynamic controls `ctl_delete` and `ctl_cancel`); the team must decide them |
+
 ## Phase 5 (picture cards; no detector)
 | Item | Phase | Status | Evidence |
 | --- | --- | --- | --- |
@@ -126,3 +189,91 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | SUS (10 statements, published wording) scored 0-100, shown in the survey and exported in the scores CSV; two reverse-worded items flipped before averaging; identical wording for both methods | 7 | verified here (scoring against a hand-worked example; no statement names a method) | `tests/study.test.ts` |
 | Analysis: SUS row, careless-answer flags (identical answers, contradicting reverse items), `--exclude-flagged` | 7 | verified here (made-up exports) | `npm run ml:test` |
 | SUS results on real participants | 7 | not met | no study run yet |
+
+## Flow-audit blockers (branch fix/flow-blockers)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Every `var(--s-N)` used is defined (icons on 04, 05, 08 no longer fill their box; "We lost your hand" is visible) | verified here | `tests/tokens.test.ts`, `npm run compare` 04/05/08 |
+| Screen 11: "Add a card" / "Spell more" by point-and-hold, words kept, back to 11 | verified here (synthetic hand) | `npm run e2e` |
+| Screen 08: only "Bring your hand back" is offered; after 10 s of camera time the screen says what to check | verified here (synthetic frames) | `npm run e2e` |
+| Hand-lost screen has a second way out | not met | every exit needs a hand (gesture-only app) |
+
+## ArSL controls: static and dynamic (branch feat/arsl-controls)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| `arsl.json` controls space, done (static, classified like letters) and delete, cancel (dynamic, $1 on the index-fingertip path); parsed the same by the app and the Python tools; the split is a first decision recorded in `todo` | verified here | `tests/arsl-control-classes.test.ts`, `ml/tests/test_controls.py` |
+| A control class acts like the same hand gesture (SPACE, YES, DELETE, NO) from any spelling state, with its own shorter hold for static ones and a $1 score setting for dynamic ones | verified here (synthetic hands, fake recognisers) | `tests/arsl-control-classes.test.ts` |
+| Collection page: Controls section (four buttons, static / dynamic), every take carries `person` = the signer code; takes stay out of git | verified here | `npm run e2e:collect`, `tests/arsl-control-classes.test.ts` |
+| `evaluate.py`: leave-one-person-out on controls together with the letters, confusion with letters and with `none`, false triggers from `none` takes (static: model frames; dynamic: $1 with the app's gate), counts only | verified here (generated recordings) | `ml/tests/test_controls.py` |
+| Overlay and log show, for every frame, who decided (old rule gesture / control class / $1 template / letter model), what and the score | verified here | `tests/arsl-control-classes.test.ts` |
+| Priority kept: a rule gesture stops model controls and letters, a command frame sends no model event; old gesture hold times unchanged (asserted) | verified here | `tests/arsl-control-classes.test.ts` |
+| Whether static / dynamic controls work better than the old gestures for ArSL signers; which shapes and strokes; recordings; the right thresholds | not met | needs recordings from several people and a camera: `docs/CONTROLS.md`, `docs/KNOWN_ISSUES.md` #23 |
+
+## Letter gating after the first camera test (branch feat/letter-gating)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Debug overlay behind `?letterdebug=1`: state, top 3 with confidence, hand speed against its limit, still counter, hold, cooldown, control gesture; editable settings; CSV log download (git-ignored) | verified here (rendered markup, log format) | `tests/letter-gating.test.ts` (1) |
+| Motion gating: nothing is classified while the hand moves or before N still frames; same letter for the hold time; after a letter the hand must change / move / leave and a cooldown passes | verified here (synthetic hands) | `tests/letter-gating.test.ts` (2) |
+| Command priority: a control gesture, a command sent, the pointer or a posing hand in the command zone stop letters, also for a hold-off after; one frame never sends a command and a letter | verified here | `tests/letter-gating.test.ts` (3) |
+| One tone + one vibration per written letter, minimum gap, switch on screen 14 ("Read aloud" / "Sounds only" / "Silent"); the spoken guess tip at most every 2 s | verified here (fake output); not tried on a device | `tests/letter-gating.test.ts` (4) |
+| `none` class: collection mode records moving / relaxed / command-zone / other takes; tools train it; a `none` answer, low confidence or small margin is shown as nothing | verified here | `tests/none-class.test.ts`, `tests/letter-gating.test.ts` (5), `ml/tests/test_none_class.py` |
+| Confidence, margin, hold, speed limit, still frames, cooldown, release and command hold-off are settings per model type and alphabet, saved from the panel | verified here | `tests/letter-gating.test.ts` (6) |
+| Whether any of this stops the noise with real hands; the right values; recorded `none` takes; a retrained model with `none` | not met | needs my camera and recordings: `docs/KNOWN_ISSUES.md` #20-#22 |
+
+## ArSL stage 2: model commands, calibration, credits, helper words (branch feat/arsl-models-calibration)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| One documented command per ArSL model file (`ml/export_mlp.py` -> `letters-arsl-mlp.json`, `ml/train_knn.py` -> `letters-arsl-knn.json`) and `ml/export_arsl.py` for both: same alphabet file, same class order (checked), same seed gives the same models, synthetic refused, no data written | verified here (generated hands) | `ml/tests/test_arsl_export.py` |
+| The browser loader accepts both files exactly as the exporters write them and rejects a mismatched alphabet | verified here (generated fixtures in `tests/fixtures/arsl/`, not a model) | `tests/arsl-models.test.ts` |
+| `ml/calibrate.py`: precision and coverage at several thresholds, k-NN vote share and MLP softmax in separate tables, from leave-one-person-out or `--train/--test` predictions; chooses and changes no threshold; no person id in its output | verified here (generated hands) | `ml/tests/test_calibration.py` |
+| The calibration numbers for the real ArSL data | not met | run `ml/calibrate.py` on your machine, quote only its report |
+| `LETTER` thresholds chosen for the ArSL models | not met | needs a real model, its calibration table and a camera |
+| CC BY 4.0 credit for ArSL21L (and ASLAD, test-only) in `docs/CREDITS.md` and the About text on the help screen (13) | verified here; the full dataset citations still have to be pasted (`TODO(Youssef)` in `docs/CREDITS.md`) | `tests/credits.test.ts` |
+| Arabic helper-word list (written by us, `docs/ARABIC_WORDS.md`) used by the validator in the browser and on the server, and given to the language model | verified here | `tests/arabic-words.test.ts`, `tests/arsl-server.test.ts` |
+| UI note that read-aloud is English only (share screen 12, voice setting 14): shown only while no Arabic voice is installed (PR #24 changed it from "always with ArSL") | verified here (rendered markup, fake voices) | `tests/arsl-screens.test.ts`, `tests/speech-voice.test.ts` |
+| An Arabic dictionary / spelling help, grammar | not met | out of scope: `docs/KNOWN_ISSUES.md` #15 |
+| Arabic speech: the app speaks with an installed Arabic voice (`ar-EG`, then `ar-SA`, any `ar-*`), never an English voice for Arabic text; letter names are spoken from `spoken` in `arsl.json` where confirmed; string tables per language (`src/output/strings.ts`, PR #24) | verified here (fake voices and synth) | `tests/speech-voice.test.ts`, `tests/strings.test.ts`; how it sounds and which voices a device has: needs my device, `docs/KNOWN_ISSUES.md` #17 |
+| `npm run verify` starts npm through the shell on Windows only; a command that cannot start is a FAIL with the real error (and a warning at the start), never a silent 0 s | verified here for Linux and with a Windows-shaped failure (npm missing from the PATH) and a fake `win32` platform; **not run on a real Windows machine by me** | `tests/verify-run.test.ts` |
+| `public/models/*-knn.json` git-ignored (a k-NN file stores real landmark samples); a pre-commit check (`npm run hooks:install`) and a test refuse a staged `*-knn.json` or any file under `ml/data/` / `datasets/` | verified here (scratch repository, real hook) | `tests/forbidden-files.test.ts` |
+| Stricter k-NN guard (applies to integration/phase2): every `*-knn.json` is refused, anywhere; the only exception is a file under `tests/fixtures/` whose JSON says `synthetic: true` and has at most 200 vectors; same rule in the pre-commit hook, `npm run check:staged` and the test that fails when a forbidden file is tracked; judged by the content in the git index | verified here (scratch repository, real hook, the four cases: allowed fixture, fixture without the flag, public/models, more than 200 vectors) | `tests/forbidden-files.test.ts` |
+| `ml/calibrate.py`: `--augment` defaults to the shipped `all`, names optional, hint when `--alphabet` is missing, rows that repeat the row above are marked | verified here | `ml/tests/test_calibration.py` |
+| Arabic helper list has no duplicate | verified here | `tests/arabic-words.test.ts` |
+
+## ArSL in the web app, stage 1 (branch feat/arsl-app)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Spelling screens and the letter buffer map a class id to its glyph with the alphabet file (`config/alphabets/*.json`), not the first character | verified here | `tests/arsl-app.test.ts` |
+| A glyph that is not confirmed (`display` null, or the class is in a `todo` question) is shown as the Latin class id between marks, dashed, and flagged unconfirmed; no Arabic letter is guessed | verified here | `tests/arsl-app.test.ts` |
+| Alphabet selector (English = ASL, Arabic = ArSL) on screen 03, saved with the other settings; the loader reads `letters-arsl-{mlp,knn}.json` for ArSL and the old names for ASL; a model with another alphabet's letters is refused | verified here (fake files) | `tests/arsl-app.test.ts`, `npm run e2e` |
+| The study CSV names the alphabet (`alphabet` column in trials, camera trials only, and in the session file) | verified here | `tests/arsl-app.test.ts` |
+| Sentence line right to left (`dir="rtl"`, `lang="ar"`) with ArSL; the rest of the screen stays left to right | verified here (rendered markup); not looked at in a browser by me | `tests/arsl-app.test.ts`, `tests/arsl-screens.test.ts` |
+| Space / Delete / Cancel / Done classes only when the alphabet file lists them under `controls` (ASL lists none; ArSL lists four since feat/arsl-controls; there are no control recordings and no model with these classes yet) | verified here (the parsing and the acting, with synthetic hands); the controls themselves not met | `tests/arsl-controls.test.ts`, `tests/arsl-app.test.ts` |
+| Sentence server with ArSL: English-only checks skipped, length / words / sentences / links / characters / chosen words / rate limit kept; browser checks again | verified here (fake model) | `tests/arsl-server.test.ts`, `tests/arsl-app.test.ts`; limits of this: `docs/KNOWN_ISSUES.md` #15 |
+| An ArSL model, its accuracy, the `LETTER` thresholds for it, the Arabic word list, the Arabic read-aloud voice, the layout of Arabic text on every screen size | not met | no model in `public/models/`; `docs/KNOWN_ISSUES.md` #16-#19 |
+
+## Evaluation guards, neural-network browser model (branch feat/mlp-and-eval-guards)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Leave-one-source/session-out refused when a held-out group has classes the training side lacks; `--shared-classes` restricts and says so | verified here (generated groups) | `ml/tests/test_eval_guards.py` |
+| `ml/results_md.py` removes / lists sections of `docs/MODEL_RESULTS.md`; the repo copy has no results (numbers live in the files you ran on your machine) | verified here | `ml/tests/test_eval_guards.py` |
+| `--train A --test B`: accuracy on separate recordings, never trained on (swapped-label canary gives 0%) | verified here (generated takes) | `ml/tests/test_eval_guards.py` |
+| `--strip-class-suffix` imports ASLAD `haa+`-style classes as the base class, off by default | verified here | `ml/tests/test_arsl_datasets.py` |
+| `letters-mlp.json`: TypeScript forward pass equals the Python one on the same inputs; broken/missing falls back to k-NN | verified here (golden file, fake fetch) | `tests/mlp.test.ts`, `ml/tests/test_mlp_model.py` |
+| `ml/export_mlp.py` trains on all takes, no accuracy in its report | verified here (generated takes) | `ml/tests/test_mlp_model.py` |
+| Accuracy / speed of the network in the browser; `LETTER` thresholds for softmax confidence | needs my camera | thresholds were set for k-NN and not retuned |
+| `pytest` pinned `>=8,<9` in `ml/requirements.txt` | verified here | file |
+
+## ArSL datasets (branch feat/arsl-datasets)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| `import_images.py` reads a flat folder (`--label-regex`, `--person-regex`, `--age-regex`) without moving files; persons under 18 are marked, the age is not stored | verified here (generated file names like `1001_46_F_ain_0.jpg`) | `ml/tests/test_arsl_datasets.py` |
+| `import_landmarks_csv.py`: layout chosen by you and measured, class from a file-name column / a class column / a numeric column with names, `--source` tag and never a person, classes outside the alphabet skipped and counted | verified here (generated CSV in the described shape) | `ml/tests/test_arsl_datasets.py` |
+| The importer handles ArSL_dataset.csv (`;`, header `Sign;x0;y0;...`, 90 columns, 42 xy coordinates after `Sign`) and the ASLAD-96K CSV (no real header, 63 interleaved xyz, 26 angles, number, image name) exactly as described; `--delimiter`, `--skip-rows`, `--header no`, columns by index, `--decimal-comma` | verified here (generated files of those shapes) | `ml/tests/test_arsl_datasets.py` |
+| ArSL_dataset class names mapped to the ArSL21L ids where the Arabic letter is certain from the name (21 of 31); the uncertain ones are in `todo`, and Space / Delete / Finish are skipped with their row counts reported | verified here | `ml/tests/test_arsl_datasets.py` |
+| The real files' coordinate frame, picture size and layout check on the real rows | needs my data | the importer prints what it measured and assumed |
+| `arsl.json`: the 32 ArSL21L class names as ids, aliases, `reviewed: false`, the ambiguous Arabic mappings listed as TODO and not guessed | verified here (it loads and resolves) | `ml/tests/test_arsl_datasets.py` |
+| Arabic letters for ta/taa/toot, ha/haa, ya/yaa (and dha/dhad, al/la) | not met | the team decides: `todo` in `config/alphabets/arsl.json` |
+| Evaluation by person for ArSL21L; persons under 18 only as a count, no per-person result or id in any report | verified here (generated persons) | `ml/tests/test_arsl_datasets.py` |
+| Accuracy on ArSL21L / ASLAD / ArSL_dataset.csv | not met | run `ml/evaluate.py` on your machine; `docs/MODEL_RESULTS.md` is filled only by it |
+| ArSL in the web app (labels that are names, Arabic display, word list, right to left) | not met | the spelling screens write the first character of a label |
+

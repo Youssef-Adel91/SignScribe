@@ -26,8 +26,15 @@ export class SentenceService {
 
   async suggest(req: SuggestRequest): Promise<SuggestOk> {
     const words = req.words.map((w) => w.toUpperCase());
+    // ArSL: the English-only checks are skipped, the limits stay (validate.ts, docs/KNOWN_ISSUES.md)
+    const arabic = req.alphabet === 'arsl';
     const offline = (note: string): SuggestOk => {
-      const sentence = offlineSentence(words, req.place as Place, req.attempt);
+      const sentence = offlineSentence(
+        words,
+        req.place as Place,
+        req.attempt,
+        arabic ? 'arabic' : 'english',
+      );
       return { id: req.id, ok: true, type: 'suggest', sentence, source: 'offline', note };
     };
     if (!this.provider) return offline('no language model configured');
@@ -35,7 +42,7 @@ export class SentenceService {
     const timer = setTimeout(() => ctl.abort(), this.timeoutMs);
     try {
       const proposed = await this.provider.propose(req, ctl.signal);
-      const v = validateSentence(words, proposed);
+      const v = validateSentence(words, proposed, arabic ? 'arabic' : 'english');
       if (!v.ok) {
         // log the kind of problem only, never the words of the person (reasons can name a word)
         this.log(`rejected ${this.provider.id} answer: ${v.reason.split(':')[0]}`);

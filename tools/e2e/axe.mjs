@@ -3,7 +3,7 @@
 // Automated rules find about a third of real problems: this does NOT replace a test with a screen reader.
 // Usage: npm run build && npm run axe [-- --verbose]
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
+import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -116,7 +116,7 @@ await audit('collection page', `${base}?collect=1&vision=mock&dev=1`);
 await audit('card sheet', `${base}?cards=print&vision=off&dev=1`);
 
 await browser.close();
-server.kill();
+stopTool(server);
 
 const order = { critical: 0, serious: 1, moderate: 2, minor: 3 };
 const rules = [...found.entries()].sort((a, b) => order[a[1].impact] - order[b[1].impact]);

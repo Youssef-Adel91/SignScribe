@@ -1,4 +1,4 @@
-import type { PlaceName, ServerMessage, SuggestRequest } from './protocol';
+import type { AlphabetId, PlaceName, ServerMessage, SuggestRequest } from './protocol';
 
 export interface Suggestion {
   sentence: string;
@@ -7,7 +7,13 @@ export interface Suggestion {
 }
 
 export interface SentenceClient {
-  suggest(words: string[], place: PlaceName, attempt: number, avoid: string[]): Promise<Suggestion>;
+  suggest(
+    words: string[],
+    place: PlaceName,
+    attempt: number,
+    avoid: string[],
+    alphabet?: AlphabetId,
+  ): Promise<Suggestion>;
   close(): void;
 }
 
@@ -91,6 +97,7 @@ export class WsSentenceClient implements SentenceClient {
     place: PlaceName,
     attempt: number,
     avoid: string[],
+    alphabet: AlphabetId = 'asl',
   ): Promise<Suggestion> {
     await this.open();
     const id = `s${++this.seq}`;
@@ -100,6 +107,7 @@ export class WsSentenceClient implements SentenceClient {
       words,
       place,
       attempt,
+      ...(alphabet === 'arsl' ? { alphabet } : {}),
       ...(avoid.length ? { avoid: avoid.slice(-3) } : {}),
     };
     return new Promise<Suggestion>((resolve, reject) => {

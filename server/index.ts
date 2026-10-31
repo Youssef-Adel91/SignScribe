@@ -1,10 +1,12 @@
 import { createServer } from 'node:http';
 import { createServer as createTcp } from 'node:net';
 import { WebSocketServer } from 'ws';
-import { LIMITS } from '../src/nlp/protocol.ts';
+import { LIMITS, type ContextPush } from '../src/nlp/protocol.ts';
 import { loadConfig, type Config } from './config.ts';
 import { RateLimiter, both, handleMessage } from './handler.ts';
 import { AnthropicProvider, FakeProvider, type SentenceProvider } from './llm.ts';
+import { LetterRelay } from './letters.ts';
+import { PresenceStore } from './presence.ts';
 import { SentenceService } from './sentences.ts';
 import { selfTest, type SelfTest } from './selftest.ts';
 
@@ -46,6 +48,9 @@ export async function start(
     log,
   });
 
+  const presence = new PresenceStore(config.presenceTtlMs, config.presenceRateLimit, log);
+  const letters = new LetterRelay(config.letterRateLimit);
+
   // ---- WebSocket (+ /health)
   const http = createServer((req, res) => {
     if (req.url === '/health') {
@@ -71,14 +76,29 @@ export async function start(
     verifyClient: ({ origin }: { origin?: string }) =>
       config.origins.includes('*') || (!!origin && config.origins.includes(origin)),
   });
+  const pushContext = (socket: import('ws').WebSocket, p = presence.current()) => {
+    if (socket.readyState !== socket.OPEN) return;
+    const msg: ContextPush = { type: 'context', userId: p.userId, place: p.place, demo: p.demo };
+    socket.send(JSON.stringify(msg));
+  };
+  // every connected app hears about a change at once; a new app hears the current state when it connects
+  presence.subscribe((p) => {
+    for (const c of wss.clients) pushContext(c, p);
+  });
+  letters.subscribe((l) => {
+    for (const c of wss.clients) if (c.readyState === c.OPEN) c.send(JSON.stringify(l));
+  });
+  const expiry = setInterval(() => presence.tick(), 1000);
+  expiry.unref();
   wss.on('connection', (socket) => {
     if (open() > config.maxConnections) {
       socket.close(1013, 'server busy'); // 1013: try again later
       return;
     }
+    if (presence.current().userId || presence.current().place) pushContext(socket);
     const limiter = both(new RateLimiter(config.rateLimit), globalLimiter);
     socket.on('message', (data) => {
-      void handleMessage(data.toString(), service, limiter).then(
+      void handleMessage(data.toString(), service, limiter, Date.now(), { presence, letters }).then(
         (out) => socket.readyState === socket.OPEN && socket.send(JSON.stringify(out)),
       );
     });
@@ -116,7 +136,7 @@ export async function start(
         const line = buf.slice(0, nl).trim();
         buf = buf.slice(nl + 1);
         if (line)
-          void handleMessage(line, service, limiter).then(
+          void handleMessage(line, service, limiter, Date.now(), { presence, letters }).then(
             (out) => !socket.destroyed && socket.write(JSON.stringify(out) + '\n'),
           );
       }
@@ -146,6 +166,7 @@ export async function start(
     wsPort,
     tcpPort,
     async close() {
+      clearInterval(expiry);
       for (const c of wss.clients) c.terminate();
       for (const s of sockets) s.destroy();
       await new Promise<void>((r) => wss.close(() => r()));

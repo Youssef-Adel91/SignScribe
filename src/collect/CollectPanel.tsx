@@ -1,21 +1,37 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { REJECT_LABEL } from '../config/alphabet';
 import { CameraView } from '../ui/CameraView';
 import { download } from '../study/download';
 import { useVision, visionStore } from '../vision/store';
 import {
+  CONTROLS,
   LETTERS,
   coverage,
   defaultKind,
   fromJsonl,
+  gaps,
   toJsonl,
+  type NoneTag,
   type SigningHand,
   type Take,
   type TakeKind,
 } from './dataset';
 import { TakeRecorder, type RecorderState } from './recorder';
+import { GUIDED, GuidedRun, type GuidedStep } from './guided';
 import { IdbStore, MemoryStore, type TakeStore } from './store';
 import { Overlay } from '../ui/Overlay';
 import styles from './Collect.module.css';
+
+const NONE_CHOICES: { tag: NoneTag; text: string }[] = [
+  { tag: 'moving', text: 'hand moving' },
+  { tag: 'relaxed', text: 'relaxed hand' },
+  { tag: 'command-zone', text: 'hand in the command zone' },
+  { tag: 'other', text: 'anything else' },
+];
+const controlCount = (takes: readonly Take[], classId: string) =>
+  takes.filter((t) => t.label === classId).length;
+const noneCount = (takes: readonly Take[], tag: NoneTag) =>
+  takes.filter((t) => t.label === REJECT_LABEL && (t.tag ?? 'other') === tag).length;
 
 const LS = 'signscribe.collect.sitting';
 function loadSitting() {
@@ -55,6 +71,15 @@ export function CollectPanel() {
   const [state, setState] = useState<RecorderState>({ kind: 'idle' });
   const [message, setMessage] = useState('');
   const rec = useRef(new TakeRecorder());
+  const [target, setTarget] = useState(5);
+  const guided = useRef<GuidedRun | null>(null);
+  const [step, setStep] = useState<GuidedStep | null>(null);
+  const [guidedNote, setGuidedNote] = useState('');
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const takesRef = useRef<Take[]>([]);
+  takesRef.current = takes;
+  const sittingRef = useRef(sitting);
+  sittingRef.current = sitting;
   const status = useVision((s) => s.status);
   const hands = useVision((s) => s.ui?.hands ?? 0);
 
@@ -68,6 +93,46 @@ export function CollectPanel() {
     }
   }, [sitting]);
   useEffect(() => setKind(defaultKind(label)), [label]);
+
+  const startStep = useCallback(() => {
+    const g = guided.current;
+    if (!g) return;
+    const st = g.current();
+    if (!st) {
+      guided.current = null;
+      setStep(null);
+      setGuidedNote(`Finished: every letter has at least ${g.target} takes.`);
+      return;
+    }
+    setStep(st);
+    setLabel(st.label);
+    setKind(st.kind);
+    setMessage('');
+    rec.current.start(
+      st.label,
+      sittingRef.current,
+      visionStore.state.frame?.t ?? performance.now(),
+      st.kind,
+      st.countdownMs,
+    );
+    setState(rec.current.state);
+  }, []);
+
+  const stopGuided = useCallback((note: string) => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    guided.current = null;
+    rec.current.cancel();
+    setState({ kind: 'idle' });
+    setStep(null);
+    setGuidedNote(note);
+  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
 
   // every camera frame goes to the recorder while a take is running
   useEffect(() => {
@@ -85,17 +150,31 @@ export function CollectPanel() {
         rec.current.cancel();
         void store.add(take).then(refresh);
         setMessage(`Saved: ${take.label}, ${take.frames.length} frames.`);
+        if (guided.current) {
+          guided.current.saved();
+          timer.current = setTimeout(startStep, GUIDED.restMs);
+        }
       } else if (s.kind === 'failed') {
         rec.current.cancel();
         setMessage(s.reason);
+        if (guided.current) {
+          if (guided.current.failed() === 'stop')
+            stopGuided(
+              `Stopped: ${GUIDED.maxFailsInRow} takes in a row were refused (${s.reason}).`,
+            );
+          else timer.current = setTimeout(startStep, GUIDED.failRestMs);
+        }
       }
     });
-  }, [store, refresh]);
+  }, [store, refresh, startStep, stopGuided]);
 
   const ready =
     sitting.signer.trim() !== '' && sitting.session.trim() !== '' && status === 'running';
-  const busy = state.kind === 'countdown' || state.kind === 'recording';
+  const running = step !== null;
+  const busy = running || state.kind === 'countdown' || state.kind === 'recording';
   const cov = coverage(takes);
+  const missing = gaps(takes, target);
+  const perLetter = (l: string) => cov.find((c) => c.label === l)?.takes ?? 0;
   const stamp = new Date().toISOString().slice(0, 10);
 
   return (
@@ -110,6 +189,21 @@ export function CollectPanel() {
         <div className={styles.grid}>
           <section>
             <CameraView label="Camera preview" className={styles.cam} />
+            {step && (
+              <p className={styles.prompt} data-testid="guided-prompt">
+                <span className={styles.promptLetter}>{step.label}</span> take {step.takeNo} of{' '}
+                {step.ofTotal}
+                {step.newLetter ? ' (new letter: change your sign)' : ''}
+                <small>
+                  {guided.current?.done ?? 0} of {guided.current?.total ?? 0} takes done
+                </small>
+              </p>
+            )}
+            {!step && guidedNote && (
+              <p className={styles.hint} role="status" data-testid="guided-note">
+                {guidedNote}
+              </p>
+            )}
             <p role="status" className={styles.status} data-testid="collect-status">
               {status !== 'running'
                 ? `Camera: ${status}`
@@ -157,19 +251,38 @@ export function CollectPanel() {
               <legend>Letter</legend>
               <div className={styles.letters} role="radiogroup" aria-label="Letter to record">
                 {LETTERS.map((l) => (
-                  <label key={l} className={label === l ? styles.on : ''}>
+                  <label
+                    key={l}
+                    className={`${label === l ? styles.on : ''} ${
+                      perLetter(l) === 0
+                        ? styles.none
+                        : perLetter(l) < target
+                          ? styles.part
+                          : styles.full
+                    }`}
+                  >
                     <input
                       type="radio"
                       name="letter"
-                      aria-label={`Letter ${l}, ${cov.find((c) => c.label === l)?.takes ?? 0} takes`}
+                      disabled={running}
+                      aria-label={`Letter ${l}, ${perLetter(l)} of ${target} takes`}
                       checked={label === l}
                       onChange={() => setLabel(l)}
                     />
                     <span>{l}</span>
-                    <small>{cov.find((c) => c.label === l)?.takes ?? 0}</small>
+                    <small>
+                      {perLetter(l)}/{target}
+                    </small>
                   </label>
                 ))}
               </div>
+              <p data-testid="gaps" className={styles.gaps}>
+                {missing.length === 0
+                  ? `Every letter has at least ${target} takes.`
+                  : `Still needed (target ${target} per letter): ${missing
+                      .map((g) => `${g.label} ${g.missing}`)
+                      .join(', ')}`}
+              </p>
               <label>
                 Kind{' '}
                 <select value={kind} onChange={(e) => setKind(e.target.value as TakeKind)}>
@@ -177,6 +290,123 @@ export function CollectPanel() {
                   <option value="dynamic">moving (draw it in the air)</option>
                 </select>
               </label>
+            </fieldset>
+            <fieldset className={styles.f}>
+              <legend>Guided run</legend>
+              <label>
+                Takes per letter{' '}
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={target}
+                  disabled={running}
+                  onChange={(e) =>
+                    setTarget(Math.max(1, Math.min(50, Number(e.target.value) || 1)))
+                  }
+                />
+              </label>
+              <p>
+                <button
+                  type="button"
+                  disabled={!ready || busy || missing.length === 0}
+                  onClick={() => {
+                    setGuidedNote('');
+                    guided.current = new GuidedRun(LETTERS, countsOf(takesRef.current), target);
+                    startStep();
+                  }}
+                >
+                  Start guided run
+                </button>{' '}
+                <button
+                  type="button"
+                  disabled={!running}
+                  onClick={() => stopGuided('Stopped. Takes already saved are kept.')}
+                >
+                  Stop
+                </button>{' '}
+                <button
+                  type="button"
+                  disabled={!running}
+                  onClick={() => {
+                    guided.current?.skipLetter();
+                    rec.current.cancel();
+                    if (timer.current) clearTimeout(timer.current);
+                    startStep();
+                  }}
+                >
+                  Skip letter
+                </button>
+              </p>
+              <p className={styles.hint}>
+                Fills the gaps: each letter below the target is recorded one take after another
+                (letter shown, 3 s countdown for the first take, 1.5 s for the rest, saved
+                automatically). Refused takes are retried; 3 in a row stop the run.
+              </p>
+            </fieldset>
+            {CONTROLS.length > 0 && (
+              <fieldset className={styles.f} data-testid="control-takes">
+                <legend>Controls (space, delete, cancel, done)</legend>
+                <p className={styles.hint}>
+                  Commands the model should know, recorded with your signer code as the person id so
+                  the tools can leave one person out. <strong>Static</strong> controls are a hand
+                  shape held still (classified like a letter); <strong>dynamic</strong> controls are
+                  a stroke drawn with the index fingertip (matched with the $1 recogniser against
+                  templates). Record several takes each, with several people. Takes stay on this
+                  computer; keep the file out of git.
+                </p>
+                {CONTROLS.map((c) => (
+                  <button
+                    key={c.classId}
+                    type="button"
+                    disabled={!ready || busy}
+                    onClick={() => {
+                      setMessage('');
+                      rec.current.start(
+                        c.classId,
+                        sitting,
+                        visionStore.state.frame?.t ?? performance.now(),
+                        c.kind,
+                      );
+                      setLabel(c.classId);
+                      setState(rec.current.state);
+                    }}
+                  >
+                    Control take: {c.action} ({c.kind}) ({controlCount(takes, c.classId)})
+                  </button>
+                ))}
+              </fieldset>
+            )}
+            <fieldset className={styles.f} data-testid="none-takes">
+              <legend>No letter (&quot;none&quot;)</legend>
+              <p className={styles.hint}>
+                Takes of everything that is NOT a letter, so the model can answer &quot;none&quot;:
+                the hand moving, a relaxed hand, a hand in the command zone. Record several of each,
+                with different people and sittings. They are labelled <code>none</code> and kept in
+                the same file; keep the file out of git.
+              </p>
+              {NONE_CHOICES.map((c) => (
+                <button
+                  key={c.tag}
+                  type="button"
+                  disabled={!ready || busy}
+                  onClick={() => {
+                    setMessage('');
+                    rec.current.start(
+                      REJECT_LABEL,
+                      sitting,
+                      visionStore.state.frame?.t ?? performance.now(),
+                      'static',
+                      undefined,
+                      c.tag,
+                    );
+                    setLabel(REJECT_LABEL);
+                    setState(rec.current.state);
+                  }}
+                >
+                  None take: {c.text} ({noneCount(takes, c.tag)})
+                </button>
+              ))}
             </fieldset>
             <p>
               <button
@@ -200,6 +430,7 @@ export function CollectPanel() {
                 type="button"
                 disabled={!busy}
                 onClick={() => {
+                  if (running) return stopGuided('Stopped. Takes already saved are kept.');
                   rec.current.cancel();
                   setState({ kind: 'idle' });
                 }}
@@ -269,6 +500,12 @@ export function CollectPanel() {
       </main>
     </Overlay>
   );
+}
+
+function countsOf(takes: readonly Take[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const t of takes) out[t.label] = (out[t.label] ?? 0) + 1;
+  return out;
 }
 
 async function importFile(

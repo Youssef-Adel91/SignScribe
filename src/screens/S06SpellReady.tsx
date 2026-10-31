@@ -9,13 +9,17 @@ import { Message } from '../ui/Message';
 import { BuilderBody } from '../ui/Builder';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
+import { useAlphabet } from '../ui/useAlphabet';
 import { useCtx } from '../state/MachineProvider';
 import { HandChip } from '../vision/bits';
+import { useStrings } from '../output/strings';
 
 export default function S06SpellReady() {
   const { hand, place, words, word } = useCtx();
+  const { rtl } = useAlphabet();
+  const strings = useStrings();
   const text = [...words, word].filter(Boolean).join(' ');
-  const caption = text ? 'Show your next letter' : 'Show your first letter';
+  const caption = text ? strings.showNextLetter : strings.showFirstLetter;
   useAnnounceOnChange(caption);
   return (
     <Screen
@@ -48,7 +52,7 @@ export default function S06SpellReady() {
         side={
           <>
             <Card title="Your message">
-              <Message text={text} caret placeholder="Your letters will appear here" />
+              <Message text={text} caret placeholder="Your letters will appear here" rtl={rtl} />
             </Card>
             <Card title="How it works">
               <InfoList>

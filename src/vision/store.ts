@@ -2,12 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import type { Checks } from './checks';
 import { NO_ADVICE, type ContextAdvice } from './context';
 import type { LetterUI } from '../recognition/letterController';
+import type { LetterTuning } from '../recognition/tuning';
 import type { ModelStatus } from '../recognition/types';
 import { IDLE_CARD_UI, type CardUI } from '../cards/controller';
 import type { VisionUI } from './controller';
 import type { HandFrame } from './types';
 
 const params = new URLSearchParams(window.location.search);
+/** Letter debug overlay and log (researcher tool, independent of ?dev=1): why a letter fires or does not. */
+export const LETTER_DEBUG = params.get('letterdebug') === '1';
 const DEV = params.get('dev') === '1';
 /**
  * How the app gets hand frames. Normal use: the real camera. With ?dev=1 only:
@@ -61,6 +64,10 @@ export interface VisionState {
     synthetic: boolean;
     motionStatus: ModelStatus;
     ui: LetterUI | null;
+    /** the values in force for this alphabet and model (the debug overlay edits them) */
+    tuning: LetterTuning | null;
+    alphabetId: string;
+    modelId: string;
   };
 }
 
@@ -80,7 +87,16 @@ const initial: VisionState = {
   checks: null,
   advice: NO_ADVICE,
   cards: { status: 'idle', message: '', synthetic: false, ui: IDLE_CARD_UI },
-  letters: { status: 'idle', message: '', synthetic: false, motionStatus: 'idle', ui: null },
+  letters: {
+    status: 'idle',
+    message: '',
+    synthetic: false,
+    motionStatus: 'idle',
+    ui: null,
+    tuning: null,
+    alphabetId: 'asl',
+    modelId: '',
+  },
 };
 
 type Listener = () => void;

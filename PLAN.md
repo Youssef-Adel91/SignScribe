@@ -42,7 +42,7 @@ storage.googleapis.com / huggingface.co**. Consequences:
    plus a k-NN baseline that trains from your exported JSON. **No accuracy number will be written
    into docs until it is measured from real recordings.** Until a model exists the letter/card paths
    show "No model yet" and the facilitator (Wizard-of-Oz, `?woz=1`) panel can drive them.
-4. Arabic / "More" alphabets: shown as "Coming soon" (disabled) until a label set + model exist.
+4. Arabic can be chosen since the ArSL work (no model yet); "More" alphabets are shown as "Coming soon" (disabled) until a label set + model exist.
 5. E2E runs in Playwright with a mocked landmark stream (fake video cannot produce landmarks without the
    model). Visual comparison uses the 13 PNG exports in `public/design/` (I will regenerate them from Figma).
 
@@ -109,3 +109,27 @@ Done: sentence server (WebSocket for the app + plain TCP lab-style socket, JSON 
 
 ## Phase 7 status (branch feat/phase7-polish, stacked on Phase 6)
 Done: study logger final (profile + consent, session record, camera speed per trial, more exports, Python analysis script), axe audit with fixes, performance recording tool and benchmark, `npm run verify`, `docs/WHATS_LEFT.md`. All seven phases are built; what remains needs a real camera, real people and trained models (docs/WHATS_LEFT.md).
+
+## Alphabet pipeline (branch feat/alphabet-tooling, after the merge)
+Youssef asked (2026-10-22) for the tooling to recognise a whole static alphabet and to measure it honestly. Done: alphabet as config (ASL ready, ArSL template), `ml/import_images.py`, `ml/evaluate.py` (leave-one-person-out, k-NN vs MLP, augmentation ablation), `train_knn.py --augment`, guided recording and gap view in the collection mode, weak letter guesses hidden, top-2 in the dev panel. Not done, on purpose: choosing the alphabet and dataset, running on real data, any accuracy number (`docs/MODEL_RESULTS.md` is empty until the script writes into it).
+
+## ArSL controls (branch feat/arsl-controls, on top of feat/letter-gating)
+The ArSL signing area recognised cancel / delete badly and space / done poorly with the old rule gestures only. Added: controls in `arsl.json` (space, done static; delete, cancel dynamic), the model side (static controls in the letter model, dynamic ones with $1 on the index-fingertip path), a Controls section in the collection page with the person id, a Controls section in the `evaluate.py` report (confusion with letters, false triggers from `none`), and a per-frame "decided by" with its score in the overlay and log. Not done: the recordings, any claim that they work better, any change to the old gesture thresholds (`docs/CONTROLS.md`).
+
+## Letter gating (branch feat/letter-gating, on top of feat/arsl-models-calibration)
+The first real-camera test showed that any hand movement produced letters (a closed set of 32 classes calls every pose a letter) and that the feedback repeated. Done: the letter logic is gated by hand stillness, stable hold, release and cooldown, command gestures and the command zone have priority, the thresholds became settings per model type and alphabet, a `none` class (collection mode, tools, loader), a debug overlay with a CSV log (`?letterdebug=1`), and rate-limited sound / vibration / speech with a switch. Not done: choosing the values (needs recordings and the camera), retraining with `none` takes, the unreliable delete gesture itself (`docs/KNOWN_ISSUES.md` #22).
+
+## ArSL stage 2 (branch feat/arsl-models-calibration, on top of feat/arsl-app)
+Youssef asked for: documented commands for both ArSL model files and a loader test, the CC BY 4.0 credit, a calibration script, an Arabic helper-word list for the validator, and a note that read-aloud is English only. Done: `ml/export_arsl.py` (+ the two single commands), `ml/calibrate.py`, `docs/CREDITS.md` and the About text on the help screen, `src/nlp/arabicWords.ts` + `docs/ARABIC_WORDS.md`, the notes on screens 12 and 14. Not done, on purpose: choosing thresholds (needs the real tables), Arabic speech, a dictionary.
+
+## ArSL in the web app, stage 1 (branch feat/arsl-app, on top of feat/mlp-and-eval-guards)
+Youssef asked for the app to work end to end with the ArSL alphabet, without an Arabic word list or validator. Done: glyphs from the alphabet file (unconfirmed ones shown as marked Latin ids), the alphabet setting on screen 03 and the per-alphabet model files, right-to-left sentence line, control classes only from the alphabet file (none in `arsl.json`), the sentence validator's Arabic mode, the `alphabet` column in the study CSV. Not done: an ArSL model and its thresholds, Arabic words and sentences, the Arabic voice (`docs/KNOWN_ISSUES.md` #15-#19).
+
+## Evaluation guards and the neural-network browser model (branch feat/mlp-and-eval-guards, on top of feat/arsl-datasets)
+Youssef ran ArSL21L leave-one-person-out on his machine and saw a 13% cross-source run that was only a class-coverage mismatch. Done: the guard (or `--shared-classes`), a section-aware `results_md.py`, train/test evaluation on his own webcam takes, an opt-in suffix import, `letters-mlp.json` (TS forward pass + parity test, k-NN fallback) and `ml/export_mlp.py`. Not done: tuning `LETTER` for softmax confidence, ArSL in the app.
+
+## ArSL datasets (branch feat/arsl-datasets, on top of the alphabet pipeline)
+Youssef checked three local datasets: ArSL21L pictures (flat folder, 50 persons, 32 classes), the ASLAD landmark CSV and ArSL_dataset.csv. Done: flat-folder import by file-name regex, a landmark CSV importer that measures the layout, `arsl.json` with the 32 class names (ambiguous Arabic mappings are TODO, not guessed), evaluation by person with persons under 18 only counted, exact commands in `ml/README.md`. Everything runs on his machine; nothing here ran on the real files.
+
+## Phase II grading rows (branches feat/ble-presence, feat/context-push, feat/dollarpy-demo, feat/demo-all)
+The course Phase II sheet scores Bluetooth (UserID + discovery), socket programming, DollarPy on MediaPipe, and "load different content based on context". Order: (1) `tools/bluetooth/scan.py` + a `presence` message on the sentence server; (2) the server pushes context to the web app, which loads the place and the person's saved settings with a visible override; (3) `tools/dollarpy/` record + live classify, letters sent over the socket; (4) `tools/demo-all.md` with a clearly labelled FAKE device; (5) the mapping table in `docs/DONE.md`. No Bluetooth hardware and no webcam were available in the build environment: those rows stay "needs real hardware".

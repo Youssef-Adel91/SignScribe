@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { DetectedChip } from './DetectedChip';
 import { Icon } from './Icon';
 import styles from './TopBar.module.css';
 
@@ -56,6 +57,7 @@ export function TopBar({ steps, children }: { steps?: StepStates; children: Reac
       {steps ? <Stepper states={steps} /> : <span />}
       <ul className={styles.chips} aria-label="Status">
         {children}
+        <DetectedChip />
       </ul>
     </header>
   );

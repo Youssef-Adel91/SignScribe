@@ -1,3 +1,4 @@
+import { ARABIC_HELPER_WORDS } from '../src/nlp/arabicWords.ts';
 import type { PlaceName, SuggestRequest } from '../src/nlp/protocol.ts';
 
 /** Anything that can propose a sentence for a list of words. The service validates whatever it returns. */
@@ -21,6 +22,16 @@ export const SYSTEM_PROMPT = [
   '- You may add only small helper words (a, the, I, my, please, need, want, can, could, would, excuse me, thank you).',
   '- Do not make it negative unless a given word is negative.',
   '- One sentence, at most 15 words. Plain text, no quotes, no explanation.',
+].join('\n');
+
+/** ArSL: the words are Arabic. Same strictness; the answer is Arabic and keeps every word exactly as written. */
+export const SYSTEM_PROMPT_ARABIC = [
+  'You turn a short list of Arabic words into ONE short, polite Arabic sentence for a person who communicates with hand signs.',
+  'Rules, all of them strict:',
+  '- Use every word you are given, exactly as written (do not change its letters).',
+  '- Do NOT add facts: no names, numbers, times, places, symptoms, medicines, reasons or other new content words.',
+  `- You may add only these helper words: ${[...new Set(ARABIC_HELPER_WORDS)].join(' ')}. No other word, not even a similar one.`,
+  '- Only Arabic letters and punctuation. One sentence, at most 15 words. Plain text, no quotes, no explanation.',
 ].join('\n');
 
 export function buildUserPrompt(req: SuggestRequest): string {
@@ -63,7 +74,7 @@ export class AnthropicProvider implements SentenceProvider {
         model: this.model,
         max_tokens: 100,
         temperature: req.attempt > 0 ? 0.9 : 0.4,
-        system: SYSTEM_PROMPT,
+        system: req.alphabet === 'arsl' ? SYSTEM_PROMPT_ARABIC : SYSTEM_PROMPT,
         messages: [{ role: 'user', content: buildUserPrompt(req) }],
       }),
       signal,

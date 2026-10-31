@@ -14,6 +14,7 @@ describe('settings storage', () => {
       contrast: 'high',
       dwell: 'slow',
       voice: false,
+      feedback: false,
     } as const;
     saveSettings(s);
     expect(loadSettings()).toEqual(s);
@@ -27,7 +28,7 @@ describe('settings storage', () => {
     );
     const s = loadSettings();
     expect(['left', 'right']).toContain(s.hand);
-    expect(s.alphabet).toBe('english'); // Arabic is not available yet
+    expect(s.alphabet).toBe('arabic'); // ArSL is a choice now (see tests/arsl-app.test.ts)
     expect(s.textSize).toBe(DEFAULT_SETTINGS.textSize);
     expect(s.dwell).toBe('auto');
     expect(s.voice).toBe(DEFAULT_SETTINGS.voice);

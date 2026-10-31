@@ -6,23 +6,29 @@ Owner: Youssef. Talk to him in Egyptian Arabic (plain, student style). Code, com
 ## Status
 All 7 phases are built and were merged into `main` (Youssef asked for it, 2026-10-22) from the stacked branches (see PLAN.md). Base: camera, MediaPipe hand tracking, rule-based gestures, pointer, dwell, command zone. Then: context/settings/TTS (3), study mode, letter-recognition TOOLING (4, no model: handoff in docs/MODEL_HANDOFF.md). Cards (5): pipeline built, NO detector trained (docs/CARDS.md). Sentence server (6) built, never tried with the live API (no key). Phase 7 built (final study logger, axe, perf tools). All phases built; what is left needs a camera, people and trained models: docs/WHATS_LEFT.md.
 Youssef decided (overrides the earlier wait): build the whole platform first (Phase 3 -> study mode -> 4 -> 5 -> 6 -> 7), then fix bugs from camera testing. Order, one branch + PR per phase, `npm run check` green.
+Alphabet pipeline (Youssef asked, 2026-10-22): `config/alphabets/*.json` holds the label set (ASL ready; ArSL = the 32 ArSL21L class names, `reviewed: false`, ambiguous Arabic mappings listed as TODO, never guessed), `ml/import_images.py` (pictures, also a flat folder) + `ml/import_landmarks_csv.py` + `ml/evaluate.py` measure honestly (leave-one-person-out), guided recording in the collection mode. No model has been trained and `docs/MODEL_RESULTS.md` is empty until `evaluate.py` writes a real result into it.
 Camera bugs go in docs/KNOWN_ISSUES.md; do not fix them unless they block the phase being built. After Phase 4 write docs/MODEL_HANDOFF.md, then continue with 5-7 without waiting for the model.
 
 ## Commands
     npm ci
     npm run server     # sentence server (.env from .env.example)
-    npm run verify     # every automatic check in one table
+    # ?letterdebug=1   letter debug panel + CSV log (why a letter fires; settings per alphabet and model; docs/MODEL_HANDOFF.md)
+    npm run verify     # every automatic check in one table (also works on Windows: npm is started through the shell there; a command that cannot start is a FAIL with its real error)
+    npm run hooks:install   # git pre-commit: refuses every *-knn.json (only a synthetic fixture under tests/fixtures/ with at most 200 vectors is allowed) and anything under ml/data/ or datasets/ (npm run check:staged does the same by hand)
     npm run axe | bench | e2e:server   # accessibility audit / cost of own code / sentence server
     npm run models     # copies MediaPipe wasm + downloads hand_landmarker.task into public/models
     npm run dev        # http://localhost:5173 (?dev=1 for dev panels; vision=off | vision=mock)
     npm run check      # typecheck + lint + unit tests (see npm run check) + production build. Keep green on every commit
-    npm run e2e        # needs a build; flow driven by synthetic hands (31 checks)
+    npm run e2e        # needs a build; flow driven by synthetic hands (43 checks)
     npm run layout     # needs a build; 78 screen/size combos
     npm run e2e:study | e2e:collect | e2e:cards | e2e:server   # study session / collection mode in a browser (synthetic hands)
+    npm run demo         # server + scanner + dollarpy + web app together (FAKE by default): tools/demo-all.md
+    npm run e2e:context  # fake Bluetooth scanner -> server -> app (needs a build)
     npm run ml:test    # Python tests for ml/ (pip install -r ml/requirements.txt)
     npm run compare    # needs a build; screens next to Figma exports (tools/compare/out)
 
 ## Folder map
+    config/       label sets (alphabets); ml/ and the web app both read them
     src/state/    XState v5 machine = the only owner of "which screen" (14 screens; 08 hand lost, 13 help)
     src/vision/   camera, MediaPipe, landmarks, gestures, pointer (One-Euro), dwell, zones, controller, checks
     src/screens/  S01..S13, driven by the machine; no click/key handlers (tested)

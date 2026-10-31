@@ -16,6 +16,8 @@ public/models/*
 !public/models/*.json
 !public/models/cards.onnx
 !public/models/README.md
+# a k-NN model stores real landmark samples of real people (a copy of the data): never committed. The MLP JSON (weights only) may be.
+public/models/*-knn.json
 tools/**/__pycache__
 tools/train/data/
 tools/cards/dataset/
@@ -44,3 +46,18 @@ signscribe-comparison-*.csv
 signscribe-profile-*.csv
 signscribe-session-*.csv
 signscribe-perf-*.json
+signscribe-letterdebug-*.csv
+# local scratch for ml/: imported picture datasets and evaluation output (the vetted numbers go to docs/MODEL_RESULTS.md by the script)
+ml/data/
+ml/reports/
+
+# the datasets themselves (pictures, landmark CSVs): keep them outside the repository or here, never commit them
+datasets/
+
+
+# BLUETOOTH: your own device addresses (tools/bluetooth/README.md). Only devices.example.json is committed.
+tools/bluetooth/devices.json
+tools/bluetooth/devices.*.json
+!tools/bluetooth/devices.example.json
+# DOLLARPY: recorded movement templates are a person's data too (tools/dollarpy/README.md)
+tools/dollarpy/templates*.json

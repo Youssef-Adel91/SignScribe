@@ -80,6 +80,34 @@ describe('LetterController (static letters)', () => {
     expect(s.types()).toContain('LETTER_CANDIDATE');
     expect(s.letters()).toEqual([]);
   });
+  it('shows nothing for a weak guess; the two best raw guesses are kept for the developer panel only', () => {
+    const f = new Fake();
+    f.guess = {
+      letter: 'B',
+      confidence: LETTER.minConfidence - 0.1,
+      alternatives: [
+        { letter: 'D', confidence: 0.3 },
+        { letter: 'E', confidence: 0.1 },
+      ],
+    };
+    const s = new Sim(new LetterController(f));
+    const ui = s.run(1500, sign())!;
+    expect(ui.guess).toBeNull();
+    expect(ui.progress).toBe(0);
+    expect(ui.raw.map((r) => r.letter)).toEqual(['B', 'D', 'E']); // the top 3 (for the debug overlay only)
+    expect(s.log).toEqual([]);
+    f.guess = g('B', 0.9);
+    const strong = s.run(600, sign())!;
+    expect(strong.guess).toMatchObject({ letter: 'B' });
+    expect(strong.raw[0]).toMatchObject({ letter: 'B', confidence: 0.9 });
+  });
+  it('no raw guess when there is no model or no hand', () => {
+    const none = new Sim(new LetterController(null));
+    expect(none.run(300, sign())!.raw).toEqual([]);
+    const f = new Fake();
+    f.guess = g('B');
+    expect(new Sim(new LetterController(f)).run(300, [])!.raw).toEqual([]);
+  });
   it('a letter that keeps changing never reaches the hold', () => {
     const f = new Fake();
     const s = new Sim(new LetterController(f));

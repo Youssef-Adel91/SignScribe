@@ -1,4 +1,5 @@
-import { and, assign, setup } from 'xstate';
+import { and, assign, raise, setup } from 'xstate';
+import { alphabetOfSetting, dropLastGlyph, glyphOf } from '../config/alphabet';
 import { closestMatch, isKnownWord } from '../nlp/dictionary';
 import { offlineSentence } from '../nlp/sentence';
 import { validateSentence } from '../nlp/validate';
@@ -16,7 +17,7 @@ export type Method = 'spell' | 'card';
 export type Overlay = 'none' | 'handLost' | 'help';
 
 /** Alphabets that currently have a label set + model. Others are shown as "Coming soon". */
-export const AVAILABLE_ALPHABETS: readonly Alphabet[] = ['english'];
+export const AVAILABLE_ALPHABETS: readonly Alphabet[] = ['english', 'arabic'];
 
 export interface Candidate {
   letter: string;
@@ -43,7 +44,19 @@ export interface Settings {
   dwell: DwellSetting;
   /** read screens, tips and the finished sentence aloud (speech synthesis) */
   voice: boolean;
+  /** one short sound and one short vibration for each letter that is written (never per frame); false = none */
+  feedback: boolean;
 }
+
+/** Who and where the Bluetooth scanner says is near (pushed by the sentence server). Null parts = not known. */
+export interface Detected {
+  userId: string | null;
+  place: Place | null;
+  /** the device is simulated (scan.py --fake): the screen says so */
+  demo: boolean;
+}
+export const detectedKey = (d: Pick<Detected, 'userId' | 'place'>): string =>
+  `${d.userId ?? '-'}|${d.place ?? '-'}`;
 
 export interface Ctx extends Settings {
   place: Place;
@@ -66,6 +79,14 @@ export interface Ctx extends Settings {
   overlay: Overlay;
   /** overlay to return to when help closes */
   overlayBefore: Overlay;
+  /** from Bluetooth, null when nothing is detected (the app then works as it always did) */
+  detected: Detected | null;
+  /** the person said "ignore" to this detection (key of userId|place): it is not applied again until something else is detected */
+  detectedIgnored: string | null;
+  /** the person chose the place themselves: a detection never changes it */
+  placeChosen: boolean;
+  /** place and settings as they were before a detection changed them, so "ignore" can put them back */
+  beforeDetect: { place: Place; settings: Settings } | null;
 }
 
 export type Ev =
@@ -77,12 +98,15 @@ export type Ev =
   | { type: 'CHOOSE_CONTRAST'; contrast: Contrast }
   | { type: 'CHOOSE_DWELL'; dwell: DwellSetting }
   | { type: 'CHOOSE_VOICE'; voice: boolean }
+  | { type: 'CHOOSE_OUTPUT'; voice: boolean; feedback: boolean }
   | { type: 'CHOOSE_CONTEXT'; place: Place }
   | { type: 'CHOOSE_METHOD'; method: Method }
   | { type: 'LETTER_CANDIDATE'; candidate: Candidate }
   | { type: 'CANDIDATE_LOST' }
   | { type: 'LETTER_CONFIRMED'; letter: string }
   | { type: 'SPACE' }
+  /** a letter from outside the camera pipeline (the dollarpy client), chosen by the person by pointing at it */
+  | { type: 'LETTER_ADD'; letter: string }
   | { type: 'DELETE' }
   | { type: 'WORD_ACCEPT' }
   | { type: 'WORD_REJECT' }
@@ -97,6 +121,17 @@ export type Ev =
   | { type: 'FINISH' }
   | { type: 'NEW_SENTENCE' }
   | { type: 'EDIT' }
+  /** Bluetooth: someone and/or somewhere was detected. `profile` = that person's saved settings, if any */
+  | {
+      type: 'CONTEXT_DETECTED';
+      userId: string | null;
+      place: Place | null;
+      demo: boolean;
+      profile?: Settings | null;
+    }
+  | { type: 'CONTEXT_CLEARED' }
+  /** "this is wrong": undo what the detection changed and do not apply it again */
+  | { type: 'CONTEXT_IGNORE' }
   /** the sentence server answered; accepted only if it is still the sentence being waited for and passes the safety rule */
   | { type: 'SENTENCE_SERVER'; sentence: string; words: string[]; attempt: number }
   /** study mode only: start the next trial from the context screen, keeping the settings */
@@ -109,15 +144,31 @@ export const DEFAULT_SETTINGS: Settings = {
   contrast: 'standard',
   dwell: 'auto',
   voice: true,
+  feedback: true,
 };
 
 /* ---------- pure helpers ---------- */
+
+/** space = a new word, delete = take the last letter back, cancel = go back (thumbs down), done = finish (thumbs up) */
+export function controlEvent(action: 'space' | 'delete' | 'cancel' | 'done' | undefined): Ev {
+  switch (action) {
+    case 'delete':
+      return { type: 'DELETE' };
+    case 'cancel':
+      return { type: 'NO' };
+    case 'done':
+      return { type: 'YES' };
+    default:
+      return { type: 'SPACE' };
+  }
+}
 
 type Wrapped = { context: Ctx };
 
 const wordIsEmpty = ({ context }: Wrapped) => context.word.length === 0;
 /** spelt word that is not in the context list AND has a close list match -> screen 09 */
 const needsSuggestion = ({ context }: Wrapped) =>
+  context.alphabet === 'english' && // there is no Arabic word list yet
   context.word.length > 0 &&
   !isKnownWord(context.word, context.place) &&
   closestMatch(context.word, context.place) !== null;
@@ -126,6 +177,9 @@ const wordsAfterPush = ({ context }: Wrapped) => context.words.length + (context
 const isIdle = ({ context }: Wrapped) => context.overlay === 'none';
 
 /* ---------- machine ---------- */
+
+/** the states before the first letter or card: a detection may still change the place and the settings there */
+const detect = { CONTEXT_DETECTED: { actions: ['noteDetected', 'applyDetected'] } } as const;
 
 export const signScribeMachine = setup({
   types: {
@@ -150,9 +204,16 @@ export const signScribeMachine = setup({
       event.attempt === context.sentenceAttempt &&
       event.words.length === context.words.length &&
       event.words.every((w, i) => w === context.words[i]) &&
-      validateSentence(context.words, event.sentence).ok,
+      validateSentence(
+        context.words,
+        event.sentence,
+        context.alphabet === 'arabic' ? 'arabic' : 'english',
+      ).ok,
     alphabetAvailable: ({ event }) =>
       event.type === 'CHOOSE_ALPHABET' && AVAILABLE_ALPHABETS.includes(event.alphabet),
+    confirmedControl: ({ context, event }) =>
+      event.type === 'LETTER_CONFIRMED' &&
+      alphabetOfSetting(context.alphabet).controls[event.letter] !== undefined,
     methodIsCard: ({ context }) => context.method === 'card',
     chosenIsCard: ({ event }) => event.type === 'CHOOSE_METHOD' && event.method === 'card',
     candidateExists: ({ context }) => context.candidate !== null,
@@ -171,24 +232,89 @@ export const signScribeMachine = setup({
     ),
     setDwell: assign(({ event }) => (event.type === 'CHOOSE_DWELL' ? { dwell: event.dwell } : {})),
     setVoice: assign(({ event }) => (event.type === 'CHOOSE_VOICE' ? { voice: event.voice } : {})),
-    setPlace: assign(({ event }) =>
-      event.type === 'CHOOSE_CONTEXT' ? { place: event.place } : {},
+    setOutput: assign(({ event }) =>
+      event.type === 'CHOOSE_OUTPUT' ? { voice: event.voice, feedback: event.feedback } : {},
     ),
+    setPlace: assign(({ event }) =>
+      event.type === 'CHOOSE_CONTEXT' ? { place: event.place, placeChosen: true } : {},
+    ),
+    /** remember the detection (any screen); an ignored detection stays ignored until a different one arrives */
+    noteDetected: assign(({ context, event }) => {
+      if (event.type !== 'CONTEXT_DETECTED') return {};
+      const d: Detected = { userId: event.userId, place: event.place, demo: event.demo };
+      if (context.detectedIgnored === detectedKey(d)) return {};
+      return { detected: d, detectedIgnored: null };
+    }),
+    /** before the message starts: load that place (unless the person chose one) and that person's saved settings */
+    applyDetected: assign(({ context, event }) => {
+      if (event.type !== 'CONTEXT_DETECTED') return {};
+      if (context.detectedIgnored === detectedKey(event)) return {};
+      const before = context.beforeDetect ?? {
+        place: context.place,
+        settings: {
+          hand: context.hand,
+          alphabet: context.alphabet,
+          textSize: context.textSize,
+          contrast: context.contrast,
+          dwell: context.dwell,
+          voice: context.voice,
+          feedback: context.feedback,
+        },
+      };
+      return {
+        beforeDetect: before,
+        ...(event.place && !context.placeChosen ? { place: event.place } : {}),
+        ...(event.userId && event.profile ? event.profile : {}),
+      };
+    }),
+    /** nothing is detected any more (person left, scanner or server gone): forget the detection and any "ignore" of it */
+    clearDetected: assign({ detected: null, detectedIgnored: null, beforeDetect: null }),
+    ignoreDetected: assign(({ context }) => {
+      if (!context.detected) return {};
+      const b = context.beforeDetect;
+      return {
+        detectedIgnored: detectedKey(context.detected),
+        detected: null,
+        beforeDetect: null,
+        ...(b ? { ...b.settings } : {}),
+        ...(b && !context.placeChosen ? { place: b.place } : {}),
+      };
+    }),
     setMethod: assign(({ event }) =>
       event.type === 'CHOOSE_METHOD' ? { method: event.method } : {},
+    ),
+    /** the control class of a LETTER_CONFIRMED does what the same hand gesture does */
+    raiseControl: raise(({ context, event }) =>
+      controlEvent(
+        event.type === 'LETTER_CONFIRMED'
+          ? alphabetOfSetting(context.alphabet).controls[event.letter]
+          : undefined,
+      ),
     ),
     setCandidate: assign(({ event }) =>
       event.type === 'LETTER_CANDIDATE' ? { candidate: event.candidate } : {},
     ),
     clearCandidate: assign({ candidate: null }),
+    addLetter: assign(({ context, event }) =>
+      event.type === 'LETTER_ADD'
+        ? { word: context.word + event.letter.toUpperCase().slice(0, 1), candidate: null }
+        : {},
+    ),
     appendLetter: assign(({ context, event }) =>
       event.type === 'LETTER_CONFIRMED'
-        ? { word: context.word + event.letter.toUpperCase().slice(0, 1), candidate: null }
+        ? {
+            word: context.word + glyphOf(alphabetOfSetting(context.alphabet), event.letter).text,
+            candidate: null,
+          }
         : {},
     ),
     /** delete the last letter; with no letters left, take back the last finished word */
     deleteLast: assign(({ context }) => {
-      if (context.word.length > 0) return { word: context.word.slice(0, -1), candidate: null };
+      if (context.word.length > 0)
+        return {
+          word: dropLastGlyph(alphabetOfSetting(context.alphabet), context.word),
+          candidate: null,
+        };
       if (context.words.length > 0) return { words: context.words.slice(0, -1), candidate: null };
       return {};
     }),
@@ -218,7 +344,10 @@ export const signScribeMachine = setup({
     })),
     /** "Delete letters" on screen 09: put the word back and drop its last letter */
     reopenWord: assign(({ context }) => ({
-      word: (context.suggestion?.original ?? context.word).slice(0, -1),
+      word: dropLastGlyph(
+        alphabetOfSetting(context.alphabet),
+        context.suggestion?.original ?? context.word,
+      ),
       suggestion: null,
     })),
     setCardCandidate: assign(({ event }) =>
@@ -254,6 +383,9 @@ export const signScribeMachine = setup({
       sentenceSource: 'offline' as const,
       overlay: 'none' as const,
       overlayBefore: 'none' as const,
+      placeChosen: false,
+      detectedIgnored: null,
+      beforeDetect: null,
     }),
     resetChoices: assign({
       place: 'Clinic' as const,
@@ -261,14 +393,19 @@ export const signScribeMachine = setup({
       afterWord: 'spell' as const,
     }),
     computeSentence: assign(({ context }) => ({
-      sentence: offlineSentence(context.words, context.place, 0),
+      sentence: offlineSentence(context.words, context.place, 0, context.alphabet),
       sentenceAttempt: 0,
       sentenceConfirmed: false,
       sentenceSource: 'offline' as const,
     })),
     tryAnother: assign(({ context }) => ({
       sentenceAttempt: context.sentenceAttempt + 1,
-      sentence: offlineSentence(context.words, context.place, context.sentenceAttempt + 1),
+      sentence: offlineSentence(
+        context.words,
+        context.place,
+        context.sentenceAttempt + 1,
+        context.alphabet,
+      ),
       sentenceSource: 'offline' as const,
     })),
     applyServerSentence: assign(({ event }) =>
@@ -307,6 +444,10 @@ export const signScribeMachine = setup({
     sentenceSource: 'offline',
     overlay: 'none',
     overlayBefore: 'none',
+    detected: null,
+    detectedIgnored: null,
+    placeChosen: false,
+    beforeDetect: null,
   }),
   initial: 'welcome',
   // Overlay events that work from every state. Child states guard on `idle`, so when an overlay is
@@ -314,6 +455,10 @@ export const signScribeMachine = setup({
   on: {
     HELP_TOGGLE: { actions: 'toggleHelp' },
     STUDY_RESTART: { target: '.context', actions: ['resetSession', 'resetChoices'] },
+    // Bluetooth context: remembered on every screen; applied only before the message starts (the states that spread `detect`)
+    CONTEXT_DETECTED: { actions: 'noteDetected' },
+    CONTEXT_CLEARED: { actions: 'clearDetected' },
+    CONTEXT_IGNORE: { actions: 'ignoreDetected' },
     NO: { guard: 'helpOpen', actions: 'toggleHelp' },
     HAND_BACK: [
       { guard: 'handLostOpen', actions: 'handBack' },
@@ -322,16 +467,18 @@ export const signScribeMachine = setup({
   },
   states: {
     /* 01 */ welcome: {
-      on: { WAKE: { guard: 'idle', target: 'cameraCheck' } },
+      on: { ...detect, WAKE: { guard: 'idle', target: 'cameraCheck' } },
     },
     /* 02 */ cameraCheck: {
       on: {
+        ...detect,
         CHECKS_PASSED: { guard: 'idle', target: 'preferences' },
         NO: { guard: 'idle', target: 'welcome' },
       },
     },
     /* 03 */ preferences: {
       on: {
+        ...detect,
         CHOOSE_HAND: { guard: 'idle', actions: 'setHand' },
         CHOOSE_ALPHABET: { guard: and(['idle', 'alphabetAvailable']), actions: 'setAlphabet' },
         YES: { guard: 'idle', target: 'comfort' },
@@ -340,16 +487,19 @@ export const signScribeMachine = setup({
     },
     /* 14 (no Figma frame): comfort settings, shown right after 03 */ comfort: {
       on: {
+        ...detect,
         CHOOSE_TEXT_SIZE: { guard: 'idle', actions: 'setTextSize' },
         CHOOSE_CONTRAST: { guard: 'idle', actions: 'setContrast' },
         CHOOSE_DWELL: { guard: 'idle', actions: 'setDwell' },
         CHOOSE_VOICE: { guard: 'idle', actions: 'setVoice' },
+        CHOOSE_OUTPUT: { guard: 'idle', actions: 'setOutput' },
         YES: { guard: 'idle', target: 'context' },
         NO: { guard: 'idle', target: 'preferences' },
       },
     },
     /* 04 */ context: {
       on: {
+        ...detect,
         CHOOSE_CONTEXT: { guard: 'idle', actions: 'setPlace' },
         YES: { guard: 'idle', target: 'method' },
         NO: { guard: 'idle', target: 'comfort' },
@@ -357,6 +507,7 @@ export const signScribeMachine = setup({
     },
     /* 05 */ method: {
       on: {
+        ...detect,
         CHOOSE_METHOD: { guard: 'idle', actions: 'setMethod' },
         YES: [
           { guard: and(['idle', 'methodIsCard']), target: 'cards' },
@@ -372,7 +523,13 @@ export const signScribeMachine = setup({
           { guard: 'helpOpen', actions: 'handLostBehindHelp' },
           { guard: 'idle', actions: 'handLost' },
         ],
+        // a control class (static or dynamic) arrives without a candidate, also while no letter is being recognised
+        LETTER_CONFIRMED: {
+          guard: and(['idle', 'confirmedControl']),
+          actions: ['clearCandidate', 'raiseControl'],
+        },
         DELETE: { guard: 'idle', actions: 'deleteLast', target: '.ready' },
+        LETTER_ADD: { guard: 'idle', actions: 'addLetter', target: '.ready' },
         SPACE: [
           { guard: and(['idle', 'wordEmpty']), target: '.ready', actions: 'clearCandidate' },
           {
@@ -405,7 +562,15 @@ export const signScribeMachine = setup({
         recognizing: {
           on: {
             LETTER_CANDIDATE: { guard: 'idle', actions: 'setCandidate' },
-            LETTER_CONFIRMED: { guard: 'idle', target: 'ready', actions: 'appendLetter' },
+            LETTER_CONFIRMED: [
+              // a class the alphabet file marks as a command does the same as the hand gesture
+              {
+                guard: and(['idle', 'confirmedControl']),
+                target: 'ready',
+                actions: ['clearCandidate', 'raiseControl'],
+              },
+              { guard: 'idle', target: 'ready', actions: 'appendLetter' },
+            ],
             CANDIDATE_LOST: { guard: 'idle', target: 'ready', actions: 'clearCandidate' },
             NO: { guard: 'idle', target: 'ready', actions: 'clearCandidate' },
           },

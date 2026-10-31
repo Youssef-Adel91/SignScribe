@@ -62,8 +62,10 @@
   --s-32: calc(var(--u) * 32);
   --s-36: calc(var(--u) * 36);
   --s-40: calc(var(--u) * 40);
+  --s-44: calc(var(--u) * 44);
   --s-48: calc(var(--u) * 48);
   --s-60: calc(var(--u) * 60);
+  --s-72: calc(var(--u) * 72);
   --s-80: calc(var(--u) * 80);
   --fs-14: max(14px, calc(var(--u) * 14 * var(--ts)));
   --fs-16: max(16px, calc(var(--u) * 16 * var(--ts)));

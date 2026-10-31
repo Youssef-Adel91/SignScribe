@@ -1,7 +1,7 @@
 // Collection mode and Wizard-of-Oz in a browser, with synthetic hands (no camera).
 // Usage: npm run build && npm run e2e:collect
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
+import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -54,6 +54,12 @@ try {
     await panel.getByPlaceholder('lamp-60cm').fill('lamp-60cm');
     await panel.getByRole('radio', { name: /^Letter B,/ }).check();
     check('Record becomes available', await rec.isEnabled());
+    const noneButtons = panel.getByRole('button', { name: /^None take:/ });
+    check('four kinds of "none" take can be recorded', (await noneButtons.count()) === 4);
+    check(
+      'they are enabled with signer and session filled in',
+      await noneButtons.first().isEnabled(),
+    );
     await rec.click();
     await play([{ pose: 'fist', cx: 0.5, cy: 0.5, size: 0.2 }], 3300);
     check(
@@ -123,7 +129,103 @@ try {
       ),
     );
     check('undo removes the last take', true);
+
+    // guided run: letter prompt, countdown, automatic advance to the next letter that still has a gap
+    await panel.getByLabel('Takes per letter').fill('1');
+    check(
+      'gaps are listed and colour is not the only signal',
+      /Still needed \(target 1 per letter\): A 1, C 1/.test(
+        await page.getByTestId('gaps').textContent(),
+      ),
+      await page.getByTestId('gaps').textContent(),
+    );
+    await panel.getByRole('button', { name: 'Start guided run' }).click();
+    check(
+      'guided run shows the letter to sign first',
+      /^A\s*take 1 of 1/.test((await page.getByTestId('guided-prompt').textContent()).trim()),
+      await page.getByTestId('guided-prompt').textContent(),
+    );
+    await play([{ pose: 'fist', cx: 0.5, cy: 0.5, size: 0.2 }], 5400);
+    await page.waitForFunction(() =>
+      /^C\s*take 1 of 1/.test(
+        (document.querySelector('[data-testid="guided-prompt"]')?.textContent ?? '').trim(),
+      ),
+    );
+    check('after A is saved the run moves on to C by itself (B already has a take)', true);
+    await panel.getByRole('button', { name: 'Stop', exact: true }).click();
+    check(
+      'Stop ends the run and keeps the saved take',
+      (await panel.getByRole('button', { name: 'Start guided run' }).isEnabled()) &&
+        /Letter A, 1 of 1/.test(
+          (await panel.getByRole('radio', { name: /^Letter A,/ }).getAttribute('aria-label')) ?? '',
+        ),
+    );
     check('no page errors', errors.length === 0, errors.join(' ; ').slice(0, 200));
+    await ctx.close();
+  }
+
+  /* ---- controls (ArSL: space, done static; delete, cancel dynamic), with the person id */
+  {
+    const ctx = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      acceptDownloads: true,
+    });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    await page.goto(`${base}?dev=1&vision=mock&collect=1&alphabet=arsl`);
+    await page.waitForFunction(() => window.__signscribe !== undefined);
+    const play = (hands, ms) =>
+      page.evaluate(([h, t]) => window.__signscribe.play(h, t), [hands, ms]);
+    const panel = page.getByTestId('collect-panel');
+    const box = panel.getByTestId('control-takes');
+    check('the Controls section is there for ArSL', await box.isVisible());
+    const buttons = box.getByRole('button', { name: /^Control take:/ });
+    check(
+      'four controls: space, done (static), delete, cancel (dynamic)',
+      (await buttons.count()) === 4,
+    );
+    const names = await buttons.allTextContents();
+    check(
+      'each says whether it is static or dynamic',
+      names.some((n) => /space \(static\)/.test(n)) &&
+        names.some((n) => /done \(static\)/.test(n)) &&
+        names.some((n) => /delete \(dynamic\)/.test(n)) &&
+        names.some((n) => /cancel \(dynamic\)/.test(n)),
+      names.join(' | '),
+    );
+    check(
+      'the letter list does not contain the controls',
+      (await panel.getByRole('radio', { name: /ctl_/ }).count()) === 0,
+    );
+    await panel.getByPlaceholder('s01').fill('s07');
+    await panel.getByPlaceholder('lamp-60cm').fill('desk');
+    await box.getByRole('button', { name: /^Control take: space/ }).click();
+    await play([{ pose: 'fist', cx: 0.5, cy: 0.5, size: 0.2 }], 5200);
+    await page.waitForFunction(() =>
+      /Saved: ctl_space/.test(
+        document.querySelector('[data-testid="collect-status"]')?.textContent ?? '',
+      ),
+    );
+    check('a static control take (space) is saved', true);
+    const [dl] = await Promise.all([
+      page.waitForEvent('download'),
+      panel.getByRole('button', { name: 'Export JSONL' }).click(),
+    ]);
+    const lines = readFileSync(await dl.path(), 'utf8')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    check(
+      'the control take is labelled with the class, is static and carries the person id',
+      lines.length === 1 &&
+        lines[0].label === 'ctl_space' &&
+        lines[0].kind === 'static' &&
+        lines[0].person === 's07' &&
+        lines[0].signer === 's07',
+      JSON.stringify(lines.map((t) => [t.label, t.kind, t.person])),
+    );
+    check('no page errors', errors.length === 0, errors.join('; '));
     await ctx.close();
   }
 
@@ -148,7 +250,7 @@ try {
   }
 } finally {
   await browser.close();
-  server.kill();
+  stopTool(server);
 }
 console.log(failed ? `\n${failed} check(s) FAILED` : '\nall collection checks passed');
 process.exit(failed ? 1 : 0);

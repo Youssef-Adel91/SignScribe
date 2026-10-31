@@ -1,7 +1,15 @@
+import { REJECT_LABEL } from '../config/alphabet';
 import { palmFraction, fullyInFrame } from '../vision/landmarks';
 import { PALM_MAX, PALM_MIN } from '../vision/checks';
 import type { HandFrame, HandObs } from '../vision/types';
-import { defaultKind, type SigningHand, type Take, type TakeFrame, type TakeKind } from './dataset';
+import {
+  defaultKind,
+  type NoneTag,
+  type SigningHand,
+  type Take,
+  type TakeFrame,
+  type TakeKind,
+} from './dataset';
 
 /** Choices that are fixed for a whole sitting. */
 export interface Sitting {
@@ -67,8 +75,19 @@ export class TakeRecorder {
   private seen = 0;
   private lastProblem: string | null = null;
   private size = { w: 0, h: 0 };
+  private countdownMs: number = RECORD.countdownMs;
+  private tag: NoneTag | null = null;
 
-  start(label: string, sitting: Sitting, now: number, kind: TakeKind = defaultKind(label)): void {
+  start(
+    label: string,
+    sitting: Sitting,
+    now: number,
+    kind: TakeKind = defaultKind(label),
+    countdownMs: number = RECORD.countdownMs,
+    tag: NoneTag | null = null,
+  ): void {
+    this.countdownMs = countdownMs;
+    this.tag = label === REJECT_LABEL ? (tag ?? 'other') : null;
     this.label = label;
     this.kind = kind;
     this.sitting = sitting;
@@ -78,7 +97,7 @@ export class TakeRecorder {
     this.seen = 0;
     this.lastProblem = null;
     this.lastKept = -Infinity;
-    this.state = { kind: 'countdown', label, secondsLeft: Math.ceil(RECORD.countdownMs / 1000) };
+    this.state = { kind: 'countdown', label, secondsLeft: Math.ceil(countdownMs / 1000) };
   }
 
   cancel(): void {
@@ -90,7 +109,7 @@ export class TakeRecorder {
     const now = frame.t;
     const s = this.state;
     if (s.kind === 'countdown') {
-      const left = RECORD.countdownMs - (now - this.t0);
+      const left = this.countdownMs - (now - this.t0);
       if (left > 0) {
         this.state = { kind: 'countdown', label: this.label, secondsLeft: Math.ceil(left / 1000) };
       } else {
@@ -141,12 +160,15 @@ export class TakeRecorder {
       label: this.label,
       kind: this.kind,
       signer: this.sitting.signer,
+      // the anonymous signer code is also the person id, so the tools hold whole people out (leave-one-person-out)
+      person: this.sitting.signer,
       session: this.sitting.session,
       hand: this.sitting.hand,
       width: this.size.w,
       height: this.size.h,
       createdAt: new Date().toISOString(),
       ...(this.sitting.synthetic ? { synthetic: true } : {}),
+      ...(this.tag ? { tag: this.tag } : {}),
       frames: this.kept,
     };
     return { kind: 'done', take };

@@ -33,6 +33,30 @@ Request:
     {"id":"2","ok":true,"type":"pong"}
     {"id":"x","ok":false,"error":"bad_request","message":"'place' must be one of Clinic, Shop, Work, Home"}
 
+Presence (from the Bluetooth scanner `tools/bluetooth/scan.py`, over the TCP door, one JSON line):
+
+    {"id":"p7","type":"presence","userId":"youssef","place":"Clinic","rssi":-58,"demo":false}
+    {"id":"p8","type":"presence","userId":null,"place":null,"rssi":null,"demo":false}     (nobody known nearby)
+    {"id":"p7","ok":true,"type":"presence"}
+
+`userId`: null or 1 to 32 letters, digits, `-` or `_` (a label from the scanner's config file, never a name or a device address). `place`: null or Clinic, Shop, Work, Home. `rssi`: whole dBm, -127 to 0 (null when nothing was found). `demo`: true when the device is simulated (`scan.py --fake`): the server logs it as a DEMO device. **A presence message may carry only these fields**: any other field (an `address`, a `name`) makes the whole message `bad_request`, so a device address cannot reach the server's memory or logs. The server keeps the last presence in memory only and forgets it after `PRESENCE_TTL_MS` (15 s) without a heartbeat. It logs a presence only when it changes and shows the labels only, never the signal strength. Presence messages have their own limit, `PRESENCE_RATE_LIMIT` (10 per 10 s for everyone together) on top of the per-connection and global ones.
+
+Pushed to every connected app over the WebSocket (no `id`, nobody asked for it; sent to a new connection at once if someone is detected, and on every change, including when a presence expires without a refresh):
+
+    {"type":"context","userId":"youssef","place":"Clinic","demo":false}
+    {"type":"context","userId":null,"place":null,"demo":false}                     (nobody detected any more)
+
+The app checks every pushed message strictly (`parseContextPush`) and ignores anything that does not fit. The comparison study (`?study=1`) and the collection mode never listen to it.
+
+Letter (from the dollarpy client `tools/dollarpy/classify_live.py`, TCP, one JSON line):
+
+    {"id":"l1","type":"letter","letter":"J","score":0.83,"source":"dollarpy","demo":false}
+    {"id":"l1","ok":true,"type":"letter"}
+
+`letter`: exactly one letter of any script. `score`: 0 to 1. `source`: a short lowercase label. `demo`: true for simulated input. Only these fields are allowed. The server pushes `{"type":"letter","letter":"J","score":0.83,"source":"dollarpy","demo":false}` to every connected app, stores nothing, does not log the letter (it is the person's text) and has its own limit, `LETTER_RATE_LIMIT` (10 per 10 s for everyone). A late app does not get an old letter. The app only shows it; the person adds it by pointing and holding.
+
+Trust: whoever can reach the TCP door can claim any presence. Keep the server on `127.0.0.1` (the default); a presence only chooses the place and loads settings the person already saved, and the app shows it and lets the person override it.
+
 Errors: `bad_request`, `too_large` (over 4096 bytes), `rate_limited` (default 20 messages per 10 s per connection, bad messages count too), `server_error`.
 
 ## The safety rule (`src/nlp/validate.ts`, checked on the server AND again in the browser and in the state machine)

@@ -5,7 +5,7 @@
 //     tracking and adding work together. It says nothing about how well a trained detector will do.
 // Usage: npm run models && npm run build && npm run e2e:cards
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
+import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -197,7 +197,7 @@ try {
   }
 } finally {
   await browser.close();
-  server.kill();
+  stopTool(server);
   for (const f of placed) rmSync(f, { force: true });
 }
 console.log(failed ? `\n${failed} check(s) FAILED` : '\nall card checks passed');

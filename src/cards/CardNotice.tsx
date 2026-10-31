@@ -1,4 +1,5 @@
 import { useAnnounceOnChange } from '../output/announcer';
+import { useStrings } from '../output/strings';
 import { useScreenNumber } from '../state/MachineProvider';
 import { useVision } from '../vision/store';
 import styles from '../vision/StatusBanner.module.css';
@@ -6,6 +7,7 @@ import styles from '../vision/StatusBanner.module.css';
 /** Says plainly when cards cannot be detected (no model yet, broken model, test model) or a card is not in this place's pack. */
 export function CardNotice() {
   const screen = useScreenNumber();
+  const strings = useStrings();
   const status = useVision((s) => s.cards.status);
   const message = useVision((s) => s.cards.message);
   const synthetic = useVision((s) => s.cards.synthetic);
@@ -13,14 +15,10 @@ export function CardNotice() {
   const live = useVision((s) => s.status === 'running');
   let text: string | null = null;
   if (live && screen === 10) {
-    if (status === 'missing')
-      text =
-        'No card detector has been trained yet. Point at a card in the list on the right to add it.';
-    else if (status === 'error') text = `The card detector could not be used: ${message}`;
-    else if (status === 'ready' && synthetic)
-      text = 'This card detector was trained on generated test data. It is not for a real study.';
-    else if (foreign)
-      text = `The ${foreign} card is not part of this place. Choose another place or another card.`;
+    if (status === 'missing') text = strings.cardNoticeMissing;
+    else if (status === 'error') text = strings.cardNoticeError(message ?? '');
+    else if (status === 'ready' && synthetic) text = strings.cardNoticeSynthetic;
+    else if (foreign) text = strings.cardNoticeForeign(foreign);
   }
   useAnnounceOnChange(text);
   if (!text) return null;

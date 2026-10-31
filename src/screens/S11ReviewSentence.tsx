@@ -7,6 +7,7 @@ import { Icon } from '../ui/Icon';
 import { InfoList, InfoRow } from '../ui/InfoRow';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
+import { textDir, useAlphabet } from '../ui/useAlphabet';
 import { useCtx } from '../state/MachineProvider';
 import styles from './S11ReviewSentence.module.css';
 import { HandChip } from '../vision/bits';
@@ -14,6 +15,7 @@ import type { ReactNode } from 'react';
 import type { Ev } from '../state/machine';
 import { CommandRing, Demo } from '../vision/bits';
 import { useDwellTarget } from '../vision/targets';
+import { useStrings } from '../output/strings';
 
 /** One of the two answer buttons: chosen by point-and-hold, like thumbs up / thumbs down. */
 function Action({
@@ -33,12 +35,30 @@ function Action({
   );
 }
 
+/** "add more": back to picture cards or spelling with the words kept, chosen by point-and-hold */
+function AddMore() {
+  const cards = useDwellTarget({ type: 'CHOOSE_METHOD', method: 'card' });
+  const spell = useDwellTarget({ type: 'CHOOSE_METHOD', method: 'spell' });
+  return (
+    <ul className={styles.more} aria-label="Add more words">
+      <li ref={cards} className={styles.moreItem}>
+        <Icon name="doc" size="var(--s-24)" />
+        Add a card
+      </li>
+      <li ref={spell} className={styles.moreItem}>
+        <Icon name="hand" size="var(--s-24)" />
+        Spell more
+      </li>
+    </ul>
+  );
+}
+
 export default function S11ReviewSentence() {
   const { place, words, sentence, sentenceSource } = useCtx();
+  const { rtl } = useAlphabet();
+  const strings = useStrings();
   useAnnounceOnChange(
-    sentence
-      ? `Suggested sentence: ${sentence}. Thumbs up to use it, thumbs down to try another.`
-      : null,
+    sentence ? strings.reviewSentenceAnnounce(sentence) : null,
   );
   return (
     <Screen
@@ -55,6 +75,7 @@ export default function S11ReviewSentence() {
           <Hint gesture="up" label="Use it" suggested />
           <Hint gesture="down" label="Try another" />
           <Hint gesture="fist" label="Delete last word" />
+          <Hint gesture="point" label="Point and hold: add more" />
         </>
       }
     >
@@ -69,7 +90,7 @@ export default function S11ReviewSentence() {
                   {i === words.length - 1 && words.length > 1 && (
                     <Icon name="doc" size="var(--s-24)" />
                   )}
-                  {w}
+                  <span {...textDir(rtl)}>{w}</span>
                 </li>
               ))}
             </ul>
@@ -81,13 +102,17 @@ export default function S11ReviewSentence() {
               SUGGESTED SENTENCE
               <span className={styles.style}>{place} style</span>
             </p>
-            <p className={styles.sentence} data-source={sentenceSource}>
+            <p className={styles.sentence} data-source={sentenceSource} {...textDir(rtl)}>
               {sentence}
             </p>
             <p className={styles.source} data-testid="sentence-source">
-              {sentenceSource === 'server'
-                ? 'Written by the language model. The app checked it: only your words and small helper words.'
-                : 'Written by simple rules from your words.'}
+              {rtl
+                ? sentenceSource === 'server'
+                  ? 'Written by the language model. The app checked length and characters, and that your words are in it. It cannot check Arabic helper words yet.'
+                  : 'Your words, as you spelt them. Arabic sentence rules are not built yet.'
+                : sentenceSource === 'server'
+                  ? 'Written by the language model. The app checked it: only your words and small helper words.'
+                  : 'Written by simple rules from your words.'}
             </p>
             <p className={styles.safe}>
               <Icon name="shield" size="var(--s-24)" />
@@ -140,8 +165,9 @@ export default function S11ReviewSentence() {
             <InfoList>
               <InfoRow icon="hand">Thumbs up: use this sentence.</InfoRow>
               <InfoRow icon="refresh">Thumbs down: try another wording.</InfoRow>
-              <InfoRow icon="doc">Need to add more? Show a card or spell a word.</InfoRow>
+              <InfoRow icon="doc">Need to add more? Point and hold:</InfoRow>
             </InfoList>
+            <AddMore />
           </Card>
         </div>
       </div>

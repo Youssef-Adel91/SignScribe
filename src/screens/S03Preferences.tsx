@@ -10,8 +10,8 @@ import styles from './S03Preferences.module.css';
 import { HandChip } from '../vision/bits';
 
 const ALPHABETS: { key: Alphabet; title: string; sub: string }[] = [
-  { key: 'arabic', title: 'Arabic', sub: 'ArSL letters' },
-  { key: 'english', title: 'English', sub: 'Fingerspelling' },
+  { key: 'arabic', title: 'Arabic', sub: 'ArSL letters (draft)' },
+  { key: 'english', title: 'English', sub: 'ASL fingerspelling' },
   { key: 'more', title: 'More…', sub: 'Other alphabets' },
 ];
 export default function S03Preferences() {
