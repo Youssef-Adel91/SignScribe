@@ -6,7 +6,7 @@ Everything below the line "built" is code and checks that run here. **Nothing in
 1. `npm ci && npm run models && npm run dev`, open `/?dev=1` in Chrome or Edge.
 2. Fill in `docs/PHASE2_CHECKLIST.md` (gestures 20 times each, commands, pointer, setup checks) and record `/?perf=1` for speed (`docs/PERF.md`).
 3. Write every misfire in `docs/KNOWN_ISSUES.md` (screen, how to repeat, severity). Fixes start from a failing test that reproduces it.
-4. Things only a person can judge: do the thresholds feel right (`checks.ts`, `zones.ts`, `controller.ts`), is the speech understandable, do the tips about light and distance appear when they should, does "Extra large" text matter to you (it overflows 21 screen/size combinations).
+4. Things only a person can judge: do the thresholds feel right (`checks.ts`, `zones.ts`, `controller.ts`), is the speech understandable, do the tips about light and distance appear when they should, does "Extra large" text matter to you (it overflows 20 screen/size combinations, KNOWN_ISSUES #3).
 
 ## 2. Models the team has to make (tooling is built)
 | Model | What to do | Where |
@@ -30,7 +30,7 @@ Put `ANTHROPIC_API_KEY` in `.env`, `npm run server`, open `/?server=ws://localho
 - Demo order and checklist: `tools/demo-all.md`. Mapping of every sheet row to files and tests: top of `docs/DONE.md`.
 
 ## 4c. ArSL
-Run the three imports and `ml/evaluate.py` on your machine (`ml/README.md`, section "ArSL"). Decide the Arabic letters for `ta/taa/toot`, `ha/haa`, `ya/yaa` (and check `dha/dhad`, `al/la`) in `config/alphabets/arsl.json` (`todo`). ArSL in the web app is not built: the spelling screens write the first character of a label.
+Run the three imports and `ml/evaluate.py` on your machine (`ml/README.md`, section "ArSL"). Decide the Arabic letters for `ta/taa/toot`, `ha/haa`, `ya/yaa` (and check `dha/dhad`, `al/la`) in `config/alphabets/arsl.json` (`todo`). ArSL is built in the web app (alphabet setting, glyph map, RTL, controls, Arabic strings and voice); what is missing is the confirmed Arabic mapping of the `todo` classes, recordings of the controls and a model in `public/models/` (`docs/PROJECT_STATUS.md`).
 
 ## 5. Other open decisions
 - Merge: all seven phases were merged into `main` in one pull request (Phase 7 branch, which contains the whole stack). PRs #2 to #6 were closed as already included. New work: branch from `main` and open a PR.
