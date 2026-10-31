@@ -69,7 +69,7 @@ How to demonstrate it: `tools/demo-all.md` (`npm run demo`, FAKE by default). Ro
 | Light/distance tips appear at the right moment on a real camera | 3 | needs my camera | tips on 06/07/09/10 |
 | Speech: off switch, no repeat, never throws | 3 | verified here (fake synth) | `tests/speech.test.ts` |
 | Speech is audible and understandable in the browser | 3 | needs my camera / speakers | |
-| No overflow at Normal and Large text on 14 screens x 3 sizes x 2 modes | 3 | verified here | `npm run layout` (84 combos each) |
+| No overflow at Normal and Large text on 14 screens x 3 sizes x 2 modes; the layout step (and `verify`) now FAILS on any Normal or Large overflow | 3 | verified here (Linux: Normal 0, Large 0, Extra large 20 = KNOWN_ISSUES #3) | `npm run layout` (84 combos each), `tests/layout-rules.test.ts` |
 | No overflow at Extra large text | 3 | not met | docs/KNOWN_ISSUES.md #3 |
 
 ## Study mode (comparison with keyboard and mouse)
