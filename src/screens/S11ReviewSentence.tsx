@@ -15,6 +15,7 @@ import type { ReactNode } from 'react';
 import type { Ev } from '../state/machine';
 import { CommandRing, Demo } from '../vision/bits';
 import { useDwellTarget } from '../vision/targets';
+import { useStrings } from '../output/strings';
 
 /** One of the two answer buttons: chosen by point-and-hold, like thumbs up / thumbs down. */
 function Action({
@@ -55,10 +56,9 @@ function AddMore() {
 export default function S11ReviewSentence() {
   const { place, words, sentence, sentenceSource } = useCtx();
   const { rtl } = useAlphabet();
+  const strings = useStrings();
   useAnnounceOnChange(
-    sentence
-      ? `Suggested sentence: ${sentence}. Thumbs up to use it, thumbs down to try another.`
-      : null,
+    sentence ? strings.reviewSentenceAnnounce(sentence) : null,
   );
   return (
     <Screen

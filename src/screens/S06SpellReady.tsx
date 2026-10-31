@@ -12,12 +12,14 @@ import { useAnnounceOnChange } from '../output/announcer';
 import { useAlphabet } from '../ui/useAlphabet';
 import { useCtx } from '../state/MachineProvider';
 import { HandChip } from '../vision/bits';
+import { useStrings } from '../output/strings';
 
 export default function S06SpellReady() {
   const { hand, place, words, word } = useCtx();
   const { rtl } = useAlphabet();
+  const strings = useStrings();
   const text = [...words, word].filter(Boolean).join(' ');
-  const caption = text ? 'Show your next letter' : 'Show your first letter';
+  const caption = text ? strings.showNextLetter : strings.showFirstLetter;
   useAnnounceOnChange(caption);
   return (
     <Screen
