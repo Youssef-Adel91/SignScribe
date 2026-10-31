@@ -109,3 +109,6 @@ Done: sentence server (WebSocket for the app + plain TCP lab-style socket, JSON 
 
 ## Phase 7 status (branch feat/phase7-polish, stacked on Phase 6)
 Done: study logger final (profile + consent, session record, camera speed per trial, more exports, Python analysis script), axe audit with fixes, performance recording tool and benchmark, `npm run verify`, `docs/WHATS_LEFT.md`. All seven phases are built; what remains needs a real camera, real people and trained models (docs/WHATS_LEFT.md).
+
+## Alphabet pipeline (branch feat/alphabet-tooling, after the merge)
+Youssef asked (2026-10-22) for the tooling to recognise a whole static alphabet and to measure it honestly. Done: alphabet as config (ASL ready, ArSL template), `ml/import_images.py`, `ml/evaluate.py` (leave-one-person-out, k-NN vs MLP, augmentation ablation), `train_knn.py --augment`, guided recording and gap view in the collection mode, weak letter guesses hidden, top-2 in the dev panel. Not done, on purpose: choosing the alphabet and dataset, running on real data, any accuracy number (`docs/MODEL_RESULTS.md` is empty until the script writes into it).

@@ -1,0 +1,10 @@
+{
+  "id": "arsl",
+  "name": "ArSL fingerspelling (Arabic Sign Language) - TEMPLATE",
+  "script": "arabic",
+  "reviewed": false,
+  "note": "TEMPLATE, not checked against any dataset. The 28 base Arabic letters are listed as static. Before using it: compare with the class list of the dataset you will train on, remove or add letters, move any letter that is drawn in the air to 'dynamic', and add the dataset's folder names to 'aliases' (folder name -> letter).",
+  "static": ["ا", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر", "ز", "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ", "ف", "ق", "ك", "ل", "م", "ن", "ه", "و", "ي"],
+  "dynamic": [],
+  "aliases": {}
+}

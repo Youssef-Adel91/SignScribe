@@ -1,0 +1,2 @@
+# only needed by import_images.py (the training and evaluation scripts need just numpy)
+mediapipe>=0.10.14
