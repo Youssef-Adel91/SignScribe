@@ -15,7 +15,15 @@ if (r.error || r.status !== 0) {
   console.error(`check-staged: could not ask git (${r.error ? r.error.message : r.stderr.trim()})`);
   process.exit(2);
 }
-const bad = forbidden(r.stdout.split('\n').filter(Boolean));
+// a k-NN file is judged by what is in the index (what would be committed / is committed), not by the file on disk
+const readIndex = (path) => {
+  const g = spawnSync('git', ['show', `:${path}`], {
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  return g.status === 0 ? g.stdout : null;
+};
+const bad = forbidden(r.stdout.split('\n').filter(Boolean), readIndex);
 if (bad.length) {
   console.error(`\nCommit refused: ${bad.length} file(s) must not be committed.\n`);
   for (const b of bad) console.error(`  ${b.file}\n    ${b.why}`);
