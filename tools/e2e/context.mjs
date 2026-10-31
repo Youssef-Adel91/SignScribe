@@ -14,6 +14,23 @@ const wsPort = 8795;
 const tcpPort = 8796;
 const base = `http://localhost:${previewPort}/`;
 const python = resolvePython(root);
+// how many app WebSockets the server has open right now (/health counts only; no letters, no text)
+const countClients = async () => {
+  try {
+    const r = await fetch(`http://127.0.0.1:${wsPort}/health`);
+    return (await r.json()).webSocketClients ?? -1;
+  } catch {
+    return -1;
+  }
+};
+const waitForClients = async (n, ms) => {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if ((await countClients()) >= n) return true;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return false;
+};
 const preview = spawn('npx', ['vite', 'preview', '--port', String(previewPort), '--strictPort'], {
   cwd: root,
   stdio: 'ignore',
@@ -177,6 +194,7 @@ try {
   // a letter recognised by the dollarpy client (SIMULATED here) is offered on the spelling screen and added by pointing
   {
     const spell = await ctx.newPage();
+    const wsClientsBefore = await countClients();
     // log what the app really receives over the WebSocket, so a timeout below says what was missing
     const wsLog = [];
     spell.on('websocket', (ws) => {
@@ -187,6 +205,14 @@ try {
     });
     await spell.goto(`${base}?dev=1&vision=mock&server=ws://localhost:${wsPort}#6`);
     await spell.waitForSelector('[data-screen="6"]');
+    // start the Python client only when the server counts one more connected WebSocket than before: Playwright's
+    // 'websocket' event only says the page CREATED the socket, not that it is connected (Windows, KNOWN_ISSUES #24)
+    const connected = await waitForClients(wsClientsBefore + 1, 15000);
+    check(
+      "the app's WebSocket is connected to the server before the client sends",
+      connected,
+      `server counts ${await countClients()} (needed ${wsClientsBefore + 1}); frames seen: ${wsLog.join(' | ') || 'none'}`,
+    );
     const client = spawn(
       python,
       [

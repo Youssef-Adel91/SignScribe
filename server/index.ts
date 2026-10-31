@@ -49,7 +49,7 @@ export async function start(
   });
 
   const presence = new PresenceStore(config.presenceTtlMs, config.presenceRateLimit, log);
-  const letters = new LetterRelay(config.letterRateLimit);
+  const letters = new LetterRelay(config.letterRateLimit, config.letterHoldMs, log);
 
   // ---- WebSocket (+ /health)
   const http = createServer((req, res) => {
@@ -60,6 +60,9 @@ export async function start(
           ok: true,
           provider: config.provider,
           languageModel: llm === null ? 'not used' : llm.ok ? 'ok' : `failed: ${llm.kind}`,
+          // counts only: lets a test or a launcher wait until the app's WebSocket is really connected
+          webSocketClients: wss.clients.size,
+          lettersRelayed: letters.relayed,
         }),
       );
     } else {
@@ -86,7 +89,13 @@ export async function start(
     for (const c of wss.clients) pushContext(c, p);
   });
   letters.subscribe((l) => {
-    for (const c of wss.clients) if (c.readyState === c.OPEN) c.send(JSON.stringify(l));
+    let sent = 0;
+    for (const c of wss.clients)
+      if (c.readyState === c.OPEN) {
+        c.send(JSON.stringify(l));
+        sent++;
+      }
+    return sent;
   });
   const expiry = setInterval(() => presence.tick(), 1000);
   expiry.unref();
@@ -96,6 +105,8 @@ export async function start(
       return;
     }
     if (presence.current().userId || presence.current().place) pushContext(socket);
+    const late = letters.takeHeld();
+    if (late) socket.send(JSON.stringify(late));
     const limiter = both(new RateLimiter(config.rateLimit), globalLimiter);
     socket.on('message', (data) => {
       void handleMessage(data.toString(), service, limiter, Date.now(), { presence, letters }).then(

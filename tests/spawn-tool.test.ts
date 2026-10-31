@@ -262,3 +262,14 @@ describe('python resolver (tools/lib/python.mjs)', () => {
     for (const f of files) expect(readFileSync(f, 'utf8'), f).not.toMatch(/\|\|\s*'python3'/);
   });
 });
+
+describe('e2e:context order (KNOWN_ISSUES #24)', () => {
+  it('the dollarpy client is started only after the app WebSocket is counted as connected', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync('tools/e2e/context.mjs', 'utf8');
+    const wait = src.indexOf('waitForClients(wsClientsBefore + 1');
+    const start = src.indexOf("'tools/dollarpy/classify_live.py'");
+    expect(wait).toBeGreaterThan(0);
+    expect(start).toBeGreaterThan(wait);
+  });
+});

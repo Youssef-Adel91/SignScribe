@@ -20,7 +20,9 @@ const b = await chromium.launch({
 });
 const bySize = { normal: 0, large: 0, xlarge: 0 };
 let bad = 0;
-// text size is a setting (screen 14), so every size is measured; only "normal" must be clean
+// text size is a setting (screen 14), so every size is measured. "normal" and "large" must be clean (the step fails otherwise);
+// "xlarge" is counted and printed, and is a known open issue (docs/KNOWN_ISSUES.md #3)
+const MUST_BE_CLEAN = new Set(['normal', 'large']);
 for (const textSize of ['normal', 'large', 'xlarge'])
   for (const mode of ['off', 'mock'])
     for (const [w, h] of [
@@ -57,7 +59,7 @@ for (const textSize of ['normal', 'large', 'xlarge'])
           (main && (main.sh > main.ch + 1 || main.sw > main.cw + 1))
         ) {
           bySize[textSize]++;
-          if (textSize === 'normal') bad++;
+          if (MUST_BE_CLEAN.has(textSize)) bad++;
           console.log(
             'OVERFLOW',
             textSize,
