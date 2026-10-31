@@ -44,6 +44,8 @@ export interface Settings {
   dwell: DwellSetting;
   /** read screens, tips and the finished sentence aloud (speech synthesis) */
   voice: boolean;
+  /** one short sound and one short vibration for each letter that is written (never per frame); false = none */
+  feedback: boolean;
 }
 
 export interface Ctx extends Settings {
@@ -78,6 +80,7 @@ export type Ev =
   | { type: 'CHOOSE_CONTRAST'; contrast: Contrast }
   | { type: 'CHOOSE_DWELL'; dwell: DwellSetting }
   | { type: 'CHOOSE_VOICE'; voice: boolean }
+  | { type: 'CHOOSE_OUTPUT'; voice: boolean; feedback: boolean }
   | { type: 'CHOOSE_CONTEXT'; place: Place }
   | { type: 'CHOOSE_METHOD'; method: Method }
   | { type: 'LETTER_CANDIDATE'; candidate: Candidate }
@@ -110,6 +113,7 @@ export const DEFAULT_SETTINGS: Settings = {
   contrast: 'standard',
   dwell: 'auto',
   voice: true,
+  feedback: true,
 };
 
 /* ---------- pure helpers ---------- */
@@ -180,6 +184,9 @@ export const signScribeMachine = setup({
     ),
     setDwell: assign(({ event }) => (event.type === 'CHOOSE_DWELL' ? { dwell: event.dwell } : {})),
     setVoice: assign(({ event }) => (event.type === 'CHOOSE_VOICE' ? { voice: event.voice } : {})),
+    setOutput: assign(({ event }) =>
+      event.type === 'CHOOSE_OUTPUT' ? { voice: event.voice, feedback: event.feedback } : {},
+    ),
     setPlace: assign(({ event }) =>
       event.type === 'CHOOSE_CONTEXT' ? { place: event.place } : {},
     ),
@@ -368,6 +375,7 @@ export const signScribeMachine = setup({
         CHOOSE_CONTRAST: { guard: 'idle', actions: 'setContrast' },
         CHOOSE_DWELL: { guard: 'idle', actions: 'setDwell' },
         CHOOSE_VOICE: { guard: 'idle', actions: 'setVoice' },
+        CHOOSE_OUTPUT: { guard: 'idle', actions: 'setOutput' },
         YES: { guard: 'idle', target: 'context' },
         NO: { guard: 'idle', target: 'preferences' },
       },

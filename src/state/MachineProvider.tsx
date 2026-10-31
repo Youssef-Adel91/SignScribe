@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { createActorContext } from '@xstate/react';
 import { screenOf, signScribeMachine, type Ctx, type Ev } from './machine';
+import { feedback, setFeedbackEnabled } from '../output/feedback';
 import { setSpeechEnabled } from '../output/speech';
 import { loadSettings, saveSettings } from './settings';
 
@@ -14,16 +15,29 @@ export function onMachineEvent(t: Tap): () => void {
   return () => taps.delete(t);
 }
 
+/** one sound + vibration for each written letter, from the event itself (never from a frame) */
+function FeedbackOnLetter() {
+  useEffect(
+    () =>
+      onMachineEvent((e) => {
+        if (e.type === 'LETTER_CONFIRMED') feedback.letterWritten();
+      }),
+    [],
+  );
+  return null;
+}
+
 function Persist() {
-  const { hand, alphabet, textSize, contrast, dwell, voice } = Machine.useSelector(
+  const { hand, alphabet, textSize, contrast, dwell, voice, feedback } = Machine.useSelector(
     (s) => s.context,
   );
   useEffect(() => {
-    saveSettings({ hand, alphabet, textSize, contrast, dwell, voice });
+    saveSettings({ hand, alphabet, textSize, contrast, dwell, voice, feedback });
     document.documentElement.dataset.textSize = textSize;
     document.documentElement.dataset.contrast = contrast;
     setSpeechEnabled(voice);
-  }, [hand, alphabet, textSize, contrast, dwell, voice]);
+    setFeedbackEnabled(feedback);
+  }, [hand, alphabet, textSize, contrast, dwell, voice, feedback]);
   return null;
 }
 
@@ -42,6 +56,7 @@ export function MachineProvider({ children }: { children: ReactNode }) {
       }}
     >
       <Persist />
+      <FeedbackOnLetter />
       {children}
     </Machine.Provider>
   );

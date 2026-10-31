@@ -66,6 +66,18 @@ It trains on ALL takes (nothing held out), so its `.report.md` has no accuracy. 
     python ml/evaluate.py --train ml/data/arsl21l.jsonl --test my-takes.jsonl --test-name "team webcam"
 Reports accuracy on your recordings only; they are never mixed into the training side (the script refuses a take id that is on both sides, or a letter that only the test has, unless `--shared-classes`). It is not a leave-one-person-out result and the report says so.
 
+### Why a letter fires, and the settings that stop it (`?letterdebug=1`)
+Open the app with `?letterdebug=1` (the camera as usual). The panel shows the state of the letter logic on the spelling screens (`moving`, `settling`, `rejected`, `candidate`, `holding`, `committed`, `wait-release`, `cooldown`, `command`, `no-hand`), the top 3 letters with confidence, hand speed against its limit, the still-frame counter, how long the same letter has been the strong guess, and the control gesture being held. **Download log** writes `signscribe-letterdebug-*.csv` (one row per camera frame, numbers and letter names only, git-ignored). **Settings** edits the values in force for the current alphabet and model type and saves them in this browser.
+
+What decides a letter, in this order, every frame:
+1. **Command first.** A recognised control gesture (delete, space, finish, cancel), a command just sent, the pointer in the command zone, or a posing hand in the command zone: no letter is shown or written, and not for `commandHoldoffMs` after. The same frame never sends a command and a letter.
+2. **Still hand.** Hand speed (mean of the 21 landmarks, palm lengths per second) must stay under `maxSpeed` (with hysteresis) for `stillFrames` frames in a row; the model is not even asked while the hand moves.
+3. **Strong guess.** Not `none`, confidence at least `minConfidence`, and best minus second best at least `minMargin`.
+4. **Hold.** The same letter for `stableMs` shows it, for `holdMs` (and `confirmConfidence`) writes it.
+5. **After a written letter.** Nothing is shown for `cooldownMs`, and the hand must change, move or leave for `releaseMs` before the same sign can be written again. One sound and one vibration, once per written letter (screen 14: "Sounds only" / "Silent").
+
+All of these are settings per model type (k-NN / MLP) and alphabet (`src/recognition/tuning.ts`). **The defaults are first guesses, not measured.** Record `none` takes (hand moving, relaxed, command zone) with several people, retrain with them, then use the log and `ml/calibrate.py` to choose the values, and save them from the panel.
+
 ### Choosing a threshold per model: `ml/calibrate.py`
     python ml/calibrate.py --data all-takes.jsonl --alphabet asl
     python ml/calibrate.py --train all-takes.jsonl --test my-takes.jsonl --test-name "team webcam" --alphabet asl

@@ -12,6 +12,7 @@ Camera bugs go in docs/KNOWN_ISSUES.md; do not fix them unless they block the ph
 ## Commands
     npm ci
     npm run server     # sentence server (.env from .env.example)
+    # ?letterdebug=1   letter debug panel + CSV log (why a letter fires; settings per alphabet and model; docs/MODEL_HANDOFF.md)
     npm run verify     # every automatic check in one table (also works on Windows: npm is started through the shell there; a command that cannot start is a FAIL with its real error)
     npm run hooks:install   # git pre-commit: refuses every *-knn.json (only a synthetic fixture under tests/fixtures/ with at most 200 vectors is allowed) and anything under ml/data/ or datasets/ (npm run check:staged does the same by hand)
     npm run axe | bench | e2e:server   # accessibility audit / cost of own code / sentence server

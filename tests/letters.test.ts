@@ -94,7 +94,7 @@ describe('LetterController (static letters)', () => {
     const ui = s.run(1500, sign())!;
     expect(ui.guess).toBeNull();
     expect(ui.progress).toBe(0);
-    expect(ui.raw.map((r) => r.letter)).toEqual(['B', 'D']); // top 2, not 3
+    expect(ui.raw.map((r) => r.letter)).toEqual(['B', 'D', 'E']); // the top 3 (for the debug overlay only)
     expect(s.log).toEqual([]);
     f.guess = g('B', 0.9);
     const strong = s.run(600, sign())!;
