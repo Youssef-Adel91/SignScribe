@@ -17,6 +17,8 @@ export interface Config {
   presenceRateLimit: number;
   /** letters from the dollarpy client accepted from everyone together in a 10 s window */
   letterRateLimit: number;
+  /** a letter that reached no app is kept this long for the next app that connects (0 = never) */
+  letterHoldMs: number;
   /** a presence that is not refreshed for this long is forgotten (the scanner sends a heartbeat) */
   presenceTtlMs: number;
   /** 'anthropic' (needs a key), 'offline' (rules only) or 'fake' (deterministic, for tests) */
@@ -54,6 +56,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     presenceRateLimit: num(env.PRESENCE_RATE_LIMIT, 10),
     presenceTtlMs: num(env.PRESENCE_TTL_MS, 15000),
     letterRateLimit: num(env.LETTER_RATE_LIMIT, 10),
+    letterHoldMs: num(env.LETTER_HOLD_MS, 5000),
     provider,
   };
 }
