@@ -1,7 +1,15 @@
+import { REJECT_LABEL } from '../config/alphabet';
 import { palmFraction, fullyInFrame } from '../vision/landmarks';
 import { PALM_MAX, PALM_MIN } from '../vision/checks';
 import type { HandFrame, HandObs } from '../vision/types';
-import { defaultKind, type SigningHand, type Take, type TakeFrame, type TakeKind } from './dataset';
+import {
+  defaultKind,
+  type NoneTag,
+  type SigningHand,
+  type Take,
+  type TakeFrame,
+  type TakeKind,
+} from './dataset';
 
 /** Choices that are fixed for a whole sitting. */
 export interface Sitting {
@@ -68,6 +76,7 @@ export class TakeRecorder {
   private lastProblem: string | null = null;
   private size = { w: 0, h: 0 };
   private countdownMs: number = RECORD.countdownMs;
+  private tag: NoneTag | null = null;
 
   start(
     label: string,
@@ -75,8 +84,10 @@ export class TakeRecorder {
     now: number,
     kind: TakeKind = defaultKind(label),
     countdownMs: number = RECORD.countdownMs,
+    tag: NoneTag | null = null,
   ): void {
     this.countdownMs = countdownMs;
+    this.tag = label === REJECT_LABEL ? (tag ?? 'other') : null;
     this.label = label;
     this.kind = kind;
     this.sitting = sitting;
@@ -155,6 +166,7 @@ export class TakeRecorder {
       height: this.size.h,
       createdAt: new Date().toISOString(),
       ...(this.sitting.synthetic ? { synthetic: true } : {}),
+      ...(this.tag ? { tag: this.tag } : {}),
       frames: this.kept,
     };
     return { kind: 'done', take };

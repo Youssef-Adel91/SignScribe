@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { REJECT_LABEL } from '../config/alphabet';
 import { CameraView } from '../ui/CameraView';
 import { download } from '../study/download';
 import { useVision, visionStore } from '../vision/store';
@@ -9,6 +10,7 @@ import {
   fromJsonl,
   gaps,
   toJsonl,
+  type NoneTag,
   type SigningHand,
   type Take,
   type TakeKind,
@@ -18,6 +20,15 @@ import { GUIDED, GuidedRun, type GuidedStep } from './guided';
 import { IdbStore, MemoryStore, type TakeStore } from './store';
 import { Overlay } from '../ui/Overlay';
 import styles from './Collect.module.css';
+
+const NONE_CHOICES: { tag: NoneTag; text: string }[] = [
+  { tag: 'moving', text: 'hand moving' },
+  { tag: 'relaxed', text: 'relaxed hand' },
+  { tag: 'command-zone', text: 'hand in the command zone' },
+  { tag: 'other', text: 'anything else' },
+];
+const noneCount = (takes: readonly Take[], tag: NoneTag) =>
+  takes.filter((t) => t.label === REJECT_LABEL && (t.tag ?? 'other') === tag).length;
 
 const LS = 'signscribe.collect.sitting';
 function loadSitting() {
@@ -329,6 +340,37 @@ export function CollectPanel() {
                 (letter shown, 3 s countdown for the first take, 1.5 s for the rest, saved
                 automatically). Refused takes are retried; 3 in a row stop the run.
               </p>
+            </fieldset>
+            <fieldset className={styles.f} data-testid="none-takes">
+              <legend>No letter (&quot;none&quot;)</legend>
+              <p className={styles.hint}>
+                Takes of everything that is NOT a letter, so the model can answer &quot;none&quot;:
+                the hand moving, a relaxed hand, a hand in the command zone. Record several of each,
+                with different people and sittings. They are labelled <code>none</code> and kept in
+                the same file; keep the file out of git.
+              </p>
+              {NONE_CHOICES.map((c) => (
+                <button
+                  key={c.tag}
+                  type="button"
+                  disabled={!ready || busy}
+                  onClick={() => {
+                    setMessage('');
+                    rec.current.start(
+                      REJECT_LABEL,
+                      sitting,
+                      visionStore.state.frame?.t ?? performance.now(),
+                      'static',
+                      undefined,
+                      c.tag,
+                    );
+                    setLabel(REJECT_LABEL);
+                    setState(rec.current.state);
+                  }}
+                >
+                  Record none: {c.text} ({noneCount(takes, c.tag)})
+                </button>
+              ))}
             </fieldset>
             <p>
               <button

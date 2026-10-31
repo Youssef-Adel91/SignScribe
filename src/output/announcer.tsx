@@ -45,10 +45,22 @@ export function AnnouncerProvider({ children }: { children: ReactNode }) {
 
 export const useAnnounce = () => useContext(AnnounceContext);
 
-/** Visible text that is also announced whenever it changes. */
-export function useAnnounceOnChange(text: string | null | undefined) {
+/**
+ * Visible text that is also announced whenever it changes. `minGapMs` limits how often it is SPOKEN (the screen reader text
+ * still updates): a guess that flickers between letters must not be read out again and again.
+ */
+export function useAnnounceOnChange(
+  text: string | null | undefined,
+  opts: { minGapMs?: number } = {},
+) {
   const announce = useAnnounce();
+  const lastSpoken = useRef(-Infinity);
+  const gap = opts.minGapMs ?? 0;
   useEffect(() => {
-    if (text) announce(text);
-  }, [text, announce]);
+    if (!text) return;
+    const now = performance.now();
+    const quiet = gap > 0 && now - lastSpoken.current < gap;
+    if (!quiet) lastSpoken.current = now;
+    announce(text, quiet ? { speak: false } : undefined);
+  }, [text, announce, gap]);
 }

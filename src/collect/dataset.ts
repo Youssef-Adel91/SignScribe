@@ -3,9 +3,12 @@
  * per line ("JSONL"), one TAKE per object. Documented in docs/DATASET.md; ml/signscribe_ml/dataset.py
  * checks the same rules.
  */
-import { ALPHABET, ALPHABET_LABELS } from '../config/alphabet';
+import { ALPHABET, ALPHABET_LABELS, REJECT_LABEL } from '../config/alphabet';
 
 export type TakeKind = 'static' | 'dynamic';
+/** what a 'none' take shows: a hand that is moving, a relaxed hand, a hand in the command zone, or something else */
+export const NONE_TAGS = ['moving', 'relaxed', 'command-zone', 'other'] as const;
+export type NoneTag = (typeof NONE_TAGS)[number];
 export type SigningHand = 'left' | 'right';
 
 export interface TakeFrame {
@@ -37,6 +40,8 @@ export interface Take {
   source?: string;
   /** true only for generated test data */
   synthetic?: boolean;
+  /** only on 'none' takes: what the hand was doing (see NONE_TAGS) */
+  tag?: NoneTag;
   frames: TakeFrame[];
 }
 
@@ -71,8 +76,11 @@ export function validateTake(raw: unknown): Take {
     if (!(k in t)) fail(`missing field '${k}'`);
   if (t.kind !== 'static' && t.kind !== 'dynamic') fail("kind must be 'static' or 'dynamic'");
   if (t.hand !== 'left' && t.hand !== 'right') fail("hand must be 'left' or 'right'");
-  if (typeof t.label !== 'string' || !LETTERS.includes(t.label))
-    fail(`label must be one letter of the alphabet (${LETTERS.join(' ')})`);
+  if (typeof t.label !== 'string' || !(LETTERS.includes(t.label) || t.label === REJECT_LABEL))
+    fail(`label must be one letter of the alphabet (${LETTERS.join(' ')}) or '${REJECT_LABEL}'`);
+  if (t.label === REJECT_LABEL && t.kind !== 'static') fail(`'${REJECT_LABEL}' takes are static`);
+  if ('tag' in t && !NONE_TAGS.includes(t.tag as NoneTag))
+    fail(`'tag' must be one of ${NONE_TAGS.join(', ')}`);
   for (const k of ['person', 'source'] as const)
     if (k in t && (typeof t[k] !== 'string' || t[k]!.trim() === ''))
       fail(`'${k}' must be a non-empty string`);

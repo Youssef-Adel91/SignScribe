@@ -25,6 +25,7 @@ export function parseSettings(p: Record<string, unknown>): Settings {
     ),
     dwell: pick(p.dwell, ['auto', 'slow', 'normal', 'fast'], d.dwell),
     voice: typeof p.voice === 'boolean' ? p.voice : d.voice,
+    feedback: typeof p.feedback === 'boolean' ? p.feedback : d.feedback,
   };
 }
 

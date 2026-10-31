@@ -144,6 +144,17 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Analysis: SUS row, careless-answer flags (identical answers, contradicting reverse items), `--exclude-flagged` | 7 | verified here (made-up exports) | `npm run ml:test` |
 | SUS results on real participants | 7 | not met | no study run yet |
 
+## Letter gating after the first camera test (branch feat/letter-gating)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Debug overlay behind `?letterdebug=1`: state, top 3 with confidence, hand speed against its limit, still counter, hold, cooldown, control gesture; editable settings; CSV log download (git-ignored) | verified here (rendered markup, log format) | `tests/letter-gating.test.ts` (1) |
+| Motion gating: nothing is classified while the hand moves or before N still frames; same letter for the hold time; after a letter the hand must change / move / leave and a cooldown passes | verified here (synthetic hands) | `tests/letter-gating.test.ts` (2) |
+| Command priority: a control gesture, a command sent, the pointer or a posing hand in the command zone stop letters, also for a hold-off after; one frame never sends a command and a letter | verified here | `tests/letter-gating.test.ts` (3) |
+| One tone + one vibration per written letter, minimum gap, switch on screen 14 ("Read aloud" / "Sounds only" / "Silent"); the spoken guess tip at most every 2 s | verified here (fake output); not tried on a device | `tests/letter-gating.test.ts` (4) |
+| `none` class: collection mode records moving / relaxed / command-zone / other takes; tools train it; a `none` answer, low confidence or small margin is shown as nothing | verified here | `tests/none-class.test.ts`, `tests/letter-gating.test.ts` (5), `ml/tests/test_none_class.py` |
+| Confidence, margin, hold, speed limit, still frames, cooldown, release and command hold-off are settings per model type and alphabet, saved from the panel | verified here | `tests/letter-gating.test.ts` (6) |
+| Whether any of this stops the noise with real hands; the right values; recorded `none` takes; a retrained model with `none` | not met | needs my camera and recordings: `docs/KNOWN_ISSUES.md` #10-#12 |
+
 ## ArSL stage 2: model commands, calibration, credits, helper words (branch feat/arsl-models-calibration)
 | Item | Status | Evidence |
 | --- | --- | --- |

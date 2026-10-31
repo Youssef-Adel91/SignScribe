@@ -28,6 +28,9 @@ A take is one short recording of one letter by one person: a few dozen frames of
 | `minor` | optional. `true` when the person was under 18, set by `import_images.py --age-regex`. **The age is never stored**, and evaluation only counts such persons: it never shows a result for one of them |
 | `synthetic` | `true` only for generated test data (and for takes made with the mock camera). Training refuses it without `--allow-synthetic` |
 
+## The "none" class (not a letter)
+A model that must answer with one of 32 letters calls every pose a letter, also a hand on its way or a relaxed hand. So the collection mode (`/?collect=1`, "No letter" box) also records takes with `label: "none"` and a `tag`: `moving` (the hand moving), `relaxed` (a relaxed hand), `command-zone` (a hand in the command zone) or `other`. They are static takes like the others, one file, and they are not in any alphabet file. The tools accept the label (`ml/signscribe_ml/dataset.py`, `src/collect/dataset.ts`), train it as one more class, and a model that answers `none` is shown as nothing. A `none` take is a take of a person: the same rules about not committing data apply.
+
 ## Alphabets (label sets)
 The letters live in `config/alphabets/<id>.json` and `config/alphabet.json` says which is active (`{"active": "asl"}`). A file has `static` letters, `dynamic` letters (drawn in the air; ASL J and Z), and `aliases` that map a picture folder name to a letter. Python reads it directly (`--alphabet arsl` to pick another); the web app reads the same files at build time (`VITE_ALPHABET=arsl`). `arsl.json` is a **template**: it has not been checked against any dataset (`"reviewed": false`), so confirm it before use.
 

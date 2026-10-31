@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from .alphabet import load_alphabet
+from .alphabet import NONE_TAGS, REJECT_LABEL, load_alphabet
 
 
 class DatasetError(ValueError):
@@ -49,10 +49,12 @@ def parse_take(raw: dict, line: int = 0, labels=None) -> Take:
     _check(raw["kind"] in ("static", "dynamic"), "kind must be 'static' or 'dynamic'", line)
     _check(raw["hand"] in ("left", "right"), "hand must be 'left' or 'right'", line)
     _check(
-        isinstance(raw["label"], str) and raw["label"] in labels,
-        f"label must be one letter of the alphabet ({' '.join(labels)})",
+        isinstance(raw["label"], str) and (raw["label"] in labels or raw["label"] == REJECT_LABEL),
+        f"label must be one letter of the alphabet ({' '.join(labels)}) or '{REJECT_LABEL}'",
         line,
     )
+    _check(raw["label"] != REJECT_LABEL or raw["kind"] == "static", f"'{REJECT_LABEL}' takes are static", line)
+    _check("tag" not in raw or raw["tag"] in NONE_TAGS, f"'tag' must be one of {', '.join(NONE_TAGS)}", line)
     _check("minor" not in raw or isinstance(raw["minor"], bool), "'minor' must be true or false", line)
     for opt in ("person", "source"):
         _check(opt not in raw or (isinstance(raw[opt], str) and raw[opt].strip() != ""), f"'{opt}' must be a non-empty string", line)

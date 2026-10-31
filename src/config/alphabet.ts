@@ -26,6 +26,12 @@ export interface AlphabetConfig {
   controls: Record<string, ControlName>;
 }
 
+/**
+ * The class a model may have for "no letter": a hand that is moving, relaxed, or in the command zone. It is not part of any alphabet
+ * file. A take with this label is recorded by the collection mode, and a model that predicts it is shown as nothing.
+ */
+export const REJECT_LABEL = 'none';
+
 export type ControlName = 'space' | 'delete' | 'finish';
 const CONTROL_NAMES: readonly ControlName[] = ['space', 'delete', 'finish'];
 

@@ -8,6 +8,11 @@ from pathlib import Path
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "config"
 
+# The class a model may have for "no letter": a hand that is moving, relaxed, or in the command zone. Not part of any alphabet file.
+# A take with this label is static (src/config/alphabet.ts has the same constant); a model that predicts it is shown as nothing.
+REJECT_LABEL = "none"
+NONE_TAGS = ("moving", "relaxed", "command-zone", "other")
+
 
 class AlphabetError(ValueError):
     pass
