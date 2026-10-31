@@ -15,6 +15,7 @@ import styles from './S10PictureCard.module.css';
 import { useDwellTarget } from '../vision/targets';
 import { Demo } from '../vision/bits';
 import { LiveCardOverlay } from '../cards/LiveCardOverlay';
+import { useStrings } from '../output/strings';
 
 const pretty = (w: string) => (w === 'I' ? 'I' : w.toLowerCase());
 /** "I" + "need" read as one phrase chip, like the design. */
@@ -42,12 +43,13 @@ function PackCell({ word, icon, on }: { word: string; icon: IconName; on: boolea
 
 export default function S10PictureCard() {
   const { hand, place, words, cardCandidate } = useCtx();
+  const strings = useStrings();
   const cand = cardCandidate;
   const def = cand ? cardFor(place, cand.word) : undefined;
   const pct = cand ? Math.round(cand.confidence * 100) : 0;
   const caption = cand
-    ? `Hold the card still to add "${cand.word.toLowerCase()}"`
-    : 'Show a picture card';
+    ? strings.pictureCardHold(cand.word.toLowerCase())
+    : strings.pictureCardShow;
   useAnnounceOnChange(caption);
   const pack = CARD_PACKS[place];
   return (

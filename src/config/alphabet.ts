@@ -15,6 +15,8 @@ export interface AlphabetConfig {
   aliases: Record<string, string>;
   /** label -> the letter to show a person, only where it is certain */
   display: Record<string, string | null>;
+  /** label -> the spoken pronunciation/name, only where certain */
+  spoken?: Record<string, string | null>;
   /** open questions the team still has to answer (see config/alphabets/arsl.json) */
   todo: unknown[];
   /** 'arabic' = text is written right to left */
@@ -71,6 +73,7 @@ export function parseAlphabet(raw: Partial<AlphabetConfig>, fallbackId: string):
     controls[cls] = action as ControlName;
   }
   const script = (raw as { script?: unknown }).script;
+  const rawSpoken = (raw as { spoken?: Record<string, string | null> }).spoken;
   return {
     id: raw.id ?? fallbackId,
     name: raw.name ?? fallbackId,
@@ -79,6 +82,7 @@ export function parseAlphabet(raw: Partial<AlphabetConfig>, fallbackId: string):
     dynamic: dyn,
     aliases: raw.aliases ?? {},
     display: raw.display ?? {},
+    spoken: rawSpoken ?? {},
     todo: raw.todo ?? [],
     script: script === 'arabic' ? 'arabic' : 'latin',
     controls,
@@ -151,6 +155,22 @@ export function glyphOf(a: AlphabetConfig, classId: string): Glyph {
   if (typeof shown === 'string' && shown.length > 0 && !open)
     return { text: shown, confirmed: true };
   return { text: `${UNCONFIRMED_OPEN}${classId}${UNCONFIRMED_CLOSE}`, confirmed: false };
+}
+
+/**
+ * The spoken representation for a class id. If the letter is unconfirmed, returns confirmed: false and empty text
+ * so it is never spoken as a guessed Arabic letter.
+ */
+export function spokenLetterOf(a: AlphabetConfig, classId: string): Glyph {
+  const g = glyphOf(a, classId);
+  if (!g.confirmed) {
+    return { text: '', confirmed: false };
+  }
+  const spk = a.spoken?.[classId];
+  if (typeof spk === 'string' && spk.length > 0) {
+    return { text: spk, confirmed: true };
+  }
+  return g;
 }
 
 /** the text of a word with its last letter removed (a glyph can be 2 characters, like ال, or a marked class id) */

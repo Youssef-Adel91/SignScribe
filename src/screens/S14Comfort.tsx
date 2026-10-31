@@ -1,11 +1,14 @@
+import { useEffect } from 'react';
 import { READ_ALOUD_ENGLISH_ONLY } from '../ui/readAloudNote';
 import { Chip } from '../ui/Chip';
 import { Hint } from '../ui/HintBar';
 import { Screen } from '../ui/Screen';
 import { Tile } from '../ui/Tile';
-import { useCtx } from '../state/MachineProvider';
+import { useCtx, useSend } from '../state/MachineProvider';
 import type { Contrast, DwellSetting, TextSize } from '../state/machine';
 import { useAnnounceOnChange } from '../output/announcer';
+import { useHasArabicVoice } from '../output/speech';
+import { useStrings } from '../output/strings';
 import { HandChip } from '../vision/bits';
 import { useVision } from '../vision/store';
 import common from './common.module.css';
@@ -38,12 +41,24 @@ const VOICE: { key: string; title: string; sub: string; voice: boolean; feedback
  */
 export default function S14Comfort() {
   const { textSize, contrast, dwell, voice, feedback, alphabet } = useCtx();
+  const send = useSend();
+  const strings = useStrings();
+  const hasArVoice = useHasArabicVoice();
+  const noArabicVoice = alphabet === 'arabic' && !hasArVoice;
   const holdMs = useVision((s) => s.ui?.dwell.ms ?? null);
   const live = holdMs !== null;
+
+  // Fall back to sounds only if Arabic is active but no Arabic voice is installed
+  useEffect(() => {
+    if (noArabicVoice && voice) {
+      send({ type: 'CHOOSE_OUTPUT', voice: false, feedback: true });
+    }
+  }, [noArabicVoice, voice, send]);
+
   useAnnounceOnChange(
     dwell === 'auto' && live
-      ? `Comfort settings. Hold time is now ${(holdMs / 1000).toFixed(1)} seconds and adapts to you.`
-      : 'Comfort settings. Point and hold to choose, thumbs up to continue.',
+      ? strings.comfortAnnounceLive((holdMs / 1000).toFixed(1))
+      : strings.comfortAnnounceStatic,
   );
   return (
     <Screen
@@ -122,20 +137,28 @@ export default function S14Comfort() {
           Speech and sounds
         </h2>
         <ul className={common.row} aria-labelledby="q-voice">
-          {VOICE.map((o) => (
-            <Tile
-              key={o.key}
-              selected={o.voice === voice && o.feedback === feedback}
-              title={o.title}
-              sub={o.sub}
-              className={styles.small}
-              dwell={{ type: 'CHOOSE_OUTPUT', voice: o.voice, feedback: o.feedback }}
-            />
-          ))}
+          {VOICE.map((o) => {
+            const isAll = o.key === 'all';
+            const disabled = isAll && noArabicVoice;
+            return (
+              <Tile
+                key={o.key}
+                selected={o.voice === voice && o.feedback === feedback}
+                title={o.title}
+                sub={disabled ? 'No Arabic voice' : o.sub}
+                className={styles.small}
+                dwell={{
+                  type: 'CHOOSE_OUTPUT',
+                  voice: disabled ? false : o.voice,
+                  feedback: disabled ? true : o.feedback,
+                }}
+              />
+            );
+          })}
         </ul>
-        {alphabet === 'arabic' && (
+        {alphabet === 'arabic' && noArabicVoice && (
           <p className={common.lede} data-testid="read-aloud-note">
-            {READ_ALOUD_ENGLISH_ONLY}
+            {strings.noArabicVoiceNotice} {READ_ALOUD_ENGLISH_ONLY}
           </p>
         )}
       </div>

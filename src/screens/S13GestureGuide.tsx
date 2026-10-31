@@ -4,6 +4,7 @@ import { Hint } from '../ui/HintBar';
 import { Screen } from '../ui/Screen';
 import { AboutCredits } from '../ui/AboutCredits';
 import { useAnnounceOnChange } from '../output/announcer';
+import { useStrings } from '../output/strings';
 import styles from './S13GestureGuide.module.css';
 
 const GESTURES: { title: string; glyph: Glyph; both?: boolean; text: string; tag: string }[] = [
@@ -47,7 +48,8 @@ const GESTURES: { title: string; glyph: Glyph; both?: boolean; text: string; tag
 ];
 
 export default function S13GestureGuide() {
-  useAnnounceOnChange('Gesture guide open. Thumbs up closes it.');
+  const strings = useStrings();
+  useAnnounceOnChange(strings.gestureGuideOpen);
   return (
     <Screen
       chips={

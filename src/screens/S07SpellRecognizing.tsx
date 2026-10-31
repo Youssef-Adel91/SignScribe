@@ -15,15 +15,28 @@ import { HandChip } from '../vision/bits';
 import { Demo } from '../vision/bits';
 import { useAlphabet } from '../ui/useAlphabet';
 import { LiveLetterRing } from '../recognition/LiveLetterRing';
+import { useStrings } from '../output/strings';
+import { alphabetOfSetting, spokenLetterOf } from '../config/alphabet';
 
 export default function S07SpellRecognizing() {
-  const { hand, place, words, word, candidate } = useCtx();
+  const { hand, place, words, word, candidate, alphabet } = useCtx();
   const { rtl, glyph } = useAlphabet();
+  const strings = useStrings();
   const text = [...words, word].filter(Boolean).join(' ');
-  const letter = candidate ? glyph(candidate.letter).text : '';
-  const caption = `Looks like "${letter}". Hold still…`;
+  const g = candidate ? glyph(candidate.letter) : null;
+  const letter = g ? g.text : '';
+  const caption = letter ? strings.looksLike(letter) : '';
+
+  const cfg = alphabetOfSetting(alphabet);
+  const spk = candidate ? spokenLetterOf(cfg, candidate.letter) : null;
+  const spoken = spk
+    ? spk.confirmed
+      ? strings.looksLike(spk.text)
+      : strings.looksLikeHoldStill
+    : null;
+
   // a guess that changes quickly is spoken at most every 2 s
-  useAnnounceOnChange(letter ? caption : null, { minGapMs: 2000 });
+  useAnnounceOnChange(letter ? caption : null, { minGapMs: 2000, spoken });
   const guesses = candidate
     ? [
         { letter: candidate.letter, confidence: candidate.confidence },
