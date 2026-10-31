@@ -1,6 +1,6 @@
 import { createActor, getNextSnapshot } from 'xstate';
 import type { SnapshotFrom } from 'xstate';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS, signScribeMachine, screenOf, type Ev } from '../src/state/machine';
 import { PATH_TO_SCREEN } from '../src/state/paths';
 import { loadProfile, saveProfile } from '../src/state/profiles';
@@ -188,20 +188,26 @@ describe('ContextFeed', () => {
     expect(ws.closed).toBe(true);
   });
   it('says "nothing" when the server goes away and reconnects with a growing pause', async () => {
-    const got: unknown[] = [];
-    const feed = new ContextFeed('ws://x', (c) => got.push(c), FakeWs as never, 10, 40);
-    FakeWs.all[0].onclose?.();
-    expect(got).toEqual([null]);
-    await new Promise((r) => setTimeout(r, 25));
-    expect(FakeWs.all).toHaveLength(2);
-    FakeWs.all[1].onerror?.();
-    await new Promise((r) => setTimeout(r, 15));
-    expect(FakeWs.all).toHaveLength(2); // the second pause is 20 ms
-    await new Promise((r) => setTimeout(r, 30));
-    expect(FakeWs.all).toHaveLength(3);
-    feed.close();
-    FakeWs.all[2].onclose?.();
-    await new Promise((r) => setTimeout(r, 60));
-    expect(FakeWs.all).toHaveLength(3); // closed for good
+    // fake timers: the pauses are exact, so a busy machine cannot make the real timers drift (it did, under `npm run verify`)
+    vi.useFakeTimers();
+    try {
+      const got: unknown[] = [];
+      const feed = new ContextFeed('ws://x', (c) => got.push(c), FakeWs as never, 10, 40);
+      FakeWs.all[0].onclose?.();
+      expect(got).toEqual([null]);
+      await vi.advanceTimersByTimeAsync(25);
+      expect(FakeWs.all).toHaveLength(2);
+      FakeWs.all[1].onerror?.();
+      await vi.advanceTimersByTimeAsync(15);
+      expect(FakeWs.all).toHaveLength(2); // the second pause is 20 ms
+      await vi.advanceTimersByTimeAsync(30);
+      expect(FakeWs.all).toHaveLength(3);
+      feed.close();
+      FakeWs.all[2].onclose?.();
+      await vi.advanceTimersByTimeAsync(60);
+      expect(FakeWs.all).toHaveLength(3); // closed for good
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

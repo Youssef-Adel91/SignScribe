@@ -111,7 +111,7 @@ def main(argv=None) -> int:
             templates, raw = load_templates(a.templates)
             if a.simulate and a.pose and raw.get("pose_parts"):
                 sim_keys = pose_keys(raw["pose_parts"])
-        unknown = sorted({l for l, _ in templates if l not in alphabet.labels})
+        unknown = sorted({l for l, _ in templates if l not in alphabet.letters})
         if unknown:
             raise TemplateError(f"templates for {' '.join(unknown)} are not letters of the alphabet '{alphabet.id}'")
     except (TemplateError, ValueError) as e:

@@ -230,6 +230,25 @@ def test_recording_needs_moving_letters_from_the_alphabet(capsys):
     assert "not a letter" in capsys.readouterr().err
 
 
+def test_the_dynamic_controls_of_arsl_are_not_moving_letters(capsys, tmp_path):
+    # ArSL's dynamic classes (ctl_delete, ctl_cancel) are commands, recorded through the collection page: not letters for this tool
+    assert dl.load_alphabet("arsl").dynamic == ("ctl_delete", "ctl_cancel")
+    assert record_templates.main(["--alphabet", "arsl", "--letters", "ctl_delete"]) == 2
+    assert "not a letter" in capsys.readouterr().err
+
+    pts = [[i, i] for i in range(8)]
+    ok_format = {"format": dl.FORMAT, "version": 2, "templates": [{"label": "J", "points": pts}]}
+    templates = tmp_path / "t.json"
+    templates.write_text(json.dumps(ok_format))
+    # templates of ASL's J are no letters of the ArSL alphabet
+    assert classify_live.main(["--alphabet", "arsl", "--templates", str(templates), "--no-window"]) == 2
+    assert "not letters of the alphabet" in capsys.readouterr().err
+    # and a template file cannot carry a control class as its label at all (one-letter labels only)
+    templates.write_text(json.dumps({**ok_format, "templates": [{"label": "ctl_delete", "points": pts}]}))
+    assert classify_live.main(["--alphabet", "arsl", "--templates", str(templates), "--no-window"]) == 2
+    assert "one-letter label" in capsys.readouterr().err
+
+
 def test_the_moving_letters_come_from_the_alphabet_config():
     assert dl.load_alphabet("asl").dynamic == ("J", "Z")
 

@@ -71,11 +71,12 @@ def main(argv=None) -> int:
     ap.add_argument("--no-window", action="store_true", help="no preview window (progress only on the terminal)")
     a = ap.parse_args(argv)
     alphabet = load_alphabet(a.alphabet)
-    letters = a.letters or list(alphabet.dynamic)
+    # the moving LETTERS: the dynamic classes that are not control classes (ArSL's dynamic classes are the controls delete / cancel)
+    letters = a.letters or [l for l in alphabet.dynamic if l not in alphabet.controls]
     if not letters:
         print(f"error: alphabet '{alphabet.id}' lists no moving letters. Name them with --letters, or add them under \"dynamic\" in config/alphabets/{alphabet.id}.json", file=sys.stderr)
         return 2
-    bad = [l for l in letters if l not in alphabet.labels]
+    bad = [l for l in letters if l not in alphabet.letters]
     if bad:
         print(f"error: {' '.join(bad)} is not a letter of the alphabet '{alphabet.id}'", file=sys.stderr)
         return 2
