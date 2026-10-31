@@ -51,6 +51,7 @@ Without it the app writes sentences with simple offline rules. With it, a langua
     npm run ml:test    # Python: dataset, trainers, $P vs dollarpy (needs ml/requirements.txt)
     npm run e2e:study  # needs a build: a whole study session in the browser, then the CSV is checked
     npm run compare    # needs a build: each screen next to its Figma export (tools/compare/out/)
+    npm run demo         # everything for the Phase II demo in FAKE mode (--real for hardware, --check to test it): tools/demo-all.md
     npm run e2e:context  # needs a build; fake Bluetooth scanner -> server -> app in a browser (PYTHON=… if python3 is not the one to use)
 
 ## Layout of the code
