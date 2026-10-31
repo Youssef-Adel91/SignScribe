@@ -156,6 +156,10 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Arabic helper-word list (written by us, `docs/ARABIC_WORDS.md`) used by the validator in the browser and on the server, and given to the language model | verified here | `tests/arabic-words.test.ts`, `tests/arsl-server.test.ts` |
 | UI note that read-aloud is English only (share screen 12, voice setting 14) | verified here (rendered markup) | `tests/arsl-screens.test.ts` |
 | Arabic text-to-speech, an Arabic dictionary / spelling help, grammar | not met | out of scope: `docs/KNOWN_ISSUES.md` #5, #7 |
+| `npm run verify` starts npm through the shell on Windows only; a command that cannot start is a FAIL with the real error (and a warning at the start), never a silent 0 s | verified here for Linux and with a Windows-shaped failure (npm missing from the PATH) and a fake `win32` platform; **not run on a real Windows machine by me** | `tests/verify-run.test.ts` |
+| `public/models/*-knn.json` git-ignored (a k-NN file stores real landmark samples); a pre-commit check (`npm run hooks:install`) and a test refuse a staged `*-knn.json` or any file under `ml/data/` / `datasets/` | verified here (scratch repository, real hook) | `tests/forbidden-files.test.ts` |
+| `ml/calibrate.py`: `--augment` defaults to the shipped `all`, names optional, hint when `--alphabet` is missing, rows that repeat the row above are marked | verified here | `ml/tests/test_calibration.py` |
+| Arabic helper list has no duplicate | verified here | `tests/arabic-words.test.ts` |
 
 ## ArSL in the web app, stage 1 (branch feat/arsl-app)
 | Item | Status | Evidence |

@@ -33,8 +33,7 @@ export const ARABIC_HELPER_WORDS: readonly string[] = [
   'إلى',
   'عن',
   'مع',
-  // asking politely
-  'من',
+  // asking politely ("min fadlak": min is in the joining words above)
   'فضلك',
   'لو',
   'سمحت',

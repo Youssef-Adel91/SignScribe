@@ -54,7 +54,7 @@ How to read it:
 - `--tune` picks k by cross-validation on the same data: its result is slightly optimistic. The report says so.
 
 ## Step 4: install and try
-1. Commit `public/models/letters-knn.json` (and `motion-dollar.json`) so the team shares it. `tests/models-guard.test.ts` fails if a model trained on synthetic data is there.
+1. Share the small MLP model (`public/models/letters-mlp.json` / `letters-arsl-mlp.json`) and `motion-dollar.json` through the repository. **Do not commit a k-NN model** (`public/models/*-knn.json`): it stores thousands of real landmark samples of real people, a copy of the data in another shape. `.gitignore` keeps it out, `npm run check:staged` (and the pre-commit hook from `npm run hooks:install`) refuse it, and `tests/forbidden-files.test.ts` fails if one is already committed. Share a k-NN file by hand with the people who may have the data. `tests/models-guard.test.ts` fails if a model trained on synthetic data is in `public/models/`.
 2. `npm run dev`, open `/`, go to the spelling screen: the grey "No letter model yet" notice is gone when the file loads; a broken file shows a plain message.
 3. Sign a letter and hold it. A candidate appears after `LETTER.stableMs`, the ring fills, the letter is written after `LETTER.holdMs`. Check the same sign is not written twice.
 
@@ -67,8 +67,8 @@ It trains on ALL takes (nothing held out), so its `.report.md` has no accuracy. 
 Reports accuracy on your recordings only; they are never mixed into the training side (the script refuses a take id that is on both sides, or a letter that only the test has, unless `--shared-classes`). It is not a leave-one-person-out result and the report says so.
 
 ### Choosing a threshold per model: `ml/calibrate.py`
-    python ml/calibrate.py --data all-takes.jsonl --dataset-name NAME --dataset-version V --augment all
-    python ml/calibrate.py --train all-takes.jsonl --test my-takes.jsonl --test-name "team webcam" --dataset-name NAME --dataset-version V
+    python ml/calibrate.py --data all-takes.jsonl --alphabet asl
+    python ml/calibrate.py --train all-takes.jsonl --test my-takes.jsonl --test-name "team webcam" --alphabet asl
 For the k-NN vote share and the MLP softmax, separately, it prints how many predictions would be shown at each threshold and how many of those are right (with a 95% interval), from held-out predictions only. It never changes `LETTER`; read the table of the model that will ship, then change the value by hand with a test (Step 5). The two tables are not comparable.
 
 ## Step 5: tune the thresholds with the model in hand

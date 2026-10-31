@@ -4,11 +4,16 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { probe, runStep } from './lib/run-step.mjs';
 
 const root = resolve(import.meta.dirname, '..');
+const venvPython = resolve(
+  root,
+  process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python',
+);
 const python =
   process.env.PYTHON ||
-  (existsSync(resolve(root, '.venv/bin/python')) ? resolve(root, '.venv/bin/python') : 'python3');
+  (existsSync(venvPython) ? venvPython : process.platform === 'win32' ? 'python' : 'python3');
 const hasPytest = spawnSync(python, ['-c', 'import pytest'], { stdio: 'ignore' }).status === 0;
 const hasModels =
   existsSync(resolve(root, 'public/models/hand_landmarker.task')) &&
@@ -34,6 +39,13 @@ const steps = [
   },
 ];
 
+// npm must be startable (on Windows it is npm.cmd). If it is not, say why once, before 8 steps fail.
+const npmProblem = probe('npm', ['--version']);
+if (npmProblem)
+  console.error(
+    `\nWARNING: npm could not be started (${npmProblem}). Every npm step below will FAIL with this reason.`,
+  );
+
 const rows = [];
 for (const s of steps) {
   if (s.skip) {
@@ -42,13 +54,13 @@ for (const s of steps) {
     continue;
   }
   console.log(`\n=== ${s.name}`);
-  const t0 = Date.now();
   const [cmd, args, opts] = s.cmd;
-  const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', ...opts });
+  const r = runStep(cmd, args, { cwd: root, ...opts });
+  if (!r.ok) console.error(`FAILED ${s.name}: ${r.why}`);
   rows.push([
     s.name,
-    r.status === 0 ? 'PASS' : 'FAIL',
-    `${((Date.now() - t0) / 1000).toFixed(0)} s`,
+    r.ok ? 'PASS' : 'FAIL',
+    r.ok ? `${r.seconds.toFixed(0)} s` : `${r.seconds.toFixed(0)} s  ${r.why}`,
   ]);
 }
 console.log('\n' + '-'.repeat(72));

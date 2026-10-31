@@ -79,11 +79,24 @@ def markdown(cal: dict, what: dict, kind: str) -> str:
             "| threshold | shown | coverage | precision of shown (95% interval) | wrong shown per 100 predictions |",
             "| --- | --- | --- | --- | --- |",
         ]
+        prev = None
+        same = []
         for r in d["rows"]:
             ci = r["precision_ci95"]
             ci_txt = f" ({ci[0] * 100:.1f}-{ci[1] * 100:.1f}%)" if ci else ""
-            L.append(f"| {r['threshold']:.2f} | {r['shown']} | {_pct(r['coverage'])} | {_pct(r['precision'])}{ci_txt} | {r['wrong_shown_per_100']:.2f} |")
+            dup = prev is not None and r["shown"] == prev["shown"]
+            if dup:
+                same.append(r["threshold"])
+            L.append(f"| {r['threshold']:.2f}{' (same predictions as the row above)' if dup else ''} | {r['shown']} | {_pct(r['coverage'])} | {_pct(r['precision'])}{ci_txt} | {r['wrong_shown_per_100']:.2f} |")
+            prev = r
         L.append("")
+        if same and name == "knn":
+            L += [
+                f"The k-NN rows at {', '.join(f'{t:.2f}' for t in same)} show exactly the same predictions as the row before. That is expected for a vote share: with k=5, "
+                "when all neighbours agree the share is exactly 1.0, and the votes are weighted by distance, so values just below 1.0 are rare. "
+                "A threshold between two such rows changes nothing; pick from the rows that differ.",
+                "",
+            ]
     L += [
         "The two tables are not comparable row by row: a k-NN vote share and an MLP softmax probability are different scales.",
         "This report does not choose a threshold. `LETTER.minConfidence` / `confirmConfidence` in `src/recognition/letterController.ts` were set for the k-NN and are changed by hand, with a test, after reading the table of the model that will ship.",

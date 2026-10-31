@@ -2,13 +2,17 @@
 """Precision and coverage at several confidence thresholds, for the k-NN vote share and for the MLP softmax separately.
 
     # leave-one-person-out on a dataset
-    python ml/calibrate.py --data ml/data/arsl21l.jsonl --alphabet arsl --dataset-name ArSL21L --dataset-version "as published" --augment all
+    python ml/calibrate.py --data ml/data/arsl21l.jsonl --alphabet arsl
 
     # trained on a dataset, tested on your own webcam takes only (never mixed into training)
-    python ml/calibrate.py --train ml/data/arsl21l.jsonl --test ml/data/my-webcam.jsonl --test-name "team webcam" --alphabet arsl --dataset-name ArSL21L --dataset-version "as published"
+    python ml/calibrate.py --train ml/data/arsl21l.jsonl --test ml/data/my-webcam.jsonl --test-name "team webcam" --alphabet arsl
 
 The numbers come from held-out predictions only and are written to ml/reports/ (git-ignored) with the dataset hash.
-No threshold is chosen or changed here: read the table, then change `LETTER` by hand with a test (docs/MODEL_HANDOFF.md, Step 5)."""
+No threshold is chosen or changed here: read the table, then change `LETTER` by hand with a test (docs/MODEL_HANDOFF.md, Step 5).
+
+--alphabet is required for anything that is not the active alphabet (ArSL data needs --alphabet arsl). --augment defaults to all, the setting
+ml/export_arsl.py ships, so the calibration matches the shipped model; pass --augment none to see the model without it.
+--dataset-name defaults to the takes file name and --dataset-version to "unspecified" (both are only labels in the report)."""
 import argparse
 import json
 import sys
@@ -22,6 +26,11 @@ from signscribe_ml.alphabet import AlphabetError, load_alphabet  # noqa: E402
 from signscribe_ml.augment import parse_augment  # noqa: E402
 from signscribe_ml.dataset import DatasetError  # noqa: E402
 from signscribe_ml.folds import FoldError  # noqa: E402
+
+EXAMPLE = """example (ArSL, leave-one-person-out, the way the shipped model is trained):
+  python ml/calibrate.py --data ml/data/arsl21l.jsonl --alphabet arsl
+and on your own webcam takes:
+  python ml/calibrate.py --train ml/data/arsl21l.jsonl --test ml/data/my-webcam.jsonl --test-name "team webcam" --alphabet arsl"""
 
 WHAT = {
     "knn": "the winner's share of the distance-weighted votes of the 5 nearest samples (what the browser's k-NN reports)",
@@ -37,20 +46,23 @@ def main(argv=None) -> int:
     ap.add_argument("--test", nargs="+", help="... and use predictions on THESE recordings only")
     ap.add_argument("--test-name", default="own recordings")
     ap.add_argument("--alphabet", help="config/alphabets/<name>.json")
-    ap.add_argument("--dataset-name", required=True)
-    ap.add_argument("--dataset-version", required=True)
+    ap.add_argument("--dataset-name", help="label for the report (default: the name of the takes file)")
+    ap.add_argument("--dataset-version", default="unspecified", help="label for the report (default: unspecified)")
     ap.add_argument("--models", default="knn,mlp")
     ap.add_argument("--thresholds", default=",".join(str(t) for t in cal.DEFAULT_THRESHOLDS), help="comma list, e.g. 0,0.5,0.7,0.9")
     ap.add_argument("--k", type=int, default=5)
     ap.add_argument("--group-by", default="auto", choices=["auto", "person", "source", "signer", "session"])
-    ap.add_argument("--augment", default="none")
+    ap.add_argument("--augment", default="all", help="rotate,scale,mirror (or all/none), training side only. Default all: what ml/export_arsl.py ships")
     ap.add_argument("--augment-copies", type=int, default=2)
     ap.add_argument("--shared-classes", action="store_true")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out-dir", default="ml/reports")
     ap.add_argument("--allow-synthetic", action="store_true", help="pipeline tests only")
     ap.add_argument("--allow-optimistic", action="store_true")
+    ap.epilog = EXAMPLE
     a = ap.parse_args(argv)
+    if not a.dataset_name:
+        a.dataset_name = Path((a.data or a.train)[0] if (a.data or a.train) else "dataset").stem
     if bool(a.data) == bool(a.train and a.test) or (a.train and not a.test) or (a.test and not a.train):
         print("error: pass either --data, or both --train and --test", file=sys.stderr)
         return 2
@@ -83,6 +95,8 @@ def main(argv=None) -> int:
         table = cal.build(res, thresholds)
     except (DatasetError, AlphabetError, ev.EvaluationError, FoldError, cal.CalibrationError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
+        if "label must be" in str(e):
+            print("hint: the labels are checked against the alphabet. For ArSL data pass --alphabet arsl.\n" + EXAMPLE, file=sys.stderr)
         return 2
     head = [
         f"# Confidence calibration: {a.dataset_name} {a.dataset_version}",

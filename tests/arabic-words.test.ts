@@ -13,6 +13,17 @@ describe('the helper-word list', () => {
     expect(ARABIC_HELPER_WORDS.length).toBeLessThan(80);
     for (const w of ARABIC_HELPER_WORDS) expect(w).toMatch(/^[ء-ي]+$/);
   });
+  it('has no duplicate entry, also after vowel marks and alef forms are ignored', () => {
+    const seen = new Map<string, number>();
+    for (const w of ARABIC_HELPER_WORDS)
+      seen.set(normalizeArabic(w), (seen.get(normalizeArabic(w)) ?? 0) + 1);
+    const twice = [...seen].filter(([, n]) => n > 1).map(([w]) => w);
+    expect(twice).toEqual([]);
+    expect(ARABIC_HELPER_WORDS.length).toBe(new Set(ARABIC_HELPER_WORDS).size);
+  });
+  it('still has min (من) once, for "min fadlak" and for "from"', () => {
+    expect(ARABIC_HELPER_WORDS.filter((w) => w === 'من')).toHaveLength(1);
+  });
   it('has no negation, no numbers and no yes / because / then', () => {
     const banned = ['لا', 'لم', 'لن', 'ليس', 'غير', 'بدون', 'نعم', 'لأن', 'ثم', 'واحد', 'اثنان'];
     const have = new Set(ARABIC_HELPER_WORDS.map(normalizeArabic));
@@ -21,7 +32,7 @@ describe('the helper-word list', () => {
   it('is described word for word in docs/ARABIC_WORDS.md, which says it was written by us', () => {
     for (const w of ARABIC_HELPER_WORDS) expect(doc).toContain(w);
     expect(doc).toMatch(/written by us for this project/);
-    expect(doc).toContain(`(${new Set(ARABIC_HELPER_WORDS).size} words)`);
+    expect(doc).toContain(`(${ARABIC_HELPER_WORDS.length} words)`);
   });
   it('is credited in docs/CREDITS.md as written by us', () => {
     expect(readFileSync('docs/CREDITS.md', 'utf8')).toContain('src/nlp/arabicWords.ts');

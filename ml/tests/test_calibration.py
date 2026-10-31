@@ -125,3 +125,37 @@ def test_running_it_leaves_the_thresholds_file_untouched(data, tmp_path):
     assert calibrate.main(["--data", str(data), *BASE, "--out-dir", str(tmp_path / "r")]) == 0
     assert f.read_bytes() == before
     assert sorted(p.suffix for p in (tmp_path / "r").iterdir()) == [".json", ".md"]  # it writes its own report and nothing else
+
+
+def test_names_are_optional_and_the_shipped_augmentation_is_the_default(data, tmp_path, capsys):
+    out = tmp_path / "r"
+    assert calibrate.main(["--data", str(data), "--alphabet", "arsl", "--allow-synthetic", "--out-dir", str(out)]) == 0
+    text = capsys.readouterr().out
+    assert "# Confidence calibration: arsl unspecified" in text  # file name arsl.jsonl, version unspecified
+    assert "augmentation (training side only): " in text and "none" not in text.split("augmentation (training side only): ")[1].split(",")[0]
+    assert calibrate.main(["--data", str(data), "--alphabet", "arsl", "--augment", "none", "--allow-synthetic", "--out-dir", str(out)]) == 0
+    assert "augmentation (training side only): none" in capsys.readouterr().out
+
+
+def test_the_wrong_alphabet_gets_a_hint_with_the_working_command(data, tmp_path, capsys):
+    assert calibrate.main(["--data", str(data), "--allow-synthetic", "--out-dir", str(tmp_path / "r")]) == 2
+    err = capsys.readouterr().err
+    assert "--alphabet arsl" in err and "python ml/calibrate.py --data ml/data/arsl21l.jsonl --alphabet arsl" in err
+
+
+def test_the_readme_has_the_exact_working_command():
+    from pathlib import Path
+
+    text = (Path(__file__).parent.parent / "README.md").read_text(encoding="utf-8")
+    assert "python ml/calibrate.py --data ml/data/arsl21l.jsonl --alphabet arsl" in text
+    assert "same predictions as the row above" in text
+
+
+def test_identical_high_threshold_rows_are_marked():
+    truth, pred = ["a"] * 6, ["a", "a", "a", "a", "b", "a"]
+    conf = [1.0, 1.0, 1.0, 1.0, 0.6, 0.7]
+    res = {"models": {"knn": {"truth": truth, "pred": pred, "conf": conf}}}
+    table = cal.build(res, [0.0, 0.8, 0.9, 0.99])
+    md = cal.markdown(table, {"knn": "a vote share"}, "test")
+    assert md.count("same predictions as the row above") == 2  # 0.90 and 0.99 repeat 0.80
+    assert "A threshold between two such rows changes nothing" in md
