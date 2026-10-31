@@ -3,6 +3,7 @@ import { palmSize } from '../vision/landmarks';
 import { inCommandZone } from '../vision/zones';
 import type { HandFrame, HandObs } from '../vision/types';
 import type { MotionRecognizer, StaticRecognizer } from './types';
+import type { ControlName } from '../config/alphabet';
 import { isRejected, resolveTuning, type LetterTuning } from './tuning';
 
 /**
@@ -43,6 +44,9 @@ export interface CommandState {
   active: boolean;
   /** a control event was sent on this very frame */
   fired: boolean;
+  /** which old rule gesture it is and how sure the gesture engine is (for the debug overlay and its log) */
+  label?: string;
+  score?: number;
 }
 
 export interface LetterInput {
@@ -61,6 +65,8 @@ export type LetterState =
   | 'moving'
   | 'settling'
   | 'tracing-motion'
+  | 'motion-matched'
+  | 'control-holding'
   | 'rejected'
   | 'cooldown'
   | 'wait-release'
@@ -68,8 +74,16 @@ export type LetterState =
   | 'holding'
   | 'committed';
 
+/** who decided this frame: the old rule gesture, a control class of the letter model, a $1 template, or the letter model */
+export type DecisionSource =
+  'rule-gesture' | 'control-class' | '$1-template' | 'letter-model' | 'none';
+
 export interface LetterDebug {
   state: LetterState;
+  /** the source that decided this frame, what it decided (a letter, a control action, a gesture name) and its score (0..1) */
+  source: DecisionSource;
+  decided: string;
+  score: number;
   /** smoothed hand speed in palm lengths per second (all 21 landmarks) */
   speed: number;
   /** consecutive still frames so far, and how many are needed */
@@ -158,6 +172,8 @@ export class LetterController {
     private readonly stat: StaticRecognizer | null,
     private readonly motion: MotionRecognizer | null = null,
     tuning?: LetterTuning,
+    /** control classes of the alphabet (class id -> action): they are commands, never letters */
+    private readonly controls: Record<string, ControlName> = {},
   ) {
     this.tuning = tuning ?? resolveTuning('asl', stat?.id, {});
   }
@@ -204,6 +220,9 @@ export class LetterController {
   private dbg(state: LetterState, t: number, over: Partial<LetterDebug> = {}): LetterDebug {
     return {
       state,
+      source: 'none',
+      decided: '',
+      score: 0,
       speed: this.speed,
       stillCount: this.stillCount,
       stillFrames: this.tuning.stillFrames,
@@ -229,6 +248,11 @@ export class LetterController {
       ...p,
       debug: this.dbg(state, t, d),
     };
+  }
+
+  /** a letter, or for a control class the action it does ("delete") */
+  private nameOf(classId: string): string {
+    return this.controls[classId] ?? classId;
   }
 
   /** nothing may be shown: drop the candidate (and tell the machine if one was on screen) */
@@ -268,7 +292,21 @@ export class LetterController {
       this.stillCount = 0;
       this.handMoving = false;
       this.noteRelease(null, t);
-      return { events, ui: this.ui(commandOn ? 'command' : 'no-hand', t) };
+      return {
+        events,
+        ui: this.ui(
+          commandOn ? 'command' : 'no-hand',
+          t,
+          {},
+          commandOn
+            ? {
+                source: 'rule-gesture',
+                decided: inp.command?.label ?? 'hold-off',
+                score: inp.command?.score ?? 0,
+              }
+            : {},
+        ),
+      };
     }
 
     // ---- how fast the hand moves (every landmark, so fingers changing shape count too), with hysteresis
@@ -294,7 +332,20 @@ export class LetterController {
 
     if (commandOn) {
       this.dropCandidate(events);
-      return { events, ui: this.ui('command', t) };
+      const cmd = inp.command;
+      return {
+        events,
+        ui: this.ui(
+          'command',
+          t,
+          {},
+          {
+            source: 'rule-gesture',
+            decided: cmd?.label ?? (cmd?.fired ? 'command' : 'hold-off'),
+            score: cmd?.score ?? 0,
+          },
+        ),
+      };
     }
 
     // ---- moving signs (J, Z): follow one fingertip, recognise when the movement stops
@@ -303,16 +354,37 @@ export class LetterController {
       const r = this.followMotion(hand, frame, t);
       if (r.event) {
         events.push(...r.event);
+        const done = r.event[r.event.length - 1];
         this.reset();
         this.motionCooldownUntil = t + 800;
-        return { events, ui: this.ui('off-screen', t) };
+        return {
+          events,
+          ui: this.ui(
+            'motion-matched',
+            t,
+            {},
+            {
+              source: '$1-template',
+              decided: done.type === 'LETTER_CONFIRMED' ? this.nameOf(done.letter) : '',
+              score: r.score,
+            },
+          ),
+        };
       }
       tracing = r.tracing;
     }
     if (tracing) {
       // while a motion is being drawn the static guess is meaningless (the hand is mid-air)
       this.dropCandidate(events);
-      return { events, ui: this.ui('tracing-motion', t, { tracingMotion: true }) };
+      return {
+        events,
+        ui: this.ui(
+          'tracing-motion',
+          t,
+          { tracingMotion: true },
+          { source: '$1-template', decided: 'tracing' },
+        ),
+      };
     }
 
     // ---- not classified while the hand moves or has not been still long enough
@@ -343,9 +415,16 @@ export class LetterController {
     const strong = g && !why ? g : null;
     this.noteRelease(strong ? strong.letter : null, t);
 
+    const asked: Partial<LetterDebug> = g
+      ? {
+          source: this.controls[g.letter] !== undefined ? 'control-class' : 'letter-model',
+          decided: this.nameOf(g.letter),
+          score: g.confidence,
+        }
+      : {};
     if (!strong) {
       this.dropCandidate(events);
-      return { events, ui: this.ui('rejected', t, { raw }, { rejectedBecause: why }) };
+      return { events, ui: this.ui('rejected', t, { raw }, { rejectedBecause: why, ...asked }) };
     }
     if (strong.letter !== this.cand) {
       if (this.shown) events.push({ type: 'CANDIDATE_LOST' });
@@ -353,17 +432,31 @@ export class LetterController {
       this.candSince = t;
       this.shown = false;
     }
-    const guess = { letter: strong.letter, confidence: strong.confidence };
+    const isControl = this.controls[strong.letter] !== undefined;
+    // a control class is a command: no candidate is shown, nothing is written, it only acts after its own (shorter) hold
+    const guess = isControl ? null : { letter: strong.letter, confidence: strong.confidence };
+    const seen: Partial<LetterDebug> = { rejectedBecause: '', ...asked };
     // a letter that was just written must be released (and the cooldown must pass) before it can be written again
     if (this.confirmedLetter !== null) {
-      return { events, ui: this.ui('wait-release', t, { guess, raw }) };
+      return { events, ui: this.ui('wait-release', t, { guess, raw }, seen) };
     }
     if (t < this.cooldownUntil) {
       // nothing is tracked during the cooldown: the hold of the next letter starts when it ends
       this.dropCandidate(events);
-      return { events, ui: this.ui('cooldown', t, { guess, raw }) };
+      return { events, ui: this.ui('cooldown', t, { guess, raw }, seen) };
     }
     const stable = t - this.candSince;
+    if (isControl) {
+      const progress = Math.min(1, stable / T.controlHoldMs);
+      if (stable >= T.controlHoldMs && strong.confidence >= T.confirmConfidence) {
+        events.push({ type: 'LETTER_CONFIRMED', letter: strong.letter });
+        this.confirmedLetter = strong.letter;
+        this.releaseSince = null;
+        this.cooldownUntil = t + T.cooldownMs;
+        return { events, ui: this.ui('committed', t, { raw, progress: 1 }, seen) };
+      }
+      return { events, ui: this.ui('control-holding', t, { raw, progress }, seen) };
+    }
     if (stable >= T.stableMs) {
       // the guess is refreshed a few times a second, not on every camera frame
       if (
@@ -389,11 +482,11 @@ export class LetterController {
       this.shown = false;
       this.releaseSince = null;
       this.cooldownUntil = t + T.cooldownMs;
-      return { events, ui: this.ui('committed', t, { guess, raw, progress: 1 }) };
+      return { events, ui: this.ui('committed', t, { guess, raw, progress: 1 }, seen) };
     }
     return {
       events,
-      ui: this.ui(this.shown ? 'holding' : 'candidate', t, { guess, raw, progress }),
+      ui: this.ui(this.shown ? 'holding' : 'candidate', t, { guess, raw, progress }, seen),
     };
   }
 
@@ -420,7 +513,7 @@ export class LetterController {
     hand: HandObs,
     frame: HandFrame,
     t: number,
-  ): { tracing: boolean; event: Ev[] | null } {
+  ): { tracing: boolean; event: Ev[] | null; score: number } {
     const m = this.motion!;
     const p = hand.landmarks[m.landmark];
     const ps = palmSize(hand, frame.width, frame.height) || 1;
@@ -439,7 +532,7 @@ export class LetterController {
         this.slowSince = null;
         this.motionStart = prev ? prev.t : t;
       }
-      return { tracing: false, event: null };
+      return { tracing: false, event: null, score: 0 };
     }
     if (speed < LETTER.motionStopSpeed) {
       if (this.slowSince === null) this.slowSince = t;
@@ -448,7 +541,7 @@ export class LetterController {
     }
     const ended = this.slowSince !== null && t - this.slowSince >= LETTER.motionEndMs;
     const tooLong = t - this.motionStart > LETTER.motionMaxMs;
-    if (!ended && !tooLong) return { tracing: true, event: null };
+    if (!ended && !tooLong) return { tracing: true, event: null, score: 0 };
 
     // the movement is over: judge the path from its start to the moment it slowed down
     const endT = this.slowSince ?? t;
@@ -462,11 +555,20 @@ export class LetterController {
     for (let i = 1; i < path.length; i++)
       length += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
     if (dur < LETTER.motionMinMs || length / ps < LETTER.motionMinLength)
-      return { tracing: false, event: null };
+      return { tracing: false, event: null, score: 0 };
     const g = m.recognize(path);
-    if (!g || g.score < LETTER.motionMinScore) return { tracing: false, event: null };
+    if (!g || g.score < this.tuning.motionMinScore)
+      return { tracing: false, event: null, score: g?.score ?? 0 };
+    // a control stroke is a command: it is confirmed at once and never shown as a candidate letter
+    if (this.controls[g.letter] !== undefined)
+      return {
+        tracing: false,
+        event: [{ type: 'LETTER_CONFIRMED', letter: g.letter }],
+        score: g.score,
+      };
     return {
       tracing: false,
+      score: g.score,
       event: [
         {
           type: 'LETTER_CANDIDATE',

@@ -144,6 +144,17 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Analysis: SUS row, careless-answer flags (identical answers, contradicting reverse items), `--exclude-flagged` | 7 | verified here (made-up exports) | `npm run ml:test` |
 | SUS results on real participants | 7 | not met | no study run yet |
 
+## ArSL controls: static and dynamic (branch feat/arsl-controls)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| `arsl.json` controls space, done (static, classified like letters) and delete, cancel (dynamic, $1 on the index-fingertip path); parsed the same by the app and the Python tools; the split is a first decision recorded in `todo` | verified here | `tests/arsl-control-classes.test.ts`, `ml/tests/test_controls.py` |
+| A control class acts like the same hand gesture (SPACE, YES, DELETE, NO) from any spelling state, with its own shorter hold for static ones and a $1 score setting for dynamic ones | verified here (synthetic hands, fake recognisers) | `tests/arsl-control-classes.test.ts` |
+| Collection page: Controls section (four buttons, static / dynamic), every take carries `person` = the signer code; takes stay out of git | verified here | `npm run e2e:collect`, `tests/arsl-control-classes.test.ts` |
+| `evaluate.py`: leave-one-person-out on controls together with the letters, confusion with letters and with `none`, false triggers from `none` takes (static: model frames; dynamic: $1 with the app's gate), counts only | verified here (generated recordings) | `ml/tests/test_controls.py` |
+| Overlay and log show, for every frame, who decided (old rule gesture / control class / $1 template / letter model), what and the score | verified here | `tests/arsl-control-classes.test.ts` |
+| Priority kept: a rule gesture stops model controls and letters, a command frame sends no model event; old gesture hold times unchanged (asserted) | verified here | `tests/arsl-control-classes.test.ts` |
+| Whether static / dynamic controls work better than the old gestures for ArSL signers; which shapes and strokes; recordings; the right thresholds | not met | needs recordings from several people and a camera: `docs/CONTROLS.md`, `docs/KNOWN_ISSUES.md` #13 |
+
 ## Letter gating after the first camera test (branch feat/letter-gating)
 | Item | Status | Evidence |
 | --- | --- | --- |
@@ -180,7 +191,7 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Alphabet selector (English = ASL, Arabic = ArSL) on screen 03, saved with the other settings; the loader reads `letters-arsl-{mlp,knn}.json` for ArSL and the old names for ASL; a model with another alphabet's letters is refused | verified here (fake files) | `tests/arsl-app.test.ts`, `npm run e2e` |
 | The study CSV names the alphabet (`alphabet` column in trials, camera trials only, and in the session file) | verified here | `tests/arsl-app.test.ts` |
 | Sentence line right to left (`dir="rtl"`, `lang="ar"`) with ArSL; the rest of the screen stays left to right | verified here (rendered markup); not looked at in a browser by me | `tests/arsl-app.test.ts`, `tests/arsl-screens.test.ts` |
-| Space / Delete / Finish classes only when the alphabet file lists them under `controls`; `arsl.json` lists none, so the hand gestures stay | verified here | `tests/arsl-controls.test.ts`, `tests/arsl-app.test.ts` |
+| Space / Delete / Cancel / Done classes only when the alphabet file lists them under `controls` (ASL lists none; ArSL lists four since branch feat/arsl-controls) | verified here | `tests/arsl-controls.test.ts`, `tests/arsl-app.test.ts` |
 | Sentence server with ArSL: English-only checks skipped, length / words / sentences / links / characters / chosen words / rate limit kept; browser checks again | verified here (fake model) | `tests/arsl-server.test.ts`, `tests/arsl-app.test.ts`; limits of this: `docs/KNOWN_ISSUES.md` #5 |
 | An ArSL model, its accuracy, the `LETTER` thresholds for it, the Arabic word list, the Arabic read-aloud voice, the layout of Arabic text on every screen size | not met | no model in `public/models/`; `docs/KNOWN_ISSUES.md` #6-#9 |
 

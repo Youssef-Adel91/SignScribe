@@ -17,12 +17,28 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from signscribe_ml import controls_report as cr  # noqa: E402
 from signscribe_ml import evaluation as ev  # noqa: E402
 from signscribe_ml import results_md as rm  # noqa: E402
 from signscribe_ml.alphabet import AlphabetError, load_alphabet  # noqa: E402
 from signscribe_ml.augment import parse_augment  # noqa: E402
 from signscribe_ml.dataset import DatasetError  # noqa: E402
 from signscribe_ml.folds import FoldError  # noqa: E402
+
+
+def controls_section(results, takes, alphabet, min_conf) -> dict:
+    """{run name: {"md": ..., "json": ...}} when the alphabet has control classes: confusion with the letters and false triggers from the
+    'none' takes. Counts and shares only, never a person."""
+    if not alphabet.controls:
+        return {}
+    dyn = cr.dynamic_report(takes, alphabet, 8, 0.6)
+    out = {}
+    for label, r in results:
+        static = {m: cr.static_report(d, alphabet, min_conf) for m, d in r["models"].items()}
+        md = cr.markdown(static, dyn)
+        if md:
+            out[label] = {"md": "\n" + md, "json": {"static": static, "dynamic": dyn}}
+    return out
 
 
 def train_test(a, argv) -> int:
@@ -45,7 +61,8 @@ def train_test(a, argv) -> int:
     except (DatasetError, AlphabetError, ev.EvaluationError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
-    body = "\n".join(f"## {label}\n\n" + ev.markdown(r, prov, a.min_confidence).replace("- python", f"- test recordings: **{a.test_name}**, sha256 `{prov['test_sha256']}`\n- python", 1) for label, r in results)
+    controls = controls_section(results, train + test, alphabet, a.min_confidence)
+    body = "\n".join(f"## {label}\n\n" + ev.markdown(r, prov, a.min_confidence).replace("- python", f"- test recordings: **{a.test_name}**, sha256 `{prov['test_sha256']}`\n- python", 1) + controls.get(label, {}).get("md", "") for label, r in results)
     out = Path(a.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     safe = lambda t: "".join(c if c.isalnum() or c in "-_." else "_" for c in t)
@@ -55,7 +72,7 @@ def train_test(a, argv) -> int:
     def strip(r):
         return {**r, "models": {m: {k: v for k, v in d.items() if k not in ("truth", "pred", "conf", "second", "conf2", "group")} for m, d in r["models"].items()}}
 
-    (out / f"{stem}.json").write_text(json.dumps({"provenance": prov, "runs": [{"name": n, **strip(r)} for n, r in results]}, indent=1), encoding="utf-8")
+    (out / f"{stem}.json").write_text(json.dumps({"provenance": prov, "runs": [{"name": n, **strip(r), **({"controls": controls[n]["json"]} if n in controls else {})} for n, r in results]}, indent=1), encoding="utf-8")
     print(body)
     print(f"wrote {out / (stem + '.md')} and {out / (stem + '.json')}")
     if a.results_md:
@@ -121,9 +138,10 @@ def main(argv=None) -> int:
     except (DatasetError, AlphabetError, FoldError, ev.EvaluationError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
+    controls = controls_section(results, takes, alphabet, a.min_confidence)
     text = []
     for label, r in results:
-        text.append(f"## {label}\n\n" + ev.markdown(r, prov, a.min_confidence))
+        text.append(f"## {label}\n\n" + ev.markdown(r, prov, a.min_confidence) + controls.get(label, {}).get("md", ""))
     body = "\n".join(text)
     out = Path(a.out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -134,7 +152,7 @@ def main(argv=None) -> int:
     def strip(r):  # raw per-sample arrays make the JSON large; the metrics are what matter
         return {**r, "models": {m: {k: v for k, v in d.items() if k not in ("truth", "pred", "conf", "second", "conf2", "group")} for m, d in r["models"].items()}}
 
-    js_path.write_text(json.dumps({"provenance": prov, "runs": [{"name": n, **strip(r)} for n, r in results]}, indent=1), encoding="utf-8")
+    js_path.write_text(json.dumps({"provenance": prov, "runs": [{"name": n, **strip(r), **({"controls": controls[n]["json"]} if n in controls else {})} for n, r in results]}, indent=1), encoding="utf-8")
     print(body)
     print(f"wrote {md_path} and {js_path}")
     if a.results_md:

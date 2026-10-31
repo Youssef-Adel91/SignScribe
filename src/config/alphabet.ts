@@ -32,8 +32,12 @@ export interface AlphabetConfig {
  */
 export const REJECT_LABEL = 'none';
 
-export type ControlName = 'space' | 'delete' | 'finish';
-const CONTROL_NAMES: readonly ControlName[] = ['space', 'delete', 'finish'];
+/**
+ * What a control class does: start a new word (space), take the last letter back (delete), go back / cancel (cancel), finish (done).
+ * The old name 'finish' is read as 'done'.
+ */
+export type ControlName = 'space' | 'delete' | 'cancel' | 'done';
+const CONTROL_NAMES: readonly ControlName[] = ['space', 'delete', 'cancel', 'done'];
 
 const files = import.meta.glob<Partial<AlphabetConfig>>('../../config/alphabets/*.json', {
   eager: true,
@@ -57,11 +61,14 @@ export function parseAlphabet(raw: Partial<AlphabetConfig>, fallbackId: string):
   for (const [cls, what] of Object.entries(rawControls)) {
     if (!all.includes(cls))
       throw new Error(`alphabet "${fallbackId}": control class "${cls}" is not a label`);
-    if (!CONTROL_NAMES.includes(what as ControlName))
+    const action = what === 'finish' ? 'done' : what; // the old name
+    if (!CONTROL_NAMES.includes(action as ControlName))
       throw new Error(
-        `alphabet "${fallbackId}": control "${String(what)}" is not one of space, delete, finish`,
+        `alphabet "${fallbackId}": control "${String(what)}" is not one of ${CONTROL_NAMES.join(', ')}`,
       );
-    controls[cls] = what as ControlName;
+    if (Object.values(controls).includes(action as ControlName))
+      throw new Error(`alphabet "${fallbackId}": two classes do the control "${action}"`);
+    controls[cls] = action as ControlName;
   }
   const script = (raw as { script?: unknown }).script;
   return {
@@ -78,8 +85,17 @@ export function parseAlphabet(raw: Partial<AlphabetConfig>, fallbackId: string):
   };
 }
 
+/** `?alphabet=arsl` picks the active alphabet from the address (the collection page and the tools in the browser) */
+function fromAddress(): string | undefined {
+  try {
+    return new URLSearchParams(window.location.search).get('alphabet') ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function loadAlphabet(name?: string): AlphabetConfig {
-  const wanted = name ?? import.meta.env.VITE_ALPHABET ?? active.active;
+  const wanted = name ?? fromAddress() ?? import.meta.env.VITE_ALPHABET ?? active.active;
   const hit = Object.entries(files).find(([path]) => path.endsWith(`/${wanted}.json`));
   if (!hit)
     throw new Error(
@@ -153,3 +169,29 @@ export function dropLastGlyph(a: AlphabetConfig, word: string): string {
 
 /** does this text contain a letter nobody has confirmed yet? (the person must not be sent it as if it were a word) */
 export const hasUnconfirmed = (text: string): boolean => text.includes(UNCONFIRMED_OPEN);
+
+/* ---------- controls: commands given as classes, not letters ---------- */
+
+/**
+ * STATIC controls are classes in `static`: a hand shape held, classified by the letter model like a letter and trained from our own
+ * takes. DYNAMIC controls are classes in `dynamic`: a stroke drawn with the index fingertip, matched with the $1 recogniser against
+ * templates recorded through the collection page. Which is which is decided only by the list the class is in.
+ */
+export function controlKind(a: AlphabetConfig, classId: string): 'static' | 'dynamic' | null {
+  if (a.controls[classId] === undefined) return null;
+  return a.static.includes(classId) ? 'static' : 'dynamic';
+}
+
+/** the letters of an alphabet: every label that is not a control class */
+export const letterLabels = (a: AlphabetConfig): string[] =>
+  [...a.static, ...a.dynamic].filter((l) => a.controls[l] === undefined);
+
+/** the control classes of an alphabet, with their action and kind */
+export const controlClasses = (
+  a: AlphabetConfig,
+): { classId: string; action: ControlName; kind: 'static' | 'dynamic' }[] =>
+  Object.entries(a.controls).map(([classId, action]) => ({
+    classId,
+    action,
+    kind: controlKind(a, classId)!,
+  }));

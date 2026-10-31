@@ -123,6 +123,9 @@ describe('1. what the debug overlay shows', () => {
       tracingMotion: false,
       debug: {
         state: 'moving',
+        source: 'none',
+        decided: '',
+        score: 0,
         speed: 1.5,
         stillCount: 0,
         stillFrames: 4,
@@ -156,6 +159,9 @@ describe('1. what the debug overlay shows', () => {
             tracingMotion: false,
             debug: {
               state: 'x',
+              source: 'none',
+              decided: '',
+              score: 0,
               speed: 0,
               stillCount: 0,
               stillFrames: 0,
@@ -193,6 +199,9 @@ describe('1. what the debug overlay shows', () => {
           tracingMotion: false,
           debug: {
             state: 'holding',
+            source: 'letter-model',
+            decided: 'ain',
+            score: 0.97,
             speed: 0.12,
             stillCount: 9,
             stillFrames: 5,
@@ -416,7 +425,11 @@ describe('3. a command has priority over a letter', () => {
     expect(
       commandState(vui({ command: { label: 'fist', progress: 0.3 } }), [], 'right', 1000).active,
     ).toBe(true);
-    expect(commandState(vui(), ['DELETE'], 'right', 1000)).toEqual({ active: true, fired: true });
+    expect(commandState(vui(), ['DELETE'], 'right', 1000)).toMatchObject({
+      active: true,
+      fired: true,
+      label: 'DELETE',
+    });
     expect(commandState(null, ['SPACE'], 'right', 1000).fired).toBe(true);
     // right-handed signer: the zone is the mirrored left, x <= 40% of the screen
     expect(commandState(vui({ pointer: { x: 200, y: 300 } }), [], 'right', 1000).active).toBe(true);
