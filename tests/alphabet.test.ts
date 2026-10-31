@@ -26,7 +26,7 @@ describe('alphabet config', () => {
   it('rejects empty sets, repeated labels and multi-character labels', () => {
     expect(() => parseAlphabet({}, 'x')).toThrow(/no labels/);
     expect(() => parseAlphabet({ static: ['A', 'A'] }, 'x')).toThrow(/twice/);
-    expect(() => parseAlphabet({ static: ['AB'] }, 'x')).toThrow(/single character/);
+    expect(() => parseAlphabet({ static: ['a b'] }, 'x')).toThrow(/1 to 16 characters/);
     expect(() => loadAlphabet('nope')).toThrow(/no alphabet "nope"/);
   });
   it('a take is checked against the alphabet, and person/source are optional non-empty strings', () => {

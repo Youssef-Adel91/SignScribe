@@ -13,6 +13,10 @@ export interface AlphabetConfig {
   static: string[];
   dynamic: string[];
   aliases: Record<string, string>;
+  /** label -> the letter to show a person, only where it is certain */
+  display: Record<string, string | null>;
+  /** open questions the team still has to answer (see config/alphabets/arsl.json) */
+  todo: unknown[];
 }
 
 const files = import.meta.glob<Partial<AlphabetConfig>>('../../config/alphabets/*.json', {
@@ -27,8 +31,11 @@ export function parseAlphabet(raw: Partial<AlphabetConfig>, fallbackId: string):
   if (all.length === 0) throw new Error(`alphabet "${fallbackId}" has no labels`);
   if (new Set(all).size !== all.length)
     throw new Error(`alphabet "${fallbackId}" lists a label twice`);
-  if (all.some((l) => typeof l !== 'string' || [...l].length !== 1))
-    throw new Error(`alphabet "${fallbackId}": every label must be a single character`);
+  // a label is one letter (ASL: "A") or a short name without spaces (ArSL21L: "ain")
+  if (all.some((l) => typeof l !== 'string' || l.length < 1 || l.length > 16 || /\s/.test(l)))
+    throw new Error(
+      `alphabet "${fallbackId}": every label must be 1 to 16 characters without spaces`,
+    );
   return {
     id: raw.id ?? fallbackId,
     name: raw.name ?? fallbackId,
@@ -36,6 +43,8 @@ export function parseAlphabet(raw: Partial<AlphabetConfig>, fallbackId: string):
     static: stat,
     dynamic: dyn,
     aliases: raw.aliases ?? {},
+    display: raw.display ?? {},
+    todo: raw.todo ?? [],
   };
 }
 

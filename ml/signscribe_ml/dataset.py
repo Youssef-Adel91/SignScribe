@@ -29,6 +29,9 @@ class Take:
     # sub-dataset). Used to hold whole groups out when testing. None when the dataset does not say.
     person: str | None = None
     source: str | None = None
+    # True when the person was under 18 (set by the importer from an age in the file name; the age itself is never stored).
+    # Used only so that evaluation can report such persons as counts and never show a result for one of them.
+    minor: bool | None = None
 
 
 def _check(cond, msg, line):
@@ -46,10 +49,11 @@ def parse_take(raw: dict, line: int = 0, labels=None) -> Take:
     _check(raw["kind"] in ("static", "dynamic"), "kind must be 'static' or 'dynamic'", line)
     _check(raw["hand"] in ("left", "right"), "hand must be 'left' or 'right'", line)
     _check(
-        isinstance(raw["label"], str) and len(raw["label"]) == 1 and raw["label"] in labels,
+        isinstance(raw["label"], str) and raw["label"] in labels,
         f"label must be one letter of the alphabet ({' '.join(labels)})",
         line,
     )
+    _check("minor" not in raw or isinstance(raw["minor"], bool), "'minor' must be true or false", line)
     for opt in ("person", "source"):
         _check(opt not in raw or (isinstance(raw[opt], str) and raw[opt].strip() != ""), f"'{opt}' must be a non-empty string", line)
     _check(raw["width"] > 0 and raw["height"] > 0, "width and height must be positive", line)
@@ -71,7 +75,7 @@ def parse_take(raw: dict, line: int = 0, labels=None) -> Take:
         id=str(raw["id"]), label=raw["label"], kind=raw["kind"], signer=str(raw["signer"]),
         session=str(raw["session"]), hand=raw["hand"], width=float(raw["width"]), height=float(raw["height"]),
         synthetic=bool(raw.get("synthetic", False)), frames=frames,
-        person=raw.get("person"), source=raw.get("source"),
+        person=raw.get("person"), source=raw.get("source"), minor=raw.get("minor"),
     )
 
 

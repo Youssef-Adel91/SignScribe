@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Import a folder of labelled pictures (one sub-folder per letter) as takes of MediaPipe hand landmarks.
+"""Import a folder of labelled pictures as takes of MediaPipe hand landmarks: one sub-folder per letter, or a flat folder whose
+file names carry the label (--label-regex).
 
     python ml/import_images.py --images path/to/dataset --out data/asl.jsonl --dataset-name ASL-Alphabet \\
         --source asl-alphabet-train [--person-regex '(?P<person>user\\d+)']
@@ -27,7 +28,10 @@ def main(argv=None, detector=None) -> int:
     ap.add_argument("--alphabet", help="config/alphabets/<name>.json (default: the active one)")
     ap.add_argument("--dataset-name", default="", help="name of the dataset (goes into the take ids and the report)")
     ap.add_argument("--source", help="which recording/sub-dataset these pictures come from (default: the folder name). Used to hold a source out when the dataset has no person ids")
-    ap.add_argument("--person-regex", help="regular expression applied to each picture's path inside --images (e.g. 'A/user3_001.jpg'); its group `person` (or group 1) is the person id")
+    ap.add_argument("--person-regex", help="regular expression searched in each picture's path inside --images (for a flat folder: the file name, e.g. '1001_46_F_ain_0.jpg'); its group `person` (or group 1) is the person id")
+    ap.add_argument("--label-regex", help="for a FLAT folder (or any tree): read each picture's label from its file name with this regular expression (group `label`, else group 1), so nothing has to be moved. Without it each sub-folder is one label")
+    ap.add_argument("--age-regex", help="searched in the same path as --person-regex; group `age` (or group 1) is the person's age in years. Only used to mark persons under --minor-below: the age is not stored")
+    ap.add_argument("--minor-below", type=int, default=18, help="age under which a person is marked `minor` (default 18)")
     ap.add_argument("--hand", default="right", choices=["right", "left"], help="the signing hand in these pictures (mixed datasets: use right and train with --augment mirror)")
     ap.add_argument("--model", default=str(DEFAULT_MODEL), help="hand_landmarker.task")
     ap.add_argument("--min-confidence", type=float, default=0.5)
@@ -47,11 +51,11 @@ def main(argv=None, detector=None) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 2
     if not alphabet.reviewed:
-        print(f"warning: alphabet '{alphabet.id}' is a template that nobody has checked against a dataset yet", file=sys.stderr)
+        print(f"warning: alphabet '{alphabet.id}' is not reviewed yet (see its 'todo' in config/alphabets/{alphabet.id}.json)", file=sys.stderr)
     det = detector or images.MediaPipeDetector(a.model, a.min_confidence)
     source = a.source or root.resolve().name
     try:
-        takes, stats = images.import_folder(root, alphabet, det, source, a.hand, a.person_regex, a.dataset_name)
+        takes, stats = images.import_folder(root, alphabet, det, source, a.hand, a.person_regex, a.dataset_name, label_regex=a.label_regex, age_regex=a.age_regex, minor_below=a.minor_below)
         detector_text = det.describe() if hasattr(det, "describe") else "custom detector"
     finally:
         if hasattr(det, "close"):
