@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { createServer as createTcp } from 'node:net';
 import { WebSocketServer } from 'ws';
-import { LIMITS } from '../src/nlp/protocol.ts';
+import { LIMITS, type ContextPush } from '../src/nlp/protocol.ts';
 import { loadConfig, type Config } from './config.ts';
 import { RateLimiter, both, handleMessage } from './handler.ts';
 import { AnthropicProvider, FakeProvider, type SentenceProvider } from './llm.ts';
@@ -74,11 +74,23 @@ export async function start(
     verifyClient: ({ origin }: { origin?: string }) =>
       config.origins.includes('*') || (!!origin && config.origins.includes(origin)),
   });
+  const pushContext = (socket: import('ws').WebSocket, p = presence.current()) => {
+    if (socket.readyState !== socket.OPEN) return;
+    const msg: ContextPush = { type: 'context', userId: p.userId, place: p.place, demo: p.demo };
+    socket.send(JSON.stringify(msg));
+  };
+  // every connected app hears about a change at once; a new app hears the current state when it connects
+  presence.subscribe((p) => {
+    for (const c of wss.clients) pushContext(c, p);
+  });
+  const expiry = setInterval(() => presence.tick(), 1000);
+  expiry.unref();
   wss.on('connection', (socket) => {
     if (open() > config.maxConnections) {
       socket.close(1013, 'server busy'); // 1013: try again later
       return;
     }
+    if (presence.current().userId || presence.current().place) pushContext(socket);
     const limiter = both(new RateLimiter(config.rateLimit), globalLimiter);
     socket.on('message', (data) => {
       void handleMessage(data.toString(), service, limiter, Date.now(), { presence }).then(
@@ -149,6 +161,7 @@ export async function start(
     wsPort,
     tcpPort,
     async close() {
+      clearInterval(expiry);
       for (const c of wss.clients) c.terminate();
       for (const s of sockets) s.destroy();
       await new Promise<void>((r) => wss.close(() => r()));

@@ -105,6 +105,11 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | `presence` message: strict fields, validation, own rate limit, memory-only store with 15 s expiry | verified here (real TCP socket) | `tests/presence.test.ts` |
 | A device address or name never reaches a log line, a message, or the server | verified here | `tools/bluetooth/test_ble.py`, `tests/presence.test.ts` |
 | Bleak scan on a real adapter with real devices | needs real hardware | `python tools/bluetooth/scan.py -v` |
+| Server pushes who/where to every connected app (also to a late one, and when a presence expires) | verified here (real WebSocket + TCP) | `tests/presence.test.ts` |
+| App loads the detected place and the person's saved settings before the message starts; shows who/where on every screen | verified here | `tests/bluetooth-context.test.ts`, `npm run e2e:context` |
+| Visible override by point-and-hold; choosing a place yourself wins; ignore restores place and settings | verified here (synthetic hand) | `tests/bluetooth-context.test.ts`, `npm run e2e:context` |
+| No Bluetooth / no scanner / no server: the app behaves as before | verified here | `npm run e2e:context` |
+| Override with a real camera and hand | needs my camera | screens 1-5, 14 |
 | FAKE device for demos, labelled in the banner and in every message | verified here | `scan.py --fake` |
 
 ## Phase 5 (picture cards; no detector)

@@ -22,6 +22,7 @@ Camera bugs go in docs/KNOWN_ISSUES.md; do not fix them unless they block the ph
     npm run e2e        # needs a build; flow driven by synthetic hands (43 checks)
     npm run layout     # needs a build; 78 screen/size combos
     npm run e2e:study | e2e:collect | e2e:cards | e2e:server   # study session / collection mode in a browser (synthetic hands)
+    npm run e2e:context  # fake Bluetooth scanner -> server -> app (needs a build)
     npm run ml:test    # Python tests for ml/ (pip install -r ml/requirements.txt)
     npm run compare    # needs a build; screens next to Figma exports (tools/compare/out)
 
