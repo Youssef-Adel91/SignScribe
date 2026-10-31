@@ -83,6 +83,13 @@ python ml/evaluate.py --data ml\data\aslad.jsonl ml\data\arsl_dataset_csv.jsonl 
   --dataset-name "ASLAD-96K + ArSL_dataset" --dataset-version "as published" --results-md docs\MODEL_RESULTS.md
 ```
 
+Guards and extras (all opt-in or automatic refusals):
+- **Class coverage**: leave-one-source-out (and session) is refused when a held-out source has classes the training sources do not (that is how an "13%" was produced from two files that cover 21 and 32 classes). Add `--shared-classes` to evaluate only on the classes every source has; the report states which ones were dropped.
+- **Suffix classes** in ASLAD (`haa+`, `haa++` ...): skipped and counted by default. Once you confirm what they are, `import_landmarks_csv.py ... --strip-class-suffix "\++$"` imports them as the base class (only names that are not in the alphabet and whose stripped form is).
+- **Your own webcam takes as a test only**: `python ml/evaluate.py --train ml/data/arsl21l.jsonl --test my-takes.jsonl --test-name "team webcam" --alphabet arsl`.
+- **Browser model**: `python ml/export_mlp.py --data ml/data/arsl21l.jsonl --alphabet arsl --out ml/reports/letters-mlp.json` (trains on all persons; do not copy ArSL models into `public/models/` yet).
+- **Clean `docs/MODEL_RESULTS.md`**: `python ml/results_md.py docs/MODEL_RESULTS.md --list`, then `--remove "TEXT IN THE TITLE"` for a section that is not a valid result.
+
 Linux and macOS: the same commands with `\` instead of the backtick, `/` in paths, `head -n 2 FILE` instead of `Get-Content`, and `python3 -m venv .venv && . .venv/bin/activate`.
 
 What the three files need, as checked on the real files:
