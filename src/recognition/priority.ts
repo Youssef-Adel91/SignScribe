@@ -28,16 +28,21 @@ export function commandState(
   signing: Hand,
   viewportW: number,
 ): CommandState {
-  const fired = eventTypes.some((e) => COMMAND_EVENTS.has(e));
-  if (!ui) return { active: fired, fired };
+  const firedType = eventTypes.find((e) => COMMAND_EVENTS.has(e));
+  const fired = firedType !== undefined;
+  if (!ui) return { active: fired, fired, ...(fired ? { label: firedType, score: 1 } : {}) };
   const holding = ui.command.label !== null || ui.command.progress > 0;
-  const zoneHand = ui.handViews.some((h) => h.inZone && h.gesture !== 'none');
+  const zoneHand = ui.handViews.find((h) => h.inZone && h.gesture !== 'none');
   let pointerInZone = false;
   if (ui.pointer && viewportW > 0) {
     const x = ui.pointer.x / viewportW;
     pointerInZone = zoneSide(signing) === 'left' ? x <= ZONE_EDGE : x >= 1 - ZONE_EDGE;
   }
-  return { active: fired || holding || zoneHand || pointerInZone, fired };
+  const active = fired || holding || zoneHand !== undefined || pointerInZone;
+  // which old rule gesture it is and how sure the gesture engine is: shown in the debug overlay and its log
+  const label = ui.command.label ?? zoneHand?.gesture ?? (pointerInZone ? 'pointer' : firedType);
+  const score = zoneHand ? zoneHand.confidence : fired ? 1 : 0;
+  return { active, fired, ...(active && label ? { label, score } : {}) };
 }
 
 const LETTER_EVENTS = new Set(['LETTER_CANDIDATE', 'LETTER_CONFIRMED']);

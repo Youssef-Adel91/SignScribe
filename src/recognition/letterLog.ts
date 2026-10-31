@@ -9,6 +9,9 @@ export interface LogRow {
   t: number;
   screen: number;
   state: string;
+  source: string;
+  decided: string;
+  score: number;
   speed: number;
   stillCount: number;
   stillFrames: number;
@@ -28,6 +31,9 @@ export const LOG_HEAD = [
   't_ms',
   'screen',
   'state',
+  'decided_by',
+  'decided',
+  'score',
   'speed_palm_per_s',
   'still_count',
   'still_frames_needed',
@@ -75,6 +81,9 @@ export class LetterLog {
         Math.round(r.t),
         r.screen,
         r.state,
+        r.source,
+        r.decided,
+        r.score.toFixed(3),
         r.speed.toFixed(3),
         r.stillCount,
         r.stillFrames,
@@ -112,6 +121,9 @@ export function rowOf(
     t,
     screen,
     state: ui.debug.state,
+    source: ui.debug.source,
+    decided: ui.debug.decided,
+    score: ui.debug.score,
     speed: ui.debug.speed,
     stillCount: ui.debug.stillCount,
     stillFrames: ui.debug.stillFrames,

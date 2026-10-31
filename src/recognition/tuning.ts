@@ -30,6 +30,10 @@ export interface LetterTuning {
   commandHoldoffMs: number;
   /** how often the shown guess is refreshed (ms) */
   refreshMs: number;
+  /** a control class (space, done) must be held this long (ms) before it acts: a command should be quicker than a letter */
+  controlHoldMs: number;
+  /** $1 score needed for a drawn stroke (J, Z, delete, cancel) to count */
+  motionMinScore: number;
 }
 
 export type ModelType = 'knn' | 'mlp';
@@ -47,6 +51,8 @@ const KNN: LetterTuning = {
   stillFrames: 4,
   commandHoldoffMs: 600,
   refreshMs: 150,
+  controlHoldMs: 500,
+  motionMinScore: 0.6,
 };
 
 /** a softmax is much more confident than a vote share, also on poses it has never seen: stricter by default, and a longer hold */
@@ -83,6 +89,8 @@ export const RANGES: Record<keyof LetterTuning, [number, number]> = {
   stillFrames: [1, 30],
   commandHoldoffMs: [0, 3000],
   refreshMs: [50, 1000],
+  controlHoldMs: [100, 3000],
+  motionMinScore: [0.3, 0.99],
 };
 export const TUNING_KEYS = Object.keys(RANGES) as (keyof LetterTuning)[];
 

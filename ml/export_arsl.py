@@ -5,6 +5,7 @@
 
         public/models/letters-arsl-mlp.json   (ml/export_mlp.py)
         public/models/letters-arsl-knn.json   (ml/train_knn.py)
+        public/models/motion-arsl-dollar.json (ml/train_dollar.py, only when the takes hold dynamic ones: the dynamic controls)
 
 Each file can also be made alone (docs/MODEL_HANDOFF.md):
 
@@ -23,8 +24,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 import export_mlp  # noqa: E402
+import train_dollar  # noqa: E402
 import train_knn  # noqa: E402
 import validate_model  # noqa: E402
+from signscribe_ml.alphabet import load_alphabet  # noqa: E402
+from signscribe_ml.dataset import read_takes  # noqa: E402
 
 
 def main(argv=None) -> int:
@@ -47,6 +51,19 @@ def main(argv=None) -> int:
     r = train_knn.main(["--data", a.data, "--out", str(knn_path), "--max-per-class", str(a.max_per_class), *common])
     if r:
         return r
+    # the dynamic controls (strokes of the index fingertip) are matched with $1: a third file, only if there are such takes
+    takes, _ = read_takes(a.data, load_alphabet(a.alphabet).labels)
+    if any(t.kind == "dynamic" for t in takes):
+        motion_path = out / f"motion-{a.alphabet}-dollar.json"
+        r = train_dollar.main(["--data", a.data, "--out", str(motion_path), "--alphabet", a.alphabet] + (["--allow-synthetic"] if a.allow_synthetic else []))
+        if r:
+            return r
+        m = json.loads(motion_path.read_text(encoding="utf-8"))
+        known = set(load_alphabet(a.alphabet).dynamic)
+        stranger = [t["label"] for t in m["templates"] if t["label"] not in known]
+        if stranger:
+            print(f"error: {motion_path}: template '{stranger[0]}' is not a dynamic class of the {a.alphabet} alphabet", file=sys.stderr)
+            return 1
     labels = {}
     for path in (mlp_path, knn_path):
         m = json.loads(path.read_text(encoding="utf-8"))

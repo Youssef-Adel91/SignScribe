@@ -3,7 +3,7 @@
   "name": "ArSL21L classes (32), NOT reviewed",
   "script": "arabic",
   "reviewed": false,
-  "note": "The labels are the 32 class names of the ArSL21L dataset (which the ASLAD landmark CSV uses too). 'display' is the Arabic letter to show a person and is filled in ONLY where the mapping is not in doubt; null = the team has to decide (see 'todo'). 'aliases' maps other spellings, and the Arabic letters that are certain, to a label. Letters of another dataset that cannot be resolved here (for example ت ط ة ه ح ي ى ظ ض, or Space, Delete, Finish) are skipped and counted by the importers, never guessed. 'dynamic' stays empty until the team confirms which letters are drawn in the air; every picture and landmark in these datasets is a still sign. The names of ArSL_dataset.csv (3ayn, 9af, Chin, Kaf ...) are aliases of the ArSL21L ids ONLY where the Arabic letter is certain from the name and the id for that letter is not in the todo. 7a2, Ha2, DDad, TTa2, TTha2, Ta2 and Ya2 have a clear Arabic letter but would land in an undecided id family (see todo), so they stay unmapped; Space, Delete and Finish are not letters.",
+  "note": "The labels are the 32 class names of the ArSL21L dataset (which the ASLAD landmark CSV uses too). 'display' is the Arabic letter to show a person and is filled in ONLY where the mapping is not in doubt; null = the team has to decide (see 'todo'). 'aliases' maps other spellings, and the Arabic letters that are certain, to a label. Letters of another dataset that cannot be resolved here (for example ت ط ة ه ح ي ى ظ ض, or Space, Delete, Finish) are skipped and counted by the importers, never guessed. 'dynamic' stays empty until the team confirms which letters are drawn in the air; every picture and landmark in these datasets is a still sign. The names of ArSL_dataset.csv (3ayn, 9af, Chin, Kaf ...) are aliases of the ArSL21L ids ONLY where the Arabic letter is certain from the name and the id for that letter is not in the todo. 7a2, Ha2, DDad, TTa2, TTha2, Ta2 and Ya2 have a clear Arabic letter but would land in an undecided id family (see todo), so they stay unmapped; Space, Delete and Finish are not letters. CONTROLS: ctl_space, ctl_done (static: a hand shape held, classified by the letter model like a letter, trained from our own takes) and ctl_delete, ctl_cancel (dynamic: a stroke drawn with the index fingertip, matched with the $1 recogniser against templates recorded through the collection page). They are commands, not letters: the app never writes them and they are not in the letter lists. Which hand shape and which stroke each one is has NOT been decided: the team records them (docs/CONTROLS.md). The assignment of the four actions to static or dynamic is a first decision and is changed by moving the class between 'static' and 'dynamic' and re-recording.",
   "static": [
     "ain",
     "al",
@@ -36,9 +36,11 @@
     "waw",
     "ya",
     "yaa",
-    "zay"
+    "zay",
+    "ctl_space",
+    "ctl_done"
   ],
-  "dynamic": [],
+  "dynamic": ["ctl_delete", "ctl_cancel"],
   "aliases": {
     "ع": "ain",
     "ال": "al",
@@ -122,81 +124,59 @@
   },
   "todo": [
     {
-      "classes": [
-        "ta",
-        "taa",
-        "toot"
-      ],
+      "classes": ["ta", "taa", "toot"],
       "question": "Which Arabic letter is each of ta, taa and toot? Candidates: ت (taa), ط (Taa), ة (taa marbuta). The dataset's own class list or the people who made it must say."
     },
     {
-      "classes": [
-        "ha",
-        "haa"
-      ],
+      "classes": ["ha", "haa"],
       "question": "Which is ه (haa) and which is ح (Haa)? Not decided."
     },
     {
-      "classes": [
-        "ya",
-        "yaa"
-      ],
+      "classes": ["ya", "yaa"],
       "question": "Which is ي and which is ى (alef maksura)? Not decided."
     },
     {
-      "classes": [
-        "dha",
-        "dhad"
-      ],
+      "classes": ["dha", "dhad"],
       "question": "Probably ظ and ض, but the order is not checked against the dataset: confirm before showing them."
     },
     {
-      "classes": [
-        "al",
-        "la"
-      ],
+      "classes": ["al", "la"],
       "question": "Ligatures (ال and لا): two letters in one sign. Decide how the app should write them (they are two characters)."
     },
     {
       "dataset": "ArSL_dataset.csv",
-      "classes": [
-        "7a2",
-        "Ha2"
-      ],
+      "classes": ["7a2", "Ha2"],
       "question": "By the usual Arabic chat spelling 7a2 is ح and Ha2 is ه, but which of ArSL21L's ha and haa is which letter is undecided, so neither is mapped."
     },
     {
       "dataset": "ArSL_dataset.csv",
-      "classes": [
-        "Ta2",
-        "TTa2",
-        "toot"
-      ],
+      "classes": ["Ta2", "TTa2", "toot"],
       "question": "Ta2 is ت and TTa2 is ط by name; which of ArSL21L's ta, taa and toot is ت, ط and ة is undecided, so none is mapped."
     },
     {
       "dataset": "ArSL_dataset.csv",
-      "classes": [
-        "TTha2",
-        "DDad"
-      ],
+      "classes": ["TTha2", "DDad"],
       "question": "TTha2 is ظ and DDad is ض by name; which of ArSL21L's dha and dhad is which is not checked, so neither is mapped."
     },
     {
       "dataset": "ArSL_dataset.csv",
-      "classes": [
-        "Ya2"
-      ],
+      "classes": ["Ya2"],
       "question": "Ya2 is ي, but ArSL21L has ya and yaa (ي and ى?); undecided, so it is not mapped."
     },
     {
       "dataset": "ArSL_dataset.csv",
-      "classes": [
-        "Space",
-        "Delete",
-        "Finish"
-      ],
+      "classes": ["Space", "Delete", "Finish"],
       "question": "Not letters (editing signs of that dataset). Skipped and counted by the importer until the team decides whether to use them."
+    },
+    {
+      "classes": ["ctl_space", "ctl_done", "ctl_delete", "ctl_cancel"],
+      "question": "Which hand shape (space, done) and which index-fingertip stroke (delete, cancel) does the team use, and is the static / dynamic split right? Decide, record at least 5 takes per person from several people (collection page, Controls), then evaluate."
     }
-  ]
+  ],
+  "controls": {
+    "ctl_space": "space",
+    "ctl_done": "done",
+    "ctl_delete": "delete",
+    "ctl_cancel": "cancel"
+  }
 }

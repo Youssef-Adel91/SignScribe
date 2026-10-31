@@ -21,7 +21,7 @@ CLASSES = "ain al aleff bb dal dha dhad fa gaaf ghain ha haa jeem kaaf khaa la l
 
 # ---------------------------------------------------------------- the alphabet
 def test_arsl_has_the_32_dataset_classes_and_is_marked_unreviewed_with_open_questions():
-    assert ARSL.static == tuple(CLASSES) and len(ARSL.labels) == 32 and ARSL.dynamic == ()
+    assert tuple(l for l in ARSL.static if l not in ARSL.controls) == tuple(CLASSES) and len(ARSL.letters) == 32 and ARSL.dynamic == ("ctl_delete", "ctl_cancel")
     assert ARSL.reviewed is False
     todo = {c for t in ARSL.todo for c in t["classes"]}
     assert {"ta", "taa", "toot", "ha", "haa", "ya", "yaa"} <= todo

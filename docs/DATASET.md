@@ -28,6 +28,9 @@ A take is one short recording of one letter by one person: a few dozen frames of
 | `minor` | optional. `true` when the person was under 18, set by `import_images.py --age-regex`. **The age is never stored**, and evaluation only counts such persons: it never shows a result for one of them |
 | `synthetic` | `true` only for generated test data (and for takes made with the mock camera). Training refuses it without `--allow-synthetic` |
 
+## Control takes and the person id
+Takes of the ArSL controls (`ctl_space`, `ctl_done` static; `ctl_delete`, `ctl_cancel` dynamic: `docs/CONTROLS.md`) are ordinary takes with those labels. Since the Controls box of the collection page was added, **every take from the collection page carries `person` = the signer code**, so `evaluate.py` holds whole people out (leave-one-person-out) also for takes recorded here, next to imported datasets that have person ids.
+
 ## The "none" class (not a letter)
 A model that must answer with one of 32 letters calls every pose a letter, also a hand on its way or a relaxed hand. So the collection mode (`/?collect=1`, "No letter" box) also records takes with `label: "none"` and a `tag`: `moving` (the hand moving), `relaxed` (a relaxed hand), `command-zone` (a hand in the command zone) or `other`. They are static takes like the others, one file, and they are not in any alphabet file. The tools accept the label (`ml/signscribe_ml/dataset.py`, `src/collect/dataset.ts`), train it as one more class, and a model that answers `none` is shown as nothing. A `none` take is a take of a person: the same rules about not committing data apply.
 

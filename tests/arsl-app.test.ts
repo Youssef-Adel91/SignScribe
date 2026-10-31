@@ -227,8 +227,13 @@ describe('3. right to left text, chrome stays left to right', () => {
 });
 
 describe('4. control classes exist only when the alphabet file lists them', () => {
-  it('ArSL lists none, so Space / Delete / Done stay hand gestures', () => {
-    expect(arsl.controls).toEqual({});
+  it('ArSL lists four controls, two static and two dynamic; ASL lists none (hand gestures only)', () => {
+    expect(arsl.controls).toEqual({
+      ctl_space: 'space',
+      ctl_done: 'done',
+      ctl_delete: 'delete',
+      ctl_cancel: 'cancel',
+    });
     expect(asl.controls).toEqual({});
   });
   it('a file may list them; the class must be one of its labels and the action a known one', () => {
@@ -241,7 +246,7 @@ describe('4. control classes exist only when the alphabet file lists them', () =
       /not a label/,
     );
     expect(() => parseAlphabet({ static: ['a', 'b'], controls: { a: 'jump' } }, 'c')).toThrow(
-      /space, delete, finish/,
+      /space, delete, cancel, done/,
     );
   });
   it('a class not listed as a control is written as a letter, never as a command', () => {

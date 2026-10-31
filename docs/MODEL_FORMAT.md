@@ -33,7 +33,9 @@ Forward pass: standardise, `x*w + b` per layer, ReLU between layers (not after t
 
 **Confidence is the softmax probability of the best letter.** That is a different kind of number from the k-NN vote share. The `LETTER` thresholds in `letterController.ts` were set for the k-NN and have **not** been tuned for this model: with a real camera, check them (Step 5 of `docs/MODEL_HANDOFF.md`) before trusting them.
 
-## `motion-dollar.json` (signs that move)
+## `motion-dollar.json` / `motion-arsl-dollar.json` (signs that move)
+ASL: `motion-dollar.json` (J, Z). ArSL: `motion-arsl-dollar.json`, whose templates are the dynamic **controls** (`ctl_delete`, `ctl_cancel`): strokes of the index fingertip. Any other alphabet `<id>`: `motion-<id>-dollar.json`. The browser refuses templates whose label the alphabet does not have.
+
 `type: "dollarP"`, `landmark` (which landmark's path, default 8 = index tip), `n` (points after resampling, 32), `templates` (`label` + recorded path). The algorithm is the one in `dollarpy` (the $P point-cloud recognizer used in the labs): resample, scale to a unit box, centre, greedy cloud matching; score `(2 - distance) / 2`, clamped at 0. Ported to Python (`ml/signscribe_ml/dollar.py`, tested against `dollarpy` itself) and TypeScript (`src/recognition/dollarP.ts`, tested against the Python golden file).
 
 ## `meta.evaluation` and the `.report.md`

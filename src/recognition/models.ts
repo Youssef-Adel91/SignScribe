@@ -34,6 +34,12 @@ function checkLabels(labels: readonly string[], a: AlphabetConfig): void {
 }
 export const MOTION_MODEL_URL = `${import.meta.env.BASE_URL}models/motion-dollar.json`;
 
+/** the $1 model of an alphabet: ASL keeps motion-dollar.json (J, Z); every other alphabet has motion-<id>-dollar.json (ArSL: the dynamic controls) */
+export const motionModelUrl = (alphabetId: string): string =>
+  alphabetId === 'asl'
+    ? MOTION_MODEL_URL
+    : `${import.meta.env.BASE_URL}models/motion-${alphabetId}-dollar.json`;
+
 export interface LoadedModels {
   letters: {
     status: ModelStatus;
@@ -129,10 +135,11 @@ export async function loadModels(
 ): Promise<LoadedModels> {
   const out = noModels();
   out.letters = await loadLetters(f, alphabetId);
-  // the motion model draws J and Z: an alphabet with no moving letters has none
-  if (getAlphabet(alphabetId).dynamic.length === 0) return out;
+  // the motion model holds the drawn signs (J and Z, the dynamic controls): an alphabet with none has no motion model
+  const alphabet = getAlphabet(alphabetId);
+  if (alphabet.dynamic.length === 0) return out;
   try {
-    const raw = await fetchJson(MOTION_MODEL_URL, f);
+    const raw = await fetchJson(motionModelUrl(alphabetId), f);
     if (raw === 'missing') {
       out.motion = {
         status: 'missing',
@@ -142,6 +149,10 @@ export async function loadModels(
       };
     } else {
       const m = parseDollarModel(raw);
+      checkLabels(
+        m.templates.map((t) => t.label),
+        alphabet,
+      );
       out.motion = {
         status: 'ready',
         recognizer: new DollarRecognizer(m),

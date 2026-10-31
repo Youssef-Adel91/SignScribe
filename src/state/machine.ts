@@ -118,6 +118,20 @@ export const DEFAULT_SETTINGS: Settings = {
 
 /* ---------- pure helpers ---------- */
 
+/** space = a new word, delete = take the last letter back, cancel = go back (thumbs down), done = finish (thumbs up) */
+export function controlEvent(action: 'space' | 'delete' | 'cancel' | 'done' | undefined): Ev {
+  switch (action) {
+    case 'delete':
+      return { type: 'DELETE' };
+    case 'cancel':
+      return { type: 'NO' };
+    case 'done':
+      return { type: 'YES' };
+    default:
+      return { type: 'SPACE' };
+  }
+}
+
 type Wrapped = { context: Ctx };
 
 const wordIsEmpty = ({ context }: Wrapped) => context.word.length === 0;
@@ -192,6 +206,14 @@ export const signScribeMachine = setup({
     ),
     setMethod: assign(({ event }) =>
       event.type === 'CHOOSE_METHOD' ? { method: event.method } : {},
+    ),
+    /** the control class of a LETTER_CONFIRMED does what the same hand gesture does */
+    raiseControl: raise(({ context, event }) =>
+      controlEvent(
+        event.type === 'LETTER_CONFIRMED'
+          ? alphabetOfSetting(context.alphabet).controls[event.letter]
+          : undefined,
+      ),
     ),
     setCandidate: assign(({ event }) =>
       event.type === 'LETTER_CANDIDATE' ? { candidate: event.candidate } : {},
@@ -404,6 +426,11 @@ export const signScribeMachine = setup({
           { guard: 'helpOpen', actions: 'handLostBehindHelp' },
           { guard: 'idle', actions: 'handLost' },
         ],
+        // a control class (static or dynamic) arrives without a candidate, also while no letter is being recognised
+        LETTER_CONFIRMED: {
+          guard: and(['idle', 'confirmedControl']),
+          actions: ['clearCandidate', 'raiseControl'],
+        },
         DELETE: { guard: 'idle', actions: 'deleteLast', target: '.ready' },
         SPACE: [
           { guard: and(['idle', 'wordEmpty']), target: '.ready', actions: 'clearCandidate' },
@@ -442,18 +469,7 @@ export const signScribeMachine = setup({
               {
                 guard: and(['idle', 'confirmedControl']),
                 target: 'ready',
-                actions: [
-                  'clearCandidate',
-                  raise(({ context, event }) => {
-                    const what =
-                      event.type === 'LETTER_CONFIRMED'
-                        ? alphabetOfSetting(context.alphabet).controls[event.letter]
-                        : 'space';
-                    return {
-                      type: what === 'delete' ? 'DELETE' : what === 'finish' ? 'YES' : 'SPACE',
-                    } as const;
-                  }),
-                ],
+                actions: ['clearCandidate', 'raiseControl'],
               },
               { guard: 'idle', target: 'ready', actions: 'appendLetter' },
             ],

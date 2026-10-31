@@ -12,6 +12,7 @@ CONFIG_DIR = Path(__file__).resolve().parents[2] / "config"
 # A take with this label is static (src/config/alphabet.ts has the same constant); a model that predicts it is shown as nothing.
 REJECT_LABEL = "none"
 NONE_TAGS = ("moving", "relaxed", "command-zone", "other")
+CONTROL_ACTIONS = ("space", "delete", "cancel", "done")  # the old name "finish" is read as "done"
 
 
 class AlphabetError(ValueError):
@@ -29,6 +30,18 @@ class Alphabet:
     # label -> the letter to show a person (only where it is certain), and open questions the team still has to answer
     display: dict = field(default_factory=dict)
     todo: tuple = ()
+    # control classes (class id -> action): commands given as classes, never letters. STATIC ones are in `static` (a hand shape,
+    # classified like a letter), DYNAMIC ones in `dynamic` (a stroke of the index fingertip, matched with $1).
+    controls: dict = field(default_factory=dict)
+
+    @property
+    def letters(self) -> list:
+        return [l for l in self.labels if l not in self.controls]
+
+    def control_kind(self, label: str):
+        if label not in self.controls:
+            return None
+        return "static" if label in self.static else "dynamic"
 
     @property
     def labels(self) -> list:
@@ -64,6 +77,20 @@ def active_name(config_dir: Path = CONFIG_DIR) -> str:
     return json.loads((config_dir / "alphabet.json").read_text(encoding="utf-8"))["active"]
 
 
+def _controls(raw, labels, name) -> dict:
+    out = {}
+    for cls, what in dict(raw).items():
+        action = "done" if what == "finish" else what
+        if cls not in labels:
+            raise AlphabetError(f"alphabet '{name}': control class '{cls}' is not a label")
+        if action not in CONTROL_ACTIONS:
+            raise AlphabetError(f"alphabet '{name}': control '{what}' is not one of {', '.join(CONTROL_ACTIONS)}")
+        if action in out.values():
+            raise AlphabetError(f"alphabet '{name}': two classes do the control '{action}'")
+        out[cls] = action
+    return out
+
+
 def load_alphabet(name: str | None = None, config_dir: Path = CONFIG_DIR) -> Alphabet:
     name = name or active_name(config_dir)
     p = config_dir / "alphabets" / f"{name}.json"
@@ -88,4 +115,5 @@ def load_alphabet(name: str | None = None, config_dir: Path = CONFIG_DIR) -> Alp
         bool(raw.get("reviewed", True)),
         dict(raw.get("display", {})),
         tuple(raw.get("todo", [])),
+        _controls(raw.get("controls", {}), allv, name),
     )
