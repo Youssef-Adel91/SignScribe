@@ -6,6 +6,8 @@ import { Machine } from '../src/state/MachineProvider';
 import { signScribeMachine, type Ev } from '../src/state/machine';
 import { PATH_TO_SCREEN } from '../src/state/paths';
 import S12Share from '../src/screens/S12Share';
+import S14Comfort from '../src/screens/S14Comfort';
+import { READ_ALOUD_ENGLISH_ONLY } from '../src/ui/readAloudNote';
 
 /** the machine at screen 12 with a finished sentence, for the given alphabet setting */
 function shareSnapshot(alphabet: 'english' | 'arabic') {
@@ -46,5 +48,39 @@ describe('the sentence line on the share screen', () => {
   });
   it('stays left to right with ASL', () => {
     expect(html('english')).not.toContain('dir="rtl"');
+  });
+});
+
+describe('read-aloud is English only, and the screens say so', () => {
+  beforeAll(() => void vi.spyOn(console, 'error').mockImplementation(() => {}));
+  const render = (snapshot: unknown, screen: () => ReturnType<typeof createElement>) =>
+    renderToStaticMarkup(
+      createElement(Machine.Provider, { options: { snapshot: snapshot as never } }, screen()),
+    );
+  it('the share screen names the limit instead of "Reading aloud" with Arabic', () => {
+    const out = render(shareSnapshot('arabic'), () => createElement(S12Share));
+    expect(out).toContain(READ_ALOUD_ENGLISH_ONLY);
+    expect(out).toContain('Read-aloud: English only');
+    expect(out).not.toContain('Reading aloud');
+  });
+  it('and keeps saying "Reading aloud" with English', () => {
+    const out = render(shareSnapshot('english'), () => createElement(S12Share));
+    expect(out).toContain('Reading aloud');
+    expect(out).not.toContain(READ_ALOUD_ENGLISH_ONLY);
+  });
+  const comfort = (alphabet: 'english' | 'arabic') => {
+    const a = createActor(signScribeMachine, { input: { alphabet } });
+    a.start();
+    let s = a.getSnapshot();
+    for (const e of PATH_TO_SCREEN[14]) s = getNextSnapshot(signScribeMachine, s, e);
+    return s;
+  };
+  it('the voice setting (14) carries the note only while Arabic is chosen', () => {
+    const ar = render(comfort('arabic'), () => createElement(S14Comfort));
+    expect(ar).toContain('data-testid="read-aloud-note"');
+    expect(ar).toContain(READ_ALOUD_ENGLISH_ONLY);
+    expect(render(comfort('english'), () => createElement(S14Comfort))).not.toContain(
+      'read-aloud-note',
+    );
   });
 });

@@ -3,6 +3,7 @@ import { Hint } from '../ui/HintBar';
 import { Icon } from '../ui/Icon';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
+import { READ_ALOUD_ENGLISH_ONLY } from '../ui/readAloudNote';
 import { textDir, useAlphabet } from '../ui/useAlphabet';
 import { useCtx } from '../state/MachineProvider';
 import styles from './S12Share.module.css';
@@ -22,7 +23,11 @@ export default function S12Share() {
       steps={['done', 'done', 'done', 'active']}
       chips={
         <>
-          <Chip kind="green">Reading aloud</Chip>
+          {rtl ? (
+            <Chip kind="gray">Read-aloud: English only</Chip>
+          ) : (
+            <Chip kind="green">Reading aloud</Chip>
+          )}
           <HandChip />
           <Chip kind="gray">Both hands up: Help</Chip>
         </>
@@ -41,9 +46,9 @@ export default function S12Share() {
         <p className={`${styles.sentence} ${styles[sizeTier(sentence)]}`} {...textDir(rtl)}>
           {sentence}
         </p>
-        <p className={styles.pill}>
+        <p className={styles.pill} data-testid="read-aloud-status">
           <Icon name="speaker" size="var(--s-24)" />
-          Reading aloud…
+          {rtl ? READ_ALOUD_ENGLISH_ONLY : 'Reading aloud…'}
         </p>
         <p className={styles.foot}>Written with SignScribe from hand signs and picture cards.</p>
       </section>

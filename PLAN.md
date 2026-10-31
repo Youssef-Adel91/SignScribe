@@ -113,6 +113,9 @@ Done: study logger final (profile + consent, session record, camera speed per tr
 ## Alphabet pipeline (branch feat/alphabet-tooling, after the merge)
 Youssef asked (2026-10-22) for the tooling to recognise a whole static alphabet and to measure it honestly. Done: alphabet as config (ASL ready, ArSL template), `ml/import_images.py`, `ml/evaluate.py` (leave-one-person-out, k-NN vs MLP, augmentation ablation), `train_knn.py --augment`, guided recording and gap view in the collection mode, weak letter guesses hidden, top-2 in the dev panel. Not done, on purpose: choosing the alphabet and dataset, running on real data, any accuracy number (`docs/MODEL_RESULTS.md` is empty until the script writes into it).
 
+## ArSL stage 2 (branch feat/arsl-models-calibration, on top of feat/arsl-app)
+Youssef asked for: documented commands for both ArSL model files and a loader test, the CC BY 4.0 credit, a calibration script, an Arabic helper-word list for the validator, and a note that read-aloud is English only. Done: `ml/export_arsl.py` (+ the two single commands), `ml/calibrate.py`, `docs/CREDITS.md` and the About text on the help screen, `src/nlp/arabicWords.ts` + `docs/ARABIC_WORDS.md`, the notes on screens 12 and 14. Not done, on purpose: choosing thresholds (needs the real tables), Arabic speech, a dictionary.
+
 ## ArSL in the web app, stage 1 (branch feat/arsl-app, on top of feat/mlp-and-eval-guards)
 Youssef asked for the app to work end to end with the ArSL alphabet, without an Arabic word list or validator. Done: glyphs from the alphabet file (unconfirmed ones shown as marked Latin ids), the alphabet setting on screen 03 and the per-alphabet model files, right-to-left sentence line, control classes only from the alphabet file (none in `arsl.json`), the sentence validator's Arabic mode, the `alphabet` column in the study CSV. Not done: an ArSL model and its thresholds, Arabic words and sentences, the Arabic voice (`docs/KNOWN_ISSUES.md` #15-#19).
 

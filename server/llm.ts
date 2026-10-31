@@ -1,3 +1,4 @@
+import { ARABIC_HELPER_WORDS } from '../src/nlp/arabicWords.ts';
 import type { PlaceName, SuggestRequest } from '../src/nlp/protocol.ts';
 
 /** Anything that can propose a sentence for a list of words. The service validates whatever it returns. */
@@ -29,6 +30,7 @@ export const SYSTEM_PROMPT_ARABIC = [
   'Rules, all of them strict:',
   '- Use every word you are given, exactly as written (do not change its letters).',
   '- Do NOT add facts: no names, numbers, times, places, symptoms, medicines, reasons or other new content words.',
+  `- You may add only these helper words: ${[...new Set(ARABIC_HELPER_WORDS)].join(' ')}. No other word, not even a similar one.`,
   '- Only Arabic letters and punctuation. One sentence, at most 15 words. Plain text, no quotes, no explanation.',
 ].join('\n');
 

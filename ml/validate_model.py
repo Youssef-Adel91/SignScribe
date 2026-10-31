@@ -51,11 +51,35 @@ def check(m) -> list:
     return errs
 
 
+def check_alphabet(m, name) -> list:
+    """The browser refuses a model with a letter its alphabet does not have; so does this."""
+    from signscribe_ml.alphabet import AlphabetError, load_alphabet
+
+    try:
+        known = set(load_alphabet(name).labels)
+    except AlphabetError as e:
+        return [str(e)]
+    stranger = [l for l in (m.get("labels") or []) if l not in known]
+    return [f"letter '{stranger[0]}' is not in the {name} alphabet: the model was trained for another alphabet"] if stranger else []
+
+
 def main(argv) -> int:
-    if len(argv) != 2:
-        print("usage: validate_model.py MODEL.json", file=sys.stderr)
+    args = list(argv[1:])
+    alphabet = None
+    if "--alphabet" in args:
+        i = args.index("--alphabet")
+        if i + 1 >= len(args):
+            print("usage: validate_model.py MODEL.json [--alphabet NAME]", file=sys.stderr)
+            return 2
+        alphabet = args[i + 1]
+        del args[i : i + 2]
+    if len(args) != 1:
+        print("usage: validate_model.py MODEL.json [--alphabet NAME]", file=sys.stderr)
         return 2
-    errs = check(json.loads(Path(argv[1]).read_text(encoding="utf-8")))
+    model = json.loads(Path(args[0]).read_text(encoding="utf-8"))
+    errs = check(model)
+    if alphabet and model.get("type") in ("knn", "mlp"):
+        errs += check_alphabet(model, alphabet)
     for e in errs:
         print(e)
     hard = [e for e in errs if not e.startswith("WARNING")]

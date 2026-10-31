@@ -153,6 +153,23 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Screen 08: only "Bring your hand back" is offered; after 10 s of camera time the screen says what to check | verified here (synthetic frames) | `npm run e2e` |
 | Hand-lost screen has a second way out | not met | every exit needs a hand (gesture-only app) |
 
+## ArSL stage 2: model commands, calibration, credits, helper words (branch feat/arsl-models-calibration)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| One documented command per ArSL model file (`ml/export_mlp.py` -> `letters-arsl-mlp.json`, `ml/train_knn.py` -> `letters-arsl-knn.json`) and `ml/export_arsl.py` for both: same alphabet file, same class order (checked), same seed gives the same models, synthetic refused, no data written | verified here (generated hands) | `ml/tests/test_arsl_export.py` |
+| The browser loader accepts both files exactly as the exporters write them and rejects a mismatched alphabet | verified here (generated fixtures in `tests/fixtures/arsl/`, not a model) | `tests/arsl-models.test.ts` |
+| `ml/calibrate.py`: precision and coverage at several thresholds, k-NN vote share and MLP softmax in separate tables, from leave-one-person-out or `--train/--test` predictions; chooses and changes no threshold; no person id in its output | verified here (generated hands) | `ml/tests/test_calibration.py` |
+| The calibration numbers for the real ArSL data | not met | run `ml/calibrate.py` on your machine, quote only its report |
+| `LETTER` thresholds chosen for the ArSL models | not met | needs a real model, its calibration table and a camera |
+| CC BY 4.0 credit for ArSL21L (and ASLAD, test-only) in `docs/CREDITS.md` and the About text on the help screen (13) | verified here; the full dataset citations still have to be pasted (`TODO(Youssef)` in `docs/CREDITS.md`) | `tests/credits.test.ts` |
+| Arabic helper-word list (written by us, `docs/ARABIC_WORDS.md`) used by the validator in the browser and on the server, and given to the language model | verified here | `tests/arabic-words.test.ts`, `tests/arsl-server.test.ts` |
+| UI note that read-aloud is English only (share screen 12, voice setting 14) | verified here (rendered markup) | `tests/arsl-screens.test.ts` |
+| Arabic text-to-speech, an Arabic dictionary / spelling help, grammar | not met | out of scope: `docs/KNOWN_ISSUES.md` #15, #17 |
+| `npm run verify` starts npm through the shell on Windows only; a command that cannot start is a FAIL with the real error (and a warning at the start), never a silent 0 s | verified here for Linux and with a Windows-shaped failure (npm missing from the PATH) and a fake `win32` platform; **not run on a real Windows machine by me** | `tests/verify-run.test.ts` |
+| `public/models/*-knn.json` git-ignored (a k-NN file stores real landmark samples); a pre-commit check (`npm run hooks:install`) and a test refuse a staged `*-knn.json` or any file under `ml/data/` / `datasets/` | verified here (scratch repository, real hook) | `tests/forbidden-files.test.ts` |
+| `ml/calibrate.py`: `--augment` defaults to the shipped `all`, names optional, hint when `--alphabet` is missing, rows that repeat the row above are marked | verified here | `ml/tests/test_calibration.py` |
+| Arabic helper list has no duplicate | verified here | `tests/arabic-words.test.ts` |
+
 ## ArSL in the web app, stage 1 (branch feat/arsl-app)
 | Item | Status | Evidence |
 | --- | --- | --- |
