@@ -160,6 +160,8 @@ export class TakeRecorder {
       label: this.label,
       kind: this.kind,
       signer: this.sitting.signer,
+      // the anonymous signer code is also the person id, so the tools hold whole people out (leave-one-person-out)
+      person: this.sitting.signer,
       session: this.sitting.session,
       hand: this.sitting.hand,
       width: this.size.w,

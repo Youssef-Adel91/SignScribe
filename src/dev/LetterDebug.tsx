@@ -13,6 +13,15 @@ import { download } from '../study/download';
 import { useVision } from '../vision/store';
 import styles from './LetterDebug.module.css';
 
+/** who decided the frame, in words */
+const SOURCE_NAME = {
+  'rule-gesture': 'old rule gesture',
+  'control-class': 'control class (letter model)',
+  '$1-template': '$1 template',
+  'letter-model': 'letter model',
+  none: '-',
+} as const;
+
 const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
 
 /**
@@ -74,6 +83,14 @@ export function LetterDebug() {
             <td data-testid="letter-state">
               {d?.state ?? '-'}
               {d?.rejectedBecause ? ` (${d.rejectedBecause})` : ''}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">decided by</th>
+            <td data-testid="letter-source">
+              {d && d.source !== 'none'
+                ? `${SOURCE_NAME[d.source]}: ${d.decided || '-'} (score ${d.score.toFixed(2)})`
+                : '-'}
             </td>
           </tr>
           <tr>

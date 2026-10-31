@@ -4,6 +4,7 @@ import { CameraView } from '../ui/CameraView';
 import { download } from '../study/download';
 import { useVision, visionStore } from '../vision/store';
 import {
+  CONTROLS,
   LETTERS,
   coverage,
   defaultKind,
@@ -27,6 +28,8 @@ const NONE_CHOICES: { tag: NoneTag; text: string }[] = [
   { tag: 'command-zone', text: 'hand in the command zone' },
   { tag: 'other', text: 'anything else' },
 ];
+const controlCount = (takes: readonly Take[], classId: string) =>
+  takes.filter((t) => t.label === classId).length;
 const noneCount = (takes: readonly Take[], tag: NoneTag) =>
   takes.filter((t) => t.label === REJECT_LABEL && (t.tag ?? 'other') === tag).length;
 
@@ -341,6 +344,39 @@ export function CollectPanel() {
                 automatically). Refused takes are retried; 3 in a row stop the run.
               </p>
             </fieldset>
+            {CONTROLS.length > 0 && (
+              <fieldset className={styles.f} data-testid="control-takes">
+                <legend>Controls (space, delete, cancel, done)</legend>
+                <p className={styles.hint}>
+                  Commands the model should know, recorded with your signer code as the person id so
+                  the tools can leave one person out. <strong>Static</strong> controls are a hand
+                  shape held still (classified like a letter); <strong>dynamic</strong> controls are
+                  a stroke drawn with the index fingertip (matched with the $1 recogniser against
+                  templates). Record several takes each, with several people. Takes stay on this
+                  computer; keep the file out of git.
+                </p>
+                {CONTROLS.map((c) => (
+                  <button
+                    key={c.classId}
+                    type="button"
+                    disabled={!ready || busy}
+                    onClick={() => {
+                      setMessage('');
+                      rec.current.start(
+                        c.classId,
+                        sitting,
+                        visionStore.state.frame?.t ?? performance.now(),
+                        c.kind,
+                      );
+                      setLabel(c.classId);
+                      setState(rec.current.state);
+                    }}
+                  >
+                    Control take: {c.action} ({c.kind}) ({controlCount(takes, c.classId)})
+                  </button>
+                ))}
+              </fieldset>
+            )}
             <fieldset className={styles.f} data-testid="none-takes">
               <legend>No letter (&quot;none&quot;)</legend>
               <p className={styles.hint}>

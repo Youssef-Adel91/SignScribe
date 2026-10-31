@@ -52,7 +52,7 @@ def test_active_alphabet_is_read_from_the_config_file_not_from_code():
 
 def test_another_alphabet_can_be_selected_and_the_arabic_one_is_marked_unreviewed():
     ar = load_alphabet("arsl")
-    assert not ar.reviewed and len(ar.labels) == 32 and "ain" in ar.labels and ar.resolve("ع") == "ain"
+    assert not ar.reviewed and len(ar.letters) == 32 and "ain" in ar.labels and ar.resolve("ع") == "ain"
 
 
 def test_unknown_alphabet_and_bad_configs_are_rejected(tmp_path):

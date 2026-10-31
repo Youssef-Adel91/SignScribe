@@ -164,6 +164,71 @@ try {
     await ctx.close();
   }
 
+  /* ---- controls (ArSL: space, done static; delete, cancel dynamic), with the person id */
+  {
+    const ctx = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      acceptDownloads: true,
+    });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    await page.goto(`${base}?dev=1&vision=mock&collect=1&alphabet=arsl`);
+    await page.waitForFunction(() => window.__signscribe !== undefined);
+    const play = (hands, ms) =>
+      page.evaluate(([h, t]) => window.__signscribe.play(h, t), [hands, ms]);
+    const panel = page.getByTestId('collect-panel');
+    const box = panel.getByTestId('control-takes');
+    check('the Controls section is there for ArSL', await box.isVisible());
+    const buttons = box.getByRole('button', { name: /^Control take:/ });
+    check(
+      'four controls: space, done (static), delete, cancel (dynamic)',
+      (await buttons.count()) === 4,
+    );
+    const names = await buttons.allTextContents();
+    check(
+      'each says whether it is static or dynamic',
+      names.some((n) => /space \(static\)/.test(n)) &&
+        names.some((n) => /done \(static\)/.test(n)) &&
+        names.some((n) => /delete \(dynamic\)/.test(n)) &&
+        names.some((n) => /cancel \(dynamic\)/.test(n)),
+      names.join(' | '),
+    );
+    check(
+      'the letter list does not contain the controls',
+      (await panel.getByRole('radio', { name: /ctl_/ }).count()) === 0,
+    );
+    await panel.getByPlaceholder('s01').fill('s07');
+    await panel.getByPlaceholder('lamp-60cm').fill('desk');
+    await box.getByRole('button', { name: /^Control take: space/ }).click();
+    await play([{ pose: 'fist', cx: 0.5, cy: 0.5, size: 0.2 }], 5200);
+    await page.waitForFunction(() =>
+      /Saved: ctl_space/.test(
+        document.querySelector('[data-testid="collect-status"]')?.textContent ?? '',
+      ),
+    );
+    check('a static control take (space) is saved', true);
+    const [dl] = await Promise.all([
+      page.waitForEvent('download'),
+      panel.getByRole('button', { name: 'Export JSONL' }).click(),
+    ]);
+    const lines = readFileSync(await dl.path(), 'utf8')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    check(
+      'the control take is labelled with the class, is static and carries the person id',
+      lines.length === 1 &&
+        lines[0].label === 'ctl_space' &&
+        lines[0].kind === 'static' &&
+        lines[0].person === 's07' &&
+        lines[0].signer === 's07',
+      JSON.stringify(lines.map((t) => [t.label, t.kind, t.person])),
+    );
+    check('no page errors', errors.length === 0, errors.join('; '));
+    await ctx.close();
+  }
+
   /* ---- Wizard of Oz */
   {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

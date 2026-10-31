@@ -152,7 +152,12 @@ export function VisionProvider() {
       resolveTuning(alphabetOfSetting(loadedFor).id, modelId);
     const applyModels = (m: LoadedModels) => {
       const tuning = tuningFor(m.letters.recognizer?.id);
-      letters = new LetterController(m.letters.recognizer, m.motion.recognizer, tuning);
+      letters = new LetterController(
+        m.letters.recognizer,
+        m.motion.recognizer,
+        tuning,
+        alphabetOfSetting(loadedFor).controls,
+      );
       visionStore.set({
         letters: {
           ...visionStore.state.letters,
@@ -216,7 +221,7 @@ export function VisionProvider() {
             frame.t,
             screen,
             lr.ui,
-            { ...command, label: ui.command.label ?? '' },
+            { ...command, label: command.label ?? '' },
             [...events, ...letterEvents].map((e) => e.type),
             `${visionStore.state.letters.alphabetId}/${visionStore.state.letters.modelId || '-'}`,
           ),
