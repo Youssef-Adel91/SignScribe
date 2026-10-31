@@ -96,7 +96,11 @@ def test_ages_only_mark_minors_and_are_never_stored(tmp_path):
     takes, st = images.import_folder(flat(tmp_path, NAMES), ARSL, Fake(), "arsl21l", **RX)
     by_person = {t["person"]: t["minor"] for t in takes}
     assert by_person == {"1001": False, "1002": True, "1003": False}
-    assert "46" not in json.dumps(takes) and "12" not in {k for t in takes for k in t if k.isdigit()}
+    # the ages (46, 12, 30) are in the file names only. Do NOT search the whole JSON text for "46": it contains a timestamp (createdAt, the
+    # current minute or second can be 46) and random hex ids, so a substring check fails by chance. Look at the values and keys instead.
+    ages = {46, 12, 30, "46", "12", "30"}
+    assert not any(v in ages for t in takes for v in t.values() if isinstance(v, (int, str)))
+    assert not any(k.isdigit() for t in takes for k in t)
     assert not any("age" in t for t in takes)
     assert st.minors == {"1002"}
 
