@@ -34,7 +34,7 @@ Run the three imports and `ml/evaluate.py` on your machine (`ml/README.md`, sect
 
 ## 5. Other open decisions
 - Merge: all seven phases were merged into `main` in one pull request (Phase 7 branch, which contains the whole stack). PRs #2 to #6 were closed as already included. New work: branch from `main` and open a PR.
-- Arabic and other alphabets: shown as "Coming soon"; each needs its own labels and model.
+- Alphabets: Arabic (ArSL) can be chosen on screen 03 but there is no ArSL model yet (and no recordings of its controls); "More..." and any other alphabet is shown as "Coming soon" and needs its own labels and model.
 - Real screen reader test (NVDA / VoiceOver): `npm run axe` finds rule violations only; it finds about a third of real problems.
 - Python versus browser for training: decided Python; the browser only reads exported JSON / ONNX.
 

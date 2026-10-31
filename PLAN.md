@@ -42,7 +42,7 @@ storage.googleapis.com / huggingface.co**. Consequences:
    plus a k-NN baseline that trains from your exported JSON. **No accuracy number will be written
    into docs until it is measured from real recordings.** Until a model exists the letter/card paths
    show "No model yet" and the facilitator (Wizard-of-Oz, `?woz=1`) panel can drive them.
-4. Arabic / "More" alphabets: shown as "Coming soon" (disabled) until a label set + model exist.
+4. Arabic can be chosen since the ArSL work (no model yet); "More" alphabets are shown as "Coming soon" (disabled) until a label set + model exist.
 5. E2E runs in Playwright with a mocked landmark stream (fake video cannot produce landmarks without the
    model). Visual comparison uses the 13 PNG exports in `public/design/` (I will regenerate them from Figma).
 
