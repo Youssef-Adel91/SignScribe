@@ -22,7 +22,7 @@ This file is the long reference for the whole project. It is built from the repo
 
 Status words used everywhere: **verified here** (an automatic test or run proves the logic, with synthetic hands, fake devices or generated data), **needs a real camera / device** (only checkable on real hardware), **not met / not built**.
 
-Contents: 1 Purpose and course requirements, 2 Architecture, 3 Screens and flow, 4 Features (file and test), 5 Sentence server and validators, 6 Models, 7 Datasets and licences, 8 Study design, 9 Phase II sheet, 10 How to run (Windows and Linux), 11 Known issues, 12 What is not built, 13 Privacy rules, 14 How to extend, 15 Team workflow, 16 Verification state.
+Contents: 1 Purpose and course requirements, 2 Architecture, 3 Screens and flow, 4 Features (file and test), 5 Sentence server and validators, 6 Models, 7 Datasets and licences, 8 Study design, 9 Phase II sheet, 10 How to run (Windows and Linux), 11 Known issues, 12 What is not built, 13 Privacy rules, 14 How to extend, 15 Team workflow, 16 Verification state, 17 Roadmap.
 
 ## 1. Purpose and course requirements
 
@@ -373,3 +373,69 @@ Copied from `docs/KNOWN_ISSUES.md` at the time of writing; that file is the sour
 | `npm run axe` | 0 violations on 62 pages and states | Linux |
 
 These runs use **synthetic hands, fake devices and generated test models**. They prove the logic, not how well anything works with real hands, real cards, a real Bluetooth device or the live language model.
+
+## 17. Roadmap
+
+Remaining work, by priority. Every item comes from a fact already written in this repository (the document named in "Source"); nothing here is a new claim. **Owner is left blank on purpose** (the team assigns it). "Done when" says what evidence closes the item; an item is not done on the strength of a green automatic check if it says it needs a real camera, person or device. Order inside a priority is a suggestion, not a dependency, except where the item says "after".
+
+**Priority 1: nothing can be judged until it is tried on a real camera**
+
+| # | Item | Source | Owner | Done when |
+| --- | --- | --- | --- | --- |
+| 1.1 | Fill in the Phase 2 camera checklist on a real laptop webcam: speed (fps, inference time, GPU or CPU), each gesture 20 attempts, commands, pointer, setup checks | `docs/PHASE2_CHECKLIST.md`, `docs/PERF.md`, KNOWN_ISSUES #2 | | the tables in `docs/PHASE2_CHECKLIST.md` hold real values with the laptop, camera, light and signer noted; every misfire is a row in `docs/KNOWN_ISSUES.md` with screen, steps and severity |
+| 1.2 | Fix the misfires from 1.1, each starting from a test that reproduces it, without guessing thresholds | `CLAUDE.md` (hard rules), `docs/PHASE2.md` | | each fixed row in KNOWN_ISSUES names its commit and test; the change is noted in `docs/PHASE2.md` |
+| 1.3 | Find out why delete, space and finish are not recognised reliably, using the debug panel and log (`command_gesture`, `command_active`) | KNOWN_ISSUES #22 | | the cause is written down from a real log; the fix (or the decision to leave it) has a test and a KNOWN_ISSUES update |
+| 1.4 | Decide the letter gating settings and the `none` class behaviour with real hands (`?letterdebug=1`) | KNOWN_ISSUES #20, `src/recognition/tuning.ts` | | the values in `tuning.ts` are chosen after reading the log of real use, each with a test, and the reason is noted; `LETTER` is changed only by hand |
+| 1.5 | Run `npm run verify` on Windows on the current `main` and update KNOWN_ISSUES #24 (still marked open although a Windows run of main + #25 + #26 passed 13 of 13, reported by Youssef) | KNOWN_ISSUES #24, section 16 | | the Windows result for the current `main` is reported and #24 is marked fixed (with the commit) or kept open with the new raw output |
+
+**Priority 2: models (tooling is built, the models are not)**
+
+| # | Item | Source | Owner | Done when |
+| --- | --- | --- | --- | --- |
+| 2.1 | Decide which hand shape or stroke each ArSL control is, and whether each is static or dynamic | KNOWN_ISSUES #23, `docs/CONTROLS.md` | | the split is recorded in `config/alphabets/arsl.json` (`todo` resolved) and in `docs/CONTROLS.md` |
+| 2.2 | Record the controls and `none` with several people in collection mode, evaluate with `ml/evaluate.py --alphabet arsl`, export | `docs/CONTROLS.md`, `docs/MODEL_HANDOFF.md` | | at least two people recorded the controls (the tool refuses fewer), the report has a Controls section with false triggers, and a model with the `ctl_*` classes loads in the app; the old rule gestures still work |
+| 2.3 | Inspect the English dataset (Mendeley set), import it, evaluate it leave-one-person-out, export the English letter model | `docs/MODEL_HANDOFF.md`, `docs/CREDITS.md` | | a section for it is written into `docs/MODEL_RESULTS.md` by `evaluate.py`, and `letters-mlp.json` / `letters-knn.json` exist (the k-NN stays out of git) |
+| 2.4 | Put the ArSL MLP file where the app loads it and decide whether the team commits it (the k-NN never) | KNOWN_ISSUES #18, `ml/README.md` | | the app loads the Arabic model from `public/models/` on a clean checkout of the agreed files, and the decision is written in `docs/MODEL_HANDOFF.md` |
+| 2.5 | Record the team's own webcam takes and use them as a test only (never mixed into training); calibrate the MLP confidence for the app | `ml/README.md` (own-webcam test, `ml/calibrate.py`), KNOWN_ISSUES #18 | | `evaluate.py --train ... --test <own takes>` and `calibrate.py` reports exist for the real webcam, and the MLP thresholds in `tuning.ts` are chosen by hand from them with a test |
+| 2.6 | Moving letters J and Z (ASL) and the ArSL dynamic controls: record templates, evaluate | `docs/MODEL_HANDOFF.md`, `docs/CONTROLS.md`, `tools/dollarpy/README.md` | | templates recorded with several people, a `$P` / `$1` evaluation run, `motion-*-dollar.json` loads |
+| 2.7 | Picture card detector: print the cards, photograph and label them in many conditions, train, export to ONNX, tune `CARD` | `docs/CARDS.md`, KNOWN_ISSUES #8 | | `cards.onnx` and `cards.json` exist from real photographs, its validation output is kept, the grey notice on screen 10 disappears on a real card |
+| 2.8 | Record the date and command of each model's training in section 6 of this document | section 6 (date "NOT RECORDED") | | the training date of each shipped model is written next to its command |
+
+**Priority 2: Arabic**
+
+| # | Item | Source | Owner | Done when |
+| --- | --- | --- | --- | --- |
+| 2.9 | Confirm the unconfirmed Arabic letter mappings (ta, taa, toot, ha, haa, ya, yaa, dha, dhad, al, la) with someone who signs ArSL | KNOWN_ISSUES #16, `config/alphabets/arsl.json` (`todo`) | | the `todo` list is empty and `reviewed` is set by a person; those letters are written as Arabic letters |
+| 2.10 | Decide how Arabic sentences are checked (a dictionary or a larger list) and how the word-suggestion screen works for Arabic | KNOWN_ISSUES #15, #18, `docs/ARABIC_WORDS.md` | | the decision is written down; if a dictionary is added, `tests/arabic-words.test.ts` and `tests/validate.test.ts` cover it |
+| 2.11 | Try Arabic text-to-speech on devices with and without an Arabic voice | KNOWN_ISSUES #17 | | each device and result is written in KNOWN_ISSUES #17 and section 4 of this document |
+| 2.12 | Keep letters as a list so deleting a two-character glyph is exact | KNOWN_ISSUES #19 | | a test deletes `ال` / `لا` and the separate letters as the team expects |
+
+**Priority 2: the study and the course deliverable**
+
+| # | Item | Source | Owner | Done when |
+| --- | --- | --- | --- | --- |
+| 2.13 | Ask the TA what course Phase 2 requires (not assumed equal to the phases in `PLAN.md`) | `CLAUDE.md` | | the answer is written in `PLAN.md` and section 9 of this document |
+| 2.14 | Fill in the Scenario and PACT (they live in the Phase I PDF) or put the PDF in `docs/phase1/` | `docs/DONE.md` (grading sheet) | | the two rows have a file in the repository or a statement of where the PDF is |
+| 2.15 | Review the survey wording with someone who has not seen it; fill the placeholders in the participant information sheet; check with the instructor whether an ethics review is needed | `docs/STUDY.md` | | the reviewer's notes and the instructor's answer are recorded; the sheet has no `<...>` left |
+| 2.16 | Pilot with a few people, then run a multiple of 4 participants; export after every session; run `ml/analysis/study_report.py` | `docs/STUDY.md`, `docs/WHATS_LEFT.md` | | the exports exist outside git, the analysis ran, and the report states who the participants were and what the camera method could do at the time |
+| 2.17 | Try the Bluetooth scanner with real devices (a band, beacon or tag) and the dollarpy client with a webcam | `tools/bluetooth/README.md`, `tools/dollarpy/README.md`, `docs/DONE.md` | | the real runs and what failed are written down; the FAKE labels stay on simulated runs |
+| 2.18 | Try the live language model: key in `.env`, `npm run server`, read the `note` field | `docs/WHATS_LEFT.md`, `server/README.md` | | the prompt, model name and the rejection rate of the safety rule are noted after real use |
+
+**Priority 3: behaviour and polish (all open rows in KNOWN_ISSUES)**
+
+| # | Item | Source | Owner | Done when |
+| --- | --- | --- | --- | --- |
+| 3.1 | Spell is the default on screen 05 while no letter model exists: say so before the user commits (after 2.3 or 2.4 the notice can go) | KNOWN_ISSUES #8 | | the screen is truthful about the models that exist |
+| 3.2 | Cancel keeps the typed letters; Finish clears the message with no confirm; fist "Delete" means different things per screen; the guide mentions an undo that does not exist; hints that do nothing on 06 and 13 | KNOWN_ISSUES #9, #10, #11, #12, #14 | | each is fixed from a reproducing test, or turned into a documented decision |
+| 3.3 | Screen 14 has no Figma frame and the footer says different things on 03, 04 and 05 | KNOWN_ISSUES #13, `docs/FLOW_AUDIT.md` | | a Figma frame exists or the difference is accepted in writing |
+| 3.4 | Extra-large text still overflows screens 7, 11, 13 and 14 at some window sizes | KNOWN_ISSUES #3 | | `npm run layout` reports no Extra large overflow, or the layout step is told which combinations are accepted, with a reason |
+| 3.5 | Test sound and vibration feedback on a real device | KNOWN_ISSUES #21 | | the devices tried and the result are written in KNOWN_ISSUES #21 |
+| 3.6 | Test with a real screen reader (NVDA or VoiceOver); `npm run axe` finds rule violations only | `docs/WHATS_LEFT.md`, `docs/A11Y.md` | | the screen reader, the screens walked and the problems found are written in `docs/A11Y.md` |
+| 3.7 | Remove the dead branch in `GestureController.track()` | KNOWN_ISSUES #1 | | the line is removed with `npm run check` green |
+
+**Priority 3: documents**
+
+| # | Item | Source | Owner | Done when |
+| --- | --- | --- | --- | --- |
+| 3.8 | Paste the dataset citations and confirm the licences of ASLAD-96K, `ArSL_dataset.csv` and the English dataset | `docs/CREDITS.md` (`TODO(Youssef)`) | | `docs/CREDITS.md` and `src/config/credits.ts` agree (`tests/credits.test.ts`) and have no `TODO` left |
+| 3.9 | Keep this document in step: when a model is trained or a result is written by `evaluate.py`, update section 6 (the tests compare it with `docs/MODEL_RESULTS.md`) | section 6, `tests/project-status.test.ts` | | this document and `docs/MODEL_RESULTS.md` agree after every change |

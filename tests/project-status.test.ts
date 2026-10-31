@@ -101,4 +101,19 @@ describe('docs/PROJECT_STATUS.md audit', () => {
     expect(rows.length).toBeGreaterThan(20);
     for (const r of rows) expect(doc).toContain(r);
   });
+
+  it('the roadmap has an owner column left blank and a "done when" for every item', () => {
+    const road = doc.slice(doc.indexOf('## 17. Roadmap'));
+    const items = road
+      .split('\n')
+      .map(cells)
+      .filter((c) => /^\d\.\d+$/.test(c[0] ?? ''));
+    expect(items.length).toBeGreaterThan(20);
+    for (const c of items) {
+      expect(c, c[0]).toHaveLength(5); // # | item | source | owner | done when
+      expect(c[3], `owner of ${c[0]}`).toBe('');
+      expect(c[4].length, `done when of ${c[0]}`).toBeGreaterThan(10);
+      expect(c[2].length, `source of ${c[0]}`).toBeGreaterThan(3);
+    }
+  });
 });
