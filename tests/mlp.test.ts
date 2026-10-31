@@ -97,7 +97,7 @@ describe('loadLetters: neural network first, k-NN as fallback', () => {
     type: 'knn',
     features: 'hand60-v1',
     k: 1,
-    labels: ['a', 'b'],
+    labels: ['A', 'B'],
     vectors: [Array(60).fill(0), Array(60).fill(1)],
     y: [0, 1],
     meta: { synthetic: false },

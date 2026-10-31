@@ -113,6 +113,9 @@ Done: study logger final (profile + consent, session record, camera speed per tr
 ## Alphabet pipeline (branch feat/alphabet-tooling, after the merge)
 Youssef asked (2026-10-22) for the tooling to recognise a whole static alphabet and to measure it honestly. Done: alphabet as config (ASL ready, ArSL template), `ml/import_images.py`, `ml/evaluate.py` (leave-one-person-out, k-NN vs MLP, augmentation ablation), `train_knn.py --augment`, guided recording and gap view in the collection mode, weak letter guesses hidden, top-2 in the dev panel. Not done, on purpose: choosing the alphabet and dataset, running on real data, any accuracy number (`docs/MODEL_RESULTS.md` is empty until the script writes into it).
 
+## ArSL in the web app, stage 1 (branch feat/arsl-app, on top of feat/mlp-and-eval-guards)
+Youssef asked for the app to work end to end with the ArSL alphabet, without an Arabic word list or validator. Done: glyphs from the alphabet file (unconfirmed ones shown as marked Latin ids), the alphabet setting on screen 03 and the per-alphabet model files, right-to-left sentence line, control classes only from the alphabet file (none in `arsl.json`), the sentence validator's Arabic mode, the `alphabet` column in the study CSV. Not done: an ArSL model and its thresholds, Arabic words and sentences, the Arabic voice (`docs/KNOWN_ISSUES.md` #15-#19).
+
 ## Evaluation guards and the neural-network browser model (branch feat/mlp-and-eval-guards, on top of feat/arsl-datasets)
 Youssef ran ArSL21L leave-one-person-out on his machine and saw a 13% cross-source run that was only a class-coverage mismatch. Done: the guard (or `--shared-classes`), a section-aware `results_md.py`, train/test evaluation on his own webcam takes, an opt-in suffix import, `letters-mlp.json` (TS forward pass + parity test, k-NN fallback) and `ml/export_mlp.py`. Not done: tuning `LETTER` for softmax confidence, ArSL in the app.
 

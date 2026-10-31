@@ -153,6 +153,18 @@ Status values: **verified here** (a test or screenshot in the cloud proves it), 
 | Screen 08: only "Bring your hand back" is offered; after 10 s of camera time the screen says what to check | verified here (synthetic frames) | `npm run e2e` |
 | Hand-lost screen has a second way out | not met | every exit needs a hand (gesture-only app) |
 
+## ArSL in the web app, stage 1 (branch feat/arsl-app)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Spelling screens and the letter buffer map a class id to its glyph with the alphabet file (`config/alphabets/*.json`), not the first character | verified here | `tests/arsl-app.test.ts` |
+| A glyph that is not confirmed (`display` null, or the class is in a `todo` question) is shown as the Latin class id between marks, dashed, and flagged unconfirmed; no Arabic letter is guessed | verified here | `tests/arsl-app.test.ts` |
+| Alphabet selector (English = ASL, Arabic = ArSL) on screen 03, saved with the other settings; the loader reads `letters-arsl-{mlp,knn}.json` for ArSL and the old names for ASL; a model with another alphabet's letters is refused | verified here (fake files) | `tests/arsl-app.test.ts`, `npm run e2e` |
+| The study CSV names the alphabet (`alphabet` column in trials, camera trials only, and in the session file) | verified here | `tests/arsl-app.test.ts` |
+| Sentence line right to left (`dir="rtl"`, `lang="ar"`) with ArSL; the rest of the screen stays left to right | verified here (rendered markup); not looked at in a browser by me | `tests/arsl-app.test.ts`, `tests/arsl-screens.test.ts` |
+| Space / Delete / Finish classes only when the alphabet file lists them under `controls`; `arsl.json` lists none, so the hand gestures stay | verified here | `tests/arsl-controls.test.ts`, `tests/arsl-app.test.ts` |
+| Sentence server with ArSL: English-only checks skipped, length / words / sentences / links / characters / chosen words / rate limit kept; browser checks again | verified here (fake model) | `tests/arsl-server.test.ts`, `tests/arsl-app.test.ts`; limits of this: `docs/KNOWN_ISSUES.md` #15 |
+| An ArSL model, its accuracy, the `LETTER` thresholds for it, the Arabic word list, the Arabic read-aloud voice, the layout of Arabic text on every screen size | not met | no model in `public/models/`; `docs/KNOWN_ISSUES.md` #16-#19 |
+
 ## Evaluation guards, neural-network browser model (branch feat/mlp-and-eval-guards)
 | Item | Status | Evidence |
 | --- | --- | --- |

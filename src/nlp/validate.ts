@@ -110,10 +110,42 @@ export function sameWord(token: string, w: string): boolean {
   return w.length > 2 && (token === w + last + 'ed' || token === w + last + 'ing');
 }
 
-export function validateSentence(chosen: readonly string[], sentence: string): Validation {
+/** Arabic letters (and the marks on them) plus spaces and Arabic or plain punctuation. No Latin letters, digits or symbols. */
+const ARABIC_TEXT =
+  /^(?:[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC .,!?:;\-\u060C\u061B\u061F]|\u200c|\u200d)+$/;
+
+/**
+ * mode 'english' (default): the full rule above.
+ * mode 'arabic' (ArSL is the active alphabet): the English-only parts are skipped, because they work on English words and
+ * endings and there is no Arabic word list yet. What stays: length, number of words and sentences, no links, only Arabic
+ * letters and punctuation (so no digits, times or other characters can be added), and every word the person chose must
+ * appear unchanged. What is NOT checked is "nothing else is added": see docs/KNOWN_ISSUES.md.
+ */
+export type ValidationMode = 'english' | 'arabic';
+
+function validateArabic(chosen: readonly string[], text: string): Validation {
+  if (/https?|www\.|@/i.test(text)) return { ok: false, reason: 'contains a link' };
+  if (!ARABIC_TEXT.test(text)) return { ok: false, reason: 'unexpected characters' };
+  const toks = text.split(/[\s.,!?:;\-\u060C\u061B\u061F]+/).filter(Boolean);
+  if (toks.length === 0) return { ok: false, reason: 'no words' };
+  if (toks.length > MAX_SENTENCE_WORDS) return { ok: false, reason: 'too many words' };
+  if ((text.match(/[.!?\u061F](\s|$)/g) ?? []).length > 2)
+    return { ok: false, reason: 'more than two sentences' };
+  const wanted = chosen.flatMap((c) => c.split(/\s+/).filter(Boolean));
+  const missing = wanted.filter((w) => !text.includes(w));
+  if (missing.length) return { ok: false, reason: 'missing a chosen word' };
+  return { ok: true };
+}
+
+export function validateSentence(
+  chosen: readonly string[],
+  sentence: string,
+  mode: ValidationMode = 'english',
+): Validation {
   const text = sentence.trim();
   if (!text) return { ok: false, reason: 'empty' };
   if (text.length > MAX_SENTENCE_CHARS) return { ok: false, reason: 'too long' };
+  if (mode === 'arabic') return validateArabic(chosen, text);
   if (!/^[A-Za-z0-9 .,!?'’;:-]+$/.test(text)) return { ok: false, reason: 'unexpected characters' };
   if (/https?|www\.|@/i.test(text)) return { ok: false, reason: 'contains a link' };
   const toks = tokens(text);
