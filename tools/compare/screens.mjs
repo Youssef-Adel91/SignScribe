@@ -2,7 +2,7 @@
 // Usage: npm run build && npm run compare [-- --size 1440x900] [-- --only 3,7]
 // Output: tools/compare/out/<size>/NN-name.png (app), NN-name.compare.png (design | app)
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
+import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -74,5 +74,5 @@ try {
   }
 } finally {
   await browser.close();
-  server.kill();
+  stopTool(server);
 }

@@ -6,7 +6,7 @@
 //  - the study mode ignores the server
 // Usage: npm run build && npm run e2e:server
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
+import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import net from 'node:net';
@@ -191,8 +191,8 @@ try {
   }
 } finally {
   await browser.close();
-  preview.kill();
-  server.kill();
+  stopTool(preview);
+  stopTool(server);
   evil.close();
 }
 console.log(failed ? `\n${failed} check(s) FAILED` : '\nall server checks passed');

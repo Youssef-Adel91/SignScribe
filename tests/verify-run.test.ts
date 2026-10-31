@@ -1,9 +1,11 @@
 // @vitest-environment node
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, symlinkSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+// @ts-expect-error plain JavaScript module of the tools folder
+import { linkPath } from '../tools/lib/link-path.mjs';
 // @ts-expect-error plain JavaScript module of the tools folder
 import { needsShell, probe, runStep } from '../tools/lib/run-step.mjs';
 
@@ -80,23 +82,30 @@ describe('a command that cannot start is a FAIL with the real reason, never a si
 });
 
 describe('verify-all itself, with npm missing from the PATH (the Windows failure, made on Linux)', () => {
+  // On Windows npm is started through the shell, so a missing npm is the shell's "not recognized" (exit code 1), not ENOENT.
+  const why = process.platform === 'win32' ? /exit code 1/ : /ENOENT/;
   it('prints the real error, marks every npm step FAIL and exits 1', () => {
     const bin = mkdtempSync(join(tmpdir(), 'only-node-'));
-    symlinkSync(process.execPath, join(bin, 'node'));
+    // a symlink to node.exe needs a privilege on Windows: linkPath falls back to a copy there
+    linkPath(process.execPath, join(bin, process.platform === 'win32' ? 'node.exe' : 'node'), {
+      isDir: false,
+    });
+    const winEnv =
+      process.platform === 'win32'
+        ? { SystemRoot: process.env.SystemRoot ?? '', ComSpec: process.env.ComSpec ?? '' }
+        : {};
     const r = spawnSync(process.execPath, ['tools/verify-all.mjs'], {
       encoding: 'utf8',
-      env: { PATH: bin, PYTHON: join(bin, 'no-python') },
+      env: { PATH: bin, PYTHON: join(bin, 'no-python'), ...winEnv },
       timeout: 60_000,
     });
     const out = `${r.stdout}\n${r.stderr}`;
     expect(r.status).toBe(1);
-    expect(out).toMatch(/WARNING: npm could not be started \(ENOENT/);
-    expect(out).toMatch(
-      /FAILED typecheck \+ lint \+ unit tests \+ build: could not start "npm": ENOENT/,
-    );
+    expect(out).toMatch(new RegExp(`WARNING: npm could not be started \\(${why.source}`));
+    expect(out).toMatch(/FAILED typecheck \+ lint \+ unit tests \+ build: /);
     const fails = out.split('\n').filter((l) => /^FAIL /.test(l));
     expect(fails.length).toBeGreaterThanOrEqual(7);
-    expect(fails.every((l) => l.includes('ENOENT'))).toBe(true);
+    expect(fails.every((l) => why.test(l))).toBe(true);
     expect(out).not.toMatch(/^PASS .*typecheck/m);
   });
 });

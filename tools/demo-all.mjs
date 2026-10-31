@@ -6,7 +6,7 @@
 //
 // Options: --fake-device youssef:Clinic   --letters "J Z"   --python /path/to/python   --no-web
 // Walkthrough and what to say for each grading row: tools/demo-all.md
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnTool as spawn, spawnToolSync as spawnSync, stopTool } from './lib/spawn-tool.mjs';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { WebSocket } from 'ws';
@@ -75,7 +75,7 @@ function run(name, cmd, cmdArgs, env = {}) {
   children.push(p);
   return p;
 }
-const stopAll = () => children.forEach((c) => c.kill());
+const stopAll = () => children.forEach((c) => stopTool(c));
 process.on('SIGINT', () => {
   stopAll();
   process.exit(0);

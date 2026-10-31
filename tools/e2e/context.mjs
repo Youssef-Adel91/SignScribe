@@ -3,7 +3,7 @@
 // can be overridden by pointing, and that everything goes back when nothing is detected.
 // Usage: npm run build && npm run e2e:context
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
+import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -220,12 +220,12 @@ try {
       !/J/.test(before.replace(/dollarpy: J/g, '')) && /J/.test(after),
       after.slice(0, 120),
     );
-    client.kill();
+    stopTool(client);
     await spell.close();
   }
 
   // the server going away changes nothing for the person
-  server.kill();
+  stopTool(server);
   await page.waitForTimeout(500);
   check(
     'the page still works with the server gone',
@@ -234,10 +234,10 @@ try {
   check('no page errors', errors.length === 0, errors.join(' ; ').slice(0, 200));
   await ctx.close();
 } finally {
-  scanner?.kill();
+  stopTool(scanner);
   await browser.close();
-  server.kill();
-  preview.kill();
+  stopTool(server);
+  stopTool(preview);
 }
 console.log(failed ? `\n${failed} check(s) FAILED` : '\nall context checks passed');
 process.exit(failed ? 1 : 0);

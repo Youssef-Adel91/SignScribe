@@ -4,7 +4,7 @@
 //     model file) the app says so clearly instead of crashing.
 // Usage: npm run build && npm run e2e
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
+import { spawnTool as spawn, stopTool } from '../lib/spawn-tool.mjs';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -398,7 +398,7 @@ try {
   }
 } finally {
   await browser.close();
-  server.kill();
+  stopTool(server);
 }
 console.log(`\n${results.length - failed}/${results.length} checks passed`);
 process.exit(failed ? 1 : 0);

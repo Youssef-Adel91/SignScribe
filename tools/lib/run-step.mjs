@@ -1,12 +1,12 @@
 // Runs one command for tools/verify-all.mjs and always tells the truth about how it ended.
 //
-// On Windows `npm` is `npm.cmd`: spawnSync('npm', ...) without a shell fails at once with ENOENT. Only npm is started through the
-// shell there (its arguments are fixed words from verify-all, no user input); Python and node are started directly, so a path with
-// spaces still works. On Linux and macOS nothing changes: no shell.
+// How a command is started (npm / npx through the shell on Windows only, programs directly, Linux untouched) lives in spawn-tool.mjs,
+// the same code the e2e launchers use.
 import { spawnSync } from 'node:child_process';
+import { isCmdTool, prepare } from './spawn-tool.mjs';
 
-export const needsShell = (cmd, platform = process.platform) =>
-  platform === 'win32' && cmd === 'npm';
+/** kept for the tests that name it: is this command started through the shell (a Windows .cmd tool)? */
+export const needsShell = isCmdTool;
 
 /**
  * @returns {{ ok: boolean, seconds: number, why: string }} why = '' on success, else the real reason (the spawn error, the signal
@@ -15,11 +15,8 @@ export const needsShell = (cmd, platform = process.platform) =>
 export function runStep(cmd, args, opts = {}, env = {}) {
   const { spawn = spawnSync, platform = process.platform, now = Date.now } = env;
   const t0 = now();
-  const r = spawn(cmd, args, {
-    stdio: 'inherit',
-    ...opts,
-    ...(needsShell(cmd, platform) ? { shell: true } : {}),
-  });
+  const p = prepare(cmd, args, { stdio: 'inherit', ...opts }, platform);
+  const r = spawn(p.cmd, p.args, p.opts);
   const seconds = (now() - t0) / 1000;
   if (r.error) {
     const code = r.error.code ? `${r.error.code}: ` : '';
@@ -33,10 +30,8 @@ export function runStep(cmd, args, opts = {}, env = {}) {
 /** can the tools be started at all? Prints nothing; returns the first reason a command could not start, or ''. */
 export function probe(cmd, args, env = {}) {
   const { spawn = spawnSync, platform = process.platform } = env;
-  const r = spawn(cmd, args, {
-    stdio: 'ignore',
-    ...(needsShell(cmd, platform) ? { shell: true } : {}),
-  });
+  const p = prepare(cmd, args, { stdio: 'ignore' }, platform);
+  const r = spawn(p.cmd, p.args, p.opts);
   if (r.error) return `${r.error.code ? `${r.error.code}: ` : ''}${r.error.message}`;
   return r.status === 0 ? '' : `exit code ${r.status}`;
 }
