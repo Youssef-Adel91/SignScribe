@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { CamPill, CameraView } from '../ui/CameraView';
 import { Card } from '../ui/Card';
 import { Chip } from '../ui/Chip';
@@ -11,10 +12,28 @@ import { BuilderBody } from '../ui/Builder';
 import { Screen } from '../ui/Screen';
 import { useAnnounceOnChange } from '../output/announcer';
 import { useCtx } from '../state/MachineProvider';
+import { visionStore } from '../vision/store';
 import styles from './S08HandLost.module.css';
+
+/** how long the hand may stay away before the screen also suggests what to check (a person may just have lowered it) */
+export const HAND_LOST_TIP_MS = 10_000;
 
 export default function S08HandLost() {
   const { hand, place, words, word } = useCtx();
+  const [late, setLate] = useState(false);
+  // counted on the camera's own clock (frame times), so it follows the pictures and not the wall clock
+  useEffect(() => {
+    let since: number | null = null;
+    return visionStore.subscribe(() => {
+      const f = visionStore.state.frame;
+      if (!f) return;
+      since ??= f.t;
+      if (f.t - since >= HAND_LOST_TIP_MS) setLate(true);
+    });
+  }, []);
+  useAnnounceOnChange(
+    late ? 'Still no hand. Check that nothing covers the camera and that there is light.' : null,
+  );
   const text = [...words, word].filter(Boolean).join(' ');
   useAnnounceOnChange(
     "We lost your hand. Bring it back into the frame. Your message is safe. I can't see your hand.",
@@ -30,12 +49,8 @@ export default function S08HandLost() {
         </>
       }
       hints={
-        <>
-          <Hint gesture="open" label="Space" />
-          <Hint gesture="fist" label="Delete" />
-          <Hint gesture="up" label="Done" />
-          <Hint gesture="down" label="Cancel" />
-        </>
+        // while the hand is lost the command gestures do nothing, so they are not offered: the only way on is the hand
+        <Hint gesture="open" label="Bring your hand back" suggested />
       }
     >
       <BuilderBody
@@ -72,6 +87,11 @@ export default function S08HandLost() {
                 <InfoRow icon="check">Nothing is deleted. Spelling is paused.</InfoRow>
                 <InfoRow icon="refresh">The ring restarts when your hand is back.</InfoRow>
                 <InfoRow icon="speaker">Also spoken: "I can't see your hand."</InfoRow>
+                {late && (
+                  <InfoRow icon="warn">
+                    Still no hand? Check that nothing covers the camera and that there is light.
+                  </InfoRow>
+                )}
               </InfoList>
             </Card>
           </>
