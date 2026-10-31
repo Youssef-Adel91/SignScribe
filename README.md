@@ -38,6 +38,8 @@ Without it the app writes sentences with simple offline rules. With it, a langua
 
 ## Checks
 
+The whole project in one document (architecture, features with their tests, models and what is NOT trained, known issues): `docs/PROJECT_STATUS.md`.
+
     npm run verify     # runs every check below and prints one table (needs `npm run models` once)
 
     npm run check      # typecheck, lint, unit tests, production build
