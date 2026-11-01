@@ -28,6 +28,7 @@ Device addresses and names exist **only** in your local `devices.json` and in th
 
 ## Demo without hardware (FAKE)
     python tools/bluetooth/scan.py --fake youssef:Clinic [--fake-seconds 20]
+    python tools/bluetooth/scan.py --fake sara:Clinic:female       # the person's profile too: the app shows pink pages
 
 Simulates one device. It prints `*** FAKE BLE DEVICE ... ***`, marks every message `"demo": true` (the app shows "demo device") and, with `--fake-seconds`, makes the device disappear so you can show the app falling back. It exists only for demos and tests. It proves nothing about Bluetooth hardware.
 
@@ -37,3 +38,10 @@ Simulates one device. It prints `*** FAKE BLE DEVICE ... ***`, marks every messa
 ## Verified, and not
 Verified here: config rules, matching (address spellings, names, prefixes, signal threshold), smoothing, the message against the server's own parser, sending over a real TCP socket, reconnecting, backing off when the server is busy or away, that no address or device name ever reaches a log line or a message, the Bleak wrapper with a fake `bleak`.
 **Not verified: a real Bluetooth adapter and real devices** (none here). Things to check on real hardware: that your devices advertise a stable name or address (phones often rotate their address for privacy: use a band, a beacon or a tag), and the `min_rssi` / scan times for your room.
+
+### The person's profile (page colours)
+A device entry with a `userId` may also say `"gender": "male"` or `"gender": "female"`. The scanner sends it with that person's presence
+(never for a place-only device), the server checks it and pushes it to the app, and the app uses it for a person it has no saved
+profile for yet: male = blue and green pages, female = pink pages. The person can change it on screen 03; their saved profile wins
+from then on. It is never logged.
+

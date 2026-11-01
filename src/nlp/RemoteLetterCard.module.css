@@ -14,7 +14,7 @@
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
 }
 .card[data-hot='true'] {
-  background: #ccfbf1;
+  background: var(--teal-bg, #ccfbf1);
   border-style: solid;
 }
 .letter {

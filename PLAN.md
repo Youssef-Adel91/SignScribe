@@ -133,3 +133,7 @@ Youssef checked three local datasets: ArSL21L pictures (flat folder, 50 persons,
 
 ## Phase II grading rows (branches feat/ble-presence, feat/context-push, feat/dollarpy-demo, feat/demo-all)
 The course Phase II sheet scores Bluetooth (UserID + discovery), socket programming, DollarPy on MediaPipe, and "load different content based on context". Order: (1) `tools/bluetooth/scan.py` + a `presence` message on the sentence server; (2) the server pushes context to the web app, which loads the place and the person's saved settings with a visible override; (3) `tools/dollarpy/` record + live classify, letters sent over the socket; (4) `tools/demo-all.md` with a clearly labelled FAKE device; (5) the mapping table in `docs/DONE.md`. No Bluetooth hardware and no webcam were available in the build environment: those rows stay "needs real hardware".
+
+## Profile colours (branch feat/profile-theme, Phase II criterion added by the team)
+Screen 03 gets a third question, "Your profile": male = blue and green pages, female = pink pages, not set = the standard teal. It is a setting like the others (saved, and part of a Bluetooth person's profile), the device list can give it for a person seen for the first time (`"gender"` in `devices.json`), and high contrast always wins. Contrast of every theme is tested. Figma: drawn in a separate file because the team file is view-only for the account that made it (docs/DONE.md, last section).
+

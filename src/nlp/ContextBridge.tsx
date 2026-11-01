@@ -24,6 +24,7 @@ export function ContextBridge({ url }: { url: string }) {
             place: c.place,
             demo: c.demo,
             profile: c.userId ? loadProfile(c.userId) : null,
+            gender: c.gender,
           });
       },
       undefined,

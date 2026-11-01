@@ -1,15 +1,19 @@
 .hand {
   width: calc(var(--u) * 340);
-  height: calc(var(--u) * 170);
+  height: calc(var(--u) * 150);
   gap: var(--s-8);
 }
 .small {
   width: calc(var(--u) * 260);
-  height: calc(var(--u) * 100);
+  height: calc(var(--u) * 88);
 }
 @media (max-width: 1100px) {
   .hand,
   .small {
     width: calc(var(--u) * 240);
   }
+}
+/* three questions at extra-large text: the hand pictures give up a little height so nothing scrolls */
+:global([data-text-size='xlarge']) .hand {
+  height: calc(var(--u) * 118);
 }

@@ -141,6 +141,7 @@ describe('parsing a pushed context message', () => {
       userId: 'youssef',
       place: 'Clinic',
       demo: true,
+      gender: null,
     });
     for (const bad of [
       '{nope',
@@ -183,7 +184,10 @@ describe('ContextFeed', () => {
       data: JSON.stringify({ type: 'context', userId: null, place: null, demo: false }),
     });
     ws.onmessage?.({ data: 'garbage' });
-    expect(got).toEqual([{ type: 'context', userId: 'u', place: null, demo: false }, null]);
+    expect(got).toEqual([
+      { type: 'context', userId: 'u', place: null, demo: false, gender: null },
+      null,
+    ]);
     feed.close();
     expect(ws.closed).toBe(true);
   });

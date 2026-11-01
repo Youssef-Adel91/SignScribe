@@ -81,7 +81,13 @@ export async function start(
   });
   const pushContext = (socket: import('ws').WebSocket, p = presence.current()) => {
     if (socket.readyState !== socket.OPEN) return;
-    const msg: ContextPush = { type: 'context', userId: p.userId, place: p.place, demo: p.demo };
+    const msg: ContextPush = {
+      type: 'context',
+      userId: p.userId,
+      place: p.place,
+      demo: p.demo,
+      gender: p.gender,
+    };
     socket.send(JSON.stringify(msg));
   };
   // every connected app hears about a change at once; a new app hears the current state when it connects

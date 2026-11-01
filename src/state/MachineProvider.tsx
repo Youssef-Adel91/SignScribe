@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createActorContext } from '@xstate/react';
-import { screenOf, signScribeMachine, type Ctx, type Ev } from './machine';
+import { screenOf, signScribeMachine, themeOf, type Ctx, type Ev } from './machine';
 import { feedback, setFeedbackEnabled } from '../output/feedback';
 import { setSpeechEnabled } from '../output/speech';
 import { loadSettings, saveSettings } from './settings';
@@ -29,16 +29,16 @@ function FeedbackOnLetter() {
 }
 
 function Persist() {
-  const { hand, alphabet, textSize, contrast, dwell, voice, feedback } = Machine.useSelector(
-    (s) => s.context,
-  );
+  const { hand, alphabet, textSize, contrast, dwell, voice, feedback, gender } =
+    Machine.useSelector((s) => s.context);
   const person = Machine.useSelector((s) => s.context.detected?.userId ?? null);
   // the values as they were when they were last looked at: a save is made only when a VALUE changed
   const seen = useRef<string | null>(null);
   useEffect(() => {
-    const values = { hand, alphabet, textSize, contrast, dwell, voice, feedback };
+    const values = { hand, alphabet, textSize, contrast, dwell, voice, feedback, gender };
     document.documentElement.dataset.textSize = textSize;
     document.documentElement.dataset.contrast = contrast;
+    document.documentElement.dataset.theme = themeOf(gender);
     setSpeechEnabled(voice);
     setFeedbackEnabled(feedback);
     const now = JSON.stringify(values);
@@ -52,7 +52,7 @@ function Persist() {
     if (!changed) return;
     if (person) saveProfile(person, values);
     else saveSettings(values);
-  }, [hand, alphabet, textSize, contrast, dwell, voice, feedback, person]);
+  }, [hand, alphabet, textSize, contrast, dwell, voice, feedback, gender, person]);
   return null;
 }
 
