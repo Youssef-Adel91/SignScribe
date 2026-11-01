@@ -10,7 +10,7 @@ For the Phase II demo. One command starts the sentence server, the Bluetooth sca
     npm run demo -- --real             # REAL: your Bluetooth adapter + your webcam (needs devices.json and recorded templates)
     npm run demo -- --check            # starts everything in FAKE mode, waits until the chain works, prints PASS/FAIL, stops
 
-Options: `--fake-device sara:Shop`, `--letters "J"`, `--python path/to/venv/python`, `--no-web`. Then open the address it prints (`http://localhost:5173/?server=ws://localhost:8787`, add `&dev=1` for the developer panels).
+Options: `--fake-device sara:Shop` (or `sara:Clinic:female` to show the profile colours: pink pages), `--letters "J"`, `--python path/to/venv/python`, `--no-web`. Then open the address it prints (`http://localhost:5173/?server=ws://localhost:8787`, add `&dev=1` for the developer panels).
 
 ## The same thing by hand (four terminals)
 | Terminal | FAKE (no hardware) | REAL |
@@ -27,7 +27,8 @@ Open `http://localhost:5173/?server=ws://localhost:8787` (the server address is 
 2. **Bluetooth (UserID and discovery).** Start the scanner. The server log says `presence: user youssef, place Clinic`. In the app a chip `Bluetooth: youssef · Clinic (demo device)` appears in the top bar **on every screen**. FAKE: the chip says "(demo device)" on purpose. REAL: carry the device you listed in `devices.json` near the computer.
 3. **Load different content based on context.** On "Where are you today?" the detected place is already selected. Run the fake scanner with another place (`--fake youssef:Shop`) and show the Shop words and cards; with a saved profile (change the text size once while detected) the person's settings come back next time. Show the override: point and hold on "Wrong? Point and hold here to ignore": place and settings go back. Stop the scanner: after about 15 s the chip disappears and the app works exactly as before.
 4. **MediaPipe + DollarPy.** Go to the spelling screen. FAKE: the client prints `recognised J` and a card "dollarpy: J (simulated)" appears; point and hold to add it. REAL: draw J or Z in the air with the index finger. Say what it tracks: the hand skeleton (21 landmarks) and the twelve Lab 5 pose landmarks (MediaPipe Pose, `--no-pose` to switch off), the fingertip path, `Recognizer/Template/Point` from the dollarpy package.
-5. **Figma interface, PACT, scenario, survey.** Not part of these tools: the scenario and the PACT are in the Phase I PDF (not in this repo); see `docs/DONE.md` ("Phase II grading sheet") for the rest.
+5. **Profile colours (added Phase II criterion).** Start with `--fake-device sara:Clinic:female`: the pages are pink before the message starts. On screen 03 choose Male (blue and green) or Not set (teal).
+6. **Figma interface, PACT, scenario, survey.** Not part of these tools: see `docs/PHASE2_SUBMISSION.md` (all rows, the demo on the day) and `docs/phase1/`.
 
 ## Before you present (checklist)
 - [ ] `npm run demo -- --check` prints three PASS lines.
