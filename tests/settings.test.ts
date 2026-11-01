@@ -15,6 +15,7 @@ describe('settings storage', () => {
       dwell: 'slow',
       voice: false,
       feedback: false,
+      gender: 'female',
     } as const;
     saveSettings(s);
     expect(loadSettings()).toEqual(s);

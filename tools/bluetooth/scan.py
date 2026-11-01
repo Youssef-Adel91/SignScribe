@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from ble_logic import (  # noqa: E402
     FAKE_BANNER,
+    GENDERS,
     PLACES,
     Config,
     ConfigError,
@@ -64,14 +65,19 @@ async def bleak_scan(seconds: float) -> list:
 
 
 def fake_config(spec: str, host: str, port: int, settings: Settings) -> tuple[Config, str]:
-    """`--fake USER:PLACE` (either may be empty). Returns a config with one simulated device."""
-    user, _, place = spec.partition(":")
-    user, place = user.strip() or None, place.strip() or None
+    """`--fake USER:PLACE[:GENDER]` (user or place may be empty; GENDER is male or female). Returns a config with one simulated device."""
+    user, _, rest = spec.partition(":")
+    place, _, gender = rest.partition(":")
+    user, place, gender = user.strip() or None, place.strip() or None, gender.strip().lower() or None
+    if gender is not None and gender not in GENDERS:
+        raise ConfigError(f"--fake gender must be one of {', '.join(GENDERS)}")
+    if gender is not None and user is None:
+        raise ConfigError("--fake gender needs a user, for example sara:Clinic:female")
     if place is not None and place not in PLACES:
         raise ConfigError(f"--fake place must be one of {', '.join(PLACES)}")
     if user is None and place is None:
         raise ConfigError("--fake needs USER:PLACE, for example youssef:Clinic")
-    entry = Entry(0, "fake-device", user, place, name=FAKE_NAME)
+    entry = Entry(0, "fake-device", user, place, name=FAKE_NAME, gender=gender)
     return Config(host, port, settings, (entry,)), FAKE_NAME
 
 
@@ -102,7 +108,7 @@ def main(argv=None) -> int:
     ap.add_argument("--config", default=str(DEFAULT_CONFIG), help="devices.json (see devices.example.json)")
     ap.add_argument("--host", help="sentence server host (default from the config, else 127.0.0.1)")
     ap.add_argument("--port", type=int, help="sentence server TCP port (default from the config, else 8788)")
-    ap.add_argument("--fake", metavar="USER:PLACE", help="DEMO ONLY: simulate one device, e.g. youssef:Clinic or :Shop. No Bluetooth hardware is used")
+    ap.add_argument("--fake", metavar="USER:PLACE", help="DEMO ONLY: simulate one device, e.g. youssef:Clinic, :Shop or sara:Clinic:female (a profile: pink pages). No Bluetooth hardware is used")
     ap.add_argument("--fake-rssi", type=int, default=-55)
     ap.add_argument("--fake-seconds", type=float, help="the fake device disappears after this many seconds (shows the app falling back)")
     ap.add_argument("--scans", type=int, help="stop after this many scans (default: run until Ctrl+C)")
@@ -134,7 +140,7 @@ def main(argv=None) -> int:
     else:
         scan = bleak_scan
     link = ServerLink(cfg.host, cfg.port)
-    reporter = Reporter(link, demo, cfg.settings.heartbeat_seconds, log=lambda *a, **k: print(*a, flush=True, **k))
+    reporter = Reporter(link, demo, cfg.settings.heartbeat_seconds, log=lambda *a, **k: print(*a, flush=True, **k), genders=cfg.genders)
     print(f"{'FAKE ' if demo else ''}scanner running; sending to {cfg.host}:{cfg.port}. Ctrl+C to stop.", flush=True)
     try:
         asyncio.run(run(cfg, scan, reporter, lambda *a, **k: print(*a, flush=True, **k), a.scans, a.verbose))

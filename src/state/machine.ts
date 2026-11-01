@@ -11,6 +11,15 @@ export type Hand = 'left' | 'right';
 export type Alphabet = 'arabic' | 'english' | 'more';
 export type TextSize = 'normal' | 'large' | 'xlarge';
 export type Contrast = 'standard' | 'high';
+/**
+ * Part of the person's profile (screen 03, or the Bluetooth device list): it decides the page colours.
+ * male = blue and green pages, female = pink pages, unset = the standard teal pages. Nothing else depends on it.
+ */
+export type Gender = 'unset' | 'male' | 'female';
+export type Theme = 'standard' | 'blue' | 'pink';
+/** the page colours of a profile; high contrast always wins over these (see tokens.css) */
+export const themeOf = (g: Gender): Theme =>
+  g === 'male' ? 'blue' : g === 'female' ? 'pink' : 'standard';
 /** auto = adaptive hold time; the others are fixed (slow 1.2 s, normal 0.8 s, fast 0.6 s) */
 export type DwellSetting = 'auto' | 'slow' | 'normal' | 'fast';
 export type Method = 'spell' | 'card';
@@ -46,6 +55,8 @@ export interface Settings {
   voice: boolean;
   /** one short sound and one short vibration for each letter that is written (never per frame); false = none */
   feedback: boolean;
+  /** the profile choice that sets the page colours (themeOf) */
+  gender: Gender;
 }
 
 /** Who and where the Bluetooth scanner says is near (pushed by the sentence server). Null parts = not known. */
@@ -96,6 +107,7 @@ export type Ev =
   | { type: 'CHOOSE_ALPHABET'; alphabet: Alphabet }
   | { type: 'CHOOSE_TEXT_SIZE'; textSize: TextSize }
   | { type: 'CHOOSE_CONTRAST'; contrast: Contrast }
+  | { type: 'CHOOSE_GENDER'; gender: Gender }
   | { type: 'CHOOSE_DWELL'; dwell: DwellSetting }
   | { type: 'CHOOSE_VOICE'; voice: boolean }
   | { type: 'CHOOSE_OUTPUT'; voice: boolean; feedback: boolean }
@@ -128,6 +140,8 @@ export type Ev =
       place: Place | null;
       demo: boolean;
       profile?: Settings | null;
+      /** from the scanner's device list, used only when this person has no saved profile yet */
+      gender?: Gender | null;
     }
   | { type: 'CONTEXT_CLEARED' }
   /** "this is wrong": undo what the detection changed and do not apply it again */
@@ -145,6 +159,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dwell: 'auto',
   voice: true,
   feedback: true,
+  gender: 'unset',
 };
 
 /* ---------- pure helpers ---------- */
@@ -230,6 +245,9 @@ export const signScribeMachine = setup({
     setContrast: assign(({ event }) =>
       event.type === 'CHOOSE_CONTRAST' ? { contrast: event.contrast } : {},
     ),
+    setGender: assign(({ event }) =>
+      event.type === 'CHOOSE_GENDER' ? { gender: event.gender } : {},
+    ),
     setDwell: assign(({ event }) => (event.type === 'CHOOSE_DWELL' ? { dwell: event.dwell } : {})),
     setVoice: assign(({ event }) => (event.type === 'CHOOSE_VOICE' ? { voice: event.voice } : {})),
     setOutput: assign(({ event }) =>
@@ -259,12 +277,15 @@ export const signScribeMachine = setup({
           dwell: context.dwell,
           voice: context.voice,
           feedback: context.feedback,
+          gender: context.gender,
         },
       };
       return {
         beforeDetect: before,
         ...(event.place && !context.placeChosen ? { place: event.place } : {}),
         ...(event.userId && event.profile ? event.profile : {}),
+        // a person seen for the first time: their device list entry may say which page colours to use
+        ...(event.userId && !event.profile && event.gender ? { gender: event.gender } : {}),
       };
     }),
     /** nothing is detected any more (person left, scanner or server gone): forget the detection and any "ignore" of it */
@@ -480,6 +501,7 @@ export const signScribeMachine = setup({
       on: {
         ...detect,
         CHOOSE_HAND: { guard: 'idle', actions: 'setHand' },
+        CHOOSE_GENDER: { guard: 'idle', actions: 'setGender' },
         CHOOSE_ALPHABET: { guard: and(['idle', 'alphabetAvailable']), actions: 'setAlphabet' },
         YES: { guard: 'idle', target: 'comfort' },
         NO: { guard: 'idle', target: 'cameraCheck' },

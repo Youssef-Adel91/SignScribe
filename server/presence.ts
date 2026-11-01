@@ -1,4 +1,4 @@
-import type { PlaceName, PresenceRequest } from '../src/nlp/protocol.ts';
+import type { PlaceName, PresenceRequest, ProfileGender } from '../src/nlp/protocol.ts';
 import { RateLimiter } from './handler.ts';
 
 export interface Presence {
@@ -6,12 +6,20 @@ export interface Presence {
   place: PlaceName | null;
   rssi: number | null;
   demo: boolean;
+  /** the person's profile from the scanner's device list (page colours); never logged */
+  gender: ProfileGender | null;
 }
 
-export const NOBODY: Presence = { userId: null, place: null, rssi: null, demo: false };
+export const NOBODY: Presence = {
+  userId: null,
+  place: null,
+  rssi: null,
+  demo: false,
+  gender: null,
+};
 
 const same = (a: Presence, b: Presence) =>
-  a.userId === b.userId && a.place === b.place && a.demo === b.demo;
+  a.userId === b.userId && a.place === b.place && a.demo === b.demo && a.gender === b.gender;
 
 /**
  * Who is near and where, as last reported by the Bluetooth scanner. It is kept in memory only, forgotten after
@@ -57,7 +65,7 @@ export class PresenceStore {
     if (!this.limiter.allow(now)) return false;
     const found = msg.userId !== null || msg.place !== null;
     const next: Presence = found
-      ? { userId: msg.userId, place: msg.place, rssi: msg.rssi, demo: msg.demo }
+      ? { userId: msg.userId, place: msg.place, rssi: msg.rssi, demo: msg.demo, gender: msg.gender }
       : NOBODY;
     const before = this.current(now);
     const changed = !same(before, next);

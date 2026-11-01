@@ -32,6 +32,7 @@ describe('presence message (Bluetooth scanner -> server)', () => {
       place: 'Clinic',
       rssi: -58,
       demo: false,
+      gender: null,
     });
     const none = parseRequest(msg({ userId: null, place: null, rssi: null }));
     expect(none.ok && (none.msg as PresenceRequest).userId).toBeNull();
@@ -64,7 +65,7 @@ describe('presence message (Bluetooth scanner -> server)', () => {
     if (!p.ok) expect(p.message).toMatch(re);
   });
   it('allows only the documented fields', () => {
-    expect(PRESENCE.fields).toEqual(['id', 'type', 'userId', 'place', 'rssi', 'demo']);
+    expect(PRESENCE.fields).toEqual(['id', 'type', 'userId', 'place', 'rssi', 'demo', 'gender']);
   });
 });
 
@@ -284,14 +285,30 @@ describe('the server pushes context to every connected app', () => {
     const early = await open();
     await tcp(msg({ id: 'a', userId: 'sara', place: 'Shop', demo: true }));
     await wait(100);
-    expect(early.msgs).toEqual([{ type: 'context', userId: 'sara', place: 'Shop', demo: true }]);
+    expect(early.msgs).toEqual([
+      { type: 'context', userId: 'sara', place: 'Shop', demo: true, gender: null },
+    ]);
     const late = await open();
     await wait(100);
-    expect(late.msgs).toEqual([{ type: 'context', userId: 'sara', place: 'Shop', demo: true }]);
+    expect(late.msgs).toEqual([
+      { type: 'context', userId: 'sara', place: 'Shop', demo: true, gender: null },
+    ]);
     await tcp(msg({ id: 'b', userId: null, place: null, rssi: null }));
     await wait(100);
-    expect(early.msgs.at(-1)).toEqual({ type: 'context', userId: null, place: null, demo: false });
-    expect(late.msgs.at(-1)).toEqual({ type: 'context', userId: null, place: null, demo: false });
+    expect(early.msgs.at(-1)).toEqual({
+      type: 'context',
+      userId: null,
+      place: null,
+      demo: false,
+      gender: null,
+    });
+    expect(late.msgs.at(-1)).toEqual({
+      type: 'context',
+      userId: null,
+      place: null,
+      demo: false,
+      gender: null,
+    });
     early.ws.close();
     late.ws.close();
   });

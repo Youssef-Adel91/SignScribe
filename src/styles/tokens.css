@@ -93,6 +93,25 @@
 :root[data-text-size='xlarge'] {
   --ts: 1.5;
 }
+/* Page colours from the person's profile (screen 03 or the Bluetooth device list; themeOf in src/state/machine.ts).
+   Only the accent family and the page background change; every text colour keeps >= 4.5:1 (tests/contrast.test.ts).
+   High contrast wins: these blocks never apply together with it. */
+:root[data-theme='blue']:not([data-contrast='high']) {
+  --bg: #ecfeff;
+  --teal: #1d4ed8;
+  --teal-ink: #1e3a8a;
+  --teal-bg: #dbeafe;
+  --teal-wash: #eff6ff;
+  --teal-soft: #93c5fd;
+}
+:root[data-theme='pink']:not([data-contrast='high']) {
+  --bg: #fff7fb;
+  --teal: #be185d;
+  --teal-ink: #9d174d;
+  --teal-bg: #fce7f3;
+  --teal-wash: #fdf2f8;
+  --teal-soft: #f9a8d4;
+}
 :root[data-contrast='high'] {
   --bg: #ffffff;
   --ink: #000000;

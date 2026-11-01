@@ -4,7 +4,7 @@ A camera-controlled interface that turns hand signs into written sentences. No k
 once it is running: you raise a hand to start, point and hold to choose, and use thumbs, a fist and an
 open palm for yes / no / delete / space.
 
-Status: all 7 phases are built: camera and gestures, comfort settings and speech, a comparison study (camera vs keyboard and mouse), letter and picture-card tooling, a sentence server, an accessibility audit and performance tools. **Not done yet:** trained letter and card models, a test on a real camera, a study with people, a try with the live language model. See `docs/WHATS_LEFT.md`, `PLAN.md`, and `docs/DONE.md` for what is proven and what still needs a real camera.
+Status: all 7 phases are built (plus Phase II additions: the person's profile sets the page colours, male = blue and green, female = pink, from screen 03 or the Bluetooth device list): camera and gestures, comfort settings and speech, a comparison study (camera vs keyboard and mouse), letter and picture-card tooling, a sentence server, an accessibility audit and performance tools. **Not done yet:** trained letter and card models, a test on a real camera, a study with people, a try with the live language model. See `docs/WHATS_LEFT.md`, `PLAN.md`, and `docs/DONE.md` for what is proven and what still needs a real camera.
 
 ## Run it
 

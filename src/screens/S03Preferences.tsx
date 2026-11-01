@@ -4,7 +4,7 @@ import { Hint } from '../ui/HintBar';
 import { Screen } from '../ui/Screen';
 import { Tile } from '../ui/Tile';
 import { useCtx } from '../state/MachineProvider';
-import { AVAILABLE_ALPHABETS, type Alphabet } from '../state/machine';
+import { AVAILABLE_ALPHABETS, type Alphabet, type Gender } from '../state/machine';
 import common from './common.module.css';
 import styles from './S03Preferences.module.css';
 import { HandChip } from '../vision/bits';
@@ -14,8 +14,14 @@ const ALPHABETS: { key: Alphabet; title: string; sub: string }[] = [
   { key: 'english', title: 'English', sub: 'ASL fingerspelling' },
   { key: 'more', title: 'More…', sub: 'Other alphabets' },
 ];
+/** the profile choice sets the page colours at once (themeOf): the person sees the effect while choosing */
+const PROFILE: { key: Gender; title: string; sub: string }[] = [
+  { key: 'male', title: 'Male', sub: 'Blue and green pages' },
+  { key: 'female', title: 'Female', sub: 'Pink pages' },
+  { key: 'unset', title: 'Not set', sub: 'Standard colours' },
+];
 export default function S03Preferences() {
-  const { hand, alphabet } = useCtx();
+  const { hand, alphabet, gender } = useCtx();
   return (
     <Screen
       steps={['active', 'todo', 'todo', 'todo']}
@@ -35,7 +41,7 @@ export default function S03Preferences() {
       }
     >
       <div className={common.center}>
-        <h1 className={common.h1}>Two quick choices</h1>
+        <h1 className={common.h1}>Three quick choices</h1>
         <p className={common.lede}>
           Point at a choice and hold still. The ring shows when it is chosen.
         </p>
@@ -87,6 +93,22 @@ export default function S03Preferences() {
               sub={a.sub}
               className={styles.small}
               dwell={{ type: 'CHOOSE_ALPHABET', alphabet: a.key }}
+            />
+          ))}
+        </ul>
+
+        <h2 className={common.h2} id="q-profile">
+          Your profile (sets the page colours)
+        </h2>
+        <ul className={common.row} aria-labelledby="q-profile">
+          {PROFILE.map((g) => (
+            <Tile
+              key={g.key}
+              selected={gender === g.key}
+              title={g.title}
+              sub={g.sub}
+              className={styles.small}
+              dwell={{ type: 'CHOOSE_GENDER', gender: g.key }}
             />
           ))}
         </ul>

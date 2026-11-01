@@ -48,6 +48,27 @@ describe('contrast ratios match the numbers in PLAN.md section 5', () => {
     }
   });
 
+  it.each(['blue', 'pink'])(
+    'profile theme %s: accent text >= 4.5:1 on white, on the page background and on its own tint',
+    (theme) => {
+      const block = css.split(`:root[data-theme='${theme}']`)[1].split('}')[0];
+      const t = (n: string) => token(n, block);
+      for (const fg of ['teal', 'teal-ink'])
+        for (const bg of ['#ffffff', t('bg'), t('teal-bg'), t('teal-wash')])
+          expect(ratio(t(fg), bg), `${theme} ${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+      // white text on the accent (selected tiles, buttons)
+      expect(ratio('#ffffff', t('teal')), `${theme} white on teal`).toBeGreaterThanOrEqual(4.5);
+      // body text still reads on the tinted page
+      for (const fg of ['ink', 'ink-2', 'muted', 'muted-2'])
+        expect(ratio(token(fg), t('bg')), `${theme} ${fg} on page`).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
+  it('high contrast always wins over a profile theme', () => {
+    expect(css).toMatch(/:root\[data-theme='blue'\]:not\(\[data-contrast='high'\]\)/);
+    expect(css).toMatch(/:root\[data-theme='pink'\]:not\(\[data-contrast='high'\]\)/);
+  });
+
   it('high-contrast palette reaches at least 7:1 for body text and 4.5:1 for the rest', () => {
     const block = css.split(":root[data-contrast='high']")[1];
     for (const t of [

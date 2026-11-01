@@ -45,8 +45,13 @@ export const PRESENCE = {
   minRssi: -127,
   maxRssi: 0,
   /** the only fields a presence message may carry: anything else (an address, a name) is refused, not stored */
-  fields: ['id', 'type', 'userId', 'place', 'rssi', 'demo'],
+  fields: ['id', 'type', 'userId', 'place', 'rssi', 'demo', 'gender'],
+  /** a person's profile from the scanner's device list: the app's page colours (blue and green / pink) */
+  genders: ['male', 'female'],
 } as const;
+export type ProfileGender = (typeof PRESENCE.genders)[number];
+const isGender = (v: unknown): v is ProfileGender =>
+  (PRESENCE.genders as readonly unknown[]).includes(v);
 export interface PresenceRequest {
   id: string;
   type: 'presence';
@@ -58,6 +63,8 @@ export interface PresenceRequest {
   rssi: number | null;
   /** true when the device is simulated (scan.py --fake): the app says so */
   demo: boolean;
+  /** the found person's profile from the device list (optional; only with a userId) */
+  gender: ProfileGender | null;
 }
 
 /** a letter recognised by another program (tools/dollarpy/classify_live.py): the app shows it and the person adds it by pointing */
@@ -119,6 +126,8 @@ export interface ContextPush {
   userId: string | null;
   place: PlaceName | null;
   demo: boolean;
+  /** the found person's profile from the scanner's device list, or null */
+  gender: ProfileGender | null;
 }
 
 /** strict check of a pushed message, in the browser: anything that does not fit is ignored */
@@ -142,6 +151,8 @@ export function parseContextPush(text: string): ContextPush | null {
     userId: userId as string | null,
     place: place as PlaceName | null,
     demo: o.demo === true,
+    // anything that is not one of the two known values is dropped, never guessed
+    gender: userId !== null && isGender(o.gender) ? o.gender : null,
   };
 }
 
@@ -281,6 +292,10 @@ function parsePresence(o: Record<string, unknown>, id: string): Parsed {
     );
   if (o.demo !== undefined && typeof o.demo !== 'boolean')
     return bad("'demo' must be true or false");
+  const gender = o.gender ?? null;
+  if (gender !== null && !isGender(gender))
+    return bad(`'gender' must be null or one of ${PRESENCE.genders.join(', ')}`);
+  if (gender !== null && userId === null) return bad("'gender' needs a 'userId'");
   return {
     ok: true,
     msg: {
@@ -290,6 +305,7 @@ function parsePresence(o: Record<string, unknown>, id: string): Parsed {
       place: place as PlaceName | null,
       rssi: rssi as number | null,
       demo: o.demo === true,
+      gender,
     },
   };
 }

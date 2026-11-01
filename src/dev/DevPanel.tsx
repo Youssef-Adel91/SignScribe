@@ -68,6 +68,9 @@ export function DevPanel({ goTo }: { goTo: (screen: number) => void }) {
         {b('Right hand', { type: 'CHOOSE_HAND', hand: 'right' })}
         {b('Arabic', { type: 'CHOOSE_ALPHABET', alphabet: 'arabic' })}
         {b('English', { type: 'CHOOSE_ALPHABET', alphabet: 'english' })}
+        {b('Profile male', { type: 'CHOOSE_GENDER', gender: 'male' })}
+        {b('Profile female', { type: 'CHOOSE_GENDER', gender: 'female' })}
+        {b('Profile not set', { type: 'CHOOSE_GENDER', gender: 'unset' })}
         {b('Text normal', { type: 'CHOOSE_TEXT_SIZE', textSize: 'normal' })}
         {b('Text large', { type: 'CHOOSE_TEXT_SIZE', textSize: 'large' })}
         {b('Text extra large', { type: 'CHOOSE_TEXT_SIZE', textSize: 'xlarge' })}

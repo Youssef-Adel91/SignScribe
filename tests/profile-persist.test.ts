@@ -121,7 +121,11 @@ describe('2. a profile saved before the feedback setting existed', () => {
     localStorage.setItem('signscribe.profile.v1.old', JSON.stringify(OLD));
     let p: Settings | null = null;
     expect(() => (p = loadProfile('old'))).not.toThrow();
-    expect(p).toEqual({ ...OLD, feedback: DEFAULT_SETTINGS.feedback });
+    expect(p).toEqual({
+      ...OLD,
+      feedback: DEFAULT_SETTINGS.feedback,
+      gender: DEFAULT_SETTINGS.gender,
+    });
   });
   it('applied by a detection it changes the settings it has and leaves feedback at the default; the stored profile keeps its other fields', () => {
     localStorage.setItem('signscribe.profile.v1.old', JSON.stringify(OLD));

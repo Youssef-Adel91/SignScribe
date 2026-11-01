@@ -17,6 +17,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "common"))
 from server_link import ServerLink  # noqa: E402,F401  (re-exported: scan.py and the tests import it from here)
 
 PLACES = ("Clinic", "Shop", "Work", "Home")
+# a person's profile in the device list: the app shows blue and green pages for "male", pink pages for "female"
+GENDERS = ("male", "female")
 FAKE_BANNER = "*** FAKE BLE DEVICE: this is a demo, no Bluetooth hardware is being scanned ***"
 
 
@@ -42,6 +44,7 @@ class Entry:
     address: str | None = None
     name: str | None = None
     name_prefix: str | None = None
+    gender: str | None = None  # "male" / "female": the app's page colours for this person (only with a userId)
 
     def matches(self, address: str | None, name: str | None) -> bool:
         if self.address is not None:
@@ -69,6 +72,11 @@ class Config:
     port: int
     settings: Settings
     entries: tuple
+
+    @property
+    def genders(self) -> dict:
+        """userId -> "male" / "female" for the entries that give one (the profile the app uses for its page colours)."""
+        return {e.user_id: e.gender for e in self.entries if e.user_id and e.gender}
 
 
 def _need(cond, msg):
@@ -109,13 +117,16 @@ def parse_config(raw: dict) -> Config:
         _need(uid is not None or place is not None, f"{where} needs a userId, a place or both")
         _need(uid is None or (isinstance(uid, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,32}", uid)), f"{where}.userId must be 1-32 letters, digits, - or _")
         _need(place is None or place in PLACES, f"{where}.place must be one of {', '.join(PLACES)}")
+        gender = d.get("gender")
+        _need(gender is None or gender in GENDERS, f"{where}.gender must be one of {', '.join(GENDERS)} (or left out)")
+        _need(gender is None or uid is not None, f"{where}.gender needs a userId (it is part of a person's profile)")
         kw = {"address": norm_address(val)} if key == "address" else {key: val}
         ident = (key, kw.get("address") or val)
         _need(ident not in seen, f"{where} matches the same device as an earlier entry")
         seen.add(ident)
         label = d.get("label") or f"device #{i + 1}"
         _need(isinstance(label, str) and len(label) <= 40 and not looks_like_address(label), f"{where}.label must be a short text that is not a device address (it is what appears in logs)")
-        entries.append(Entry(i, str(label), uid, place, **kw))
+        entries.append(Entry(i, str(label), uid, place, gender=gender, **kw))
     return Config(host, port, s, tuple(entries))
 
 
@@ -220,9 +231,13 @@ class Tracker:
         return Presence(u.value if u else None, p.value if p else None, rssi)
 
 
-def build_message(seq: int, p: Presence, demo: bool) -> dict:
-    """The one JSON object sent per line. No address, no device name: only the ids from the config and a signal strength."""
-    return {"id": f"p{seq}", "type": "presence", "userId": p.user_id, "place": p.place, "rssi": p.rssi if (p.user_id or p.place) else None, "demo": demo}
+def build_message(seq: int, p: Presence, demo: bool, gender: str | None = None) -> dict:
+    """The one JSON object sent per line. No address, no device name: only the ids from the config and a signal strength.
+    `gender` (the person's profile from the config, for the app's page colours) is added only when a user is found."""
+    msg = {"id": f"p{seq}", "type": "presence", "userId": p.user_id, "place": p.place, "rssi": p.rssi if (p.user_id or p.place) else None, "demo": demo}
+    if p.user_id and gender in GENDERS:
+        msg["gender"] = gender
+    return msg
 
 
 @dataclass
@@ -239,6 +254,7 @@ class Reporter:
     log: object = print
     backoff_until: float = 0.0
     sent: list = field(default_factory=list)
+    genders: dict = field(default_factory=dict)  # userId -> gender, from Config.genders
 
     def report(self, p: Presence) -> bool:
         now = self.clock()
@@ -252,7 +268,7 @@ class Reporter:
         if now - self.last_sent < 1.0:
             return False
         self.seq += 1
-        msg = build_message(self.seq, p, self.demo)
+        msg = build_message(self.seq, p, self.demo, self.genders.get(p.user_id))
         try:
             ans = self.link.send(msg)
         except OSError as e:

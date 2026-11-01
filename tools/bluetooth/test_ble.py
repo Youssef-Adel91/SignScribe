@@ -393,3 +393,55 @@ def test_fake_banner_is_flushed_when_stdout_is_a_pipe():
     finally:
         p.kill()
         p.wait()
+
+
+# ---------------------------------------------------------------- the person's profile (page colours in the app)
+def test_a_device_with_a_user_may_carry_a_profile_and_it_is_checked():
+    c = cfg([
+        {"label": "band", "match": {"name": "Band"}, "userId": "youssef", "gender": "male"},
+        {"label": "phone", "match": {"address": ADDR}, "userId": "sara", "gender": "female"},
+        {"label": "tag", "match": {"name": "Tag"}, "userId": "omar"},
+    ])
+    assert c.genders == {"youssef": "male", "sara": "female"}
+    with pytest.raises(ConfigError, match="gender must be one of"):
+        cfg([{"label": "x", "match": {"name": "X"}, "userId": "u", "gender": "robot"}])
+    with pytest.raises(ConfigError, match="gender needs a userId"):
+        cfg([{"label": "x", "match": {"name": "X"}, "place": "Shop", "gender": "female"}])
+
+
+def test_the_profile_is_sent_only_with_a_user():
+    assert build_message(1, Presence("sara", "Clinic", -60), False, "female")["gender"] == "female"
+    assert "gender" not in build_message(2, Presence(None, "Shop", -60), False, "female")
+    assert "gender" not in build_message(3, Presence("sara", None, -60), False, None)
+
+
+def test_the_reporter_adds_the_profile_of_the_person_it_found():
+    clock, link = Clock(), Link()
+    r = Reporter(link, False, 5.0, clock=clock, log=lambda *_: None, genders={"sara": "female"})
+    assert r.report(Presence("sara", "Clinic", -60))
+    clock.t += 2
+    assert r.report(Presence("omar", "Clinic", -60))
+    assert link.sent[0]["gender"] == "female" and "gender" not in link.sent[1]
+
+
+def test_fake_mode_takes_an_optional_profile():
+    c, _ = scan.fake_config("sara:Clinic:female", "127.0.0.1", 8788, Settings())
+    assert c.genders == {"sara": "female"}
+    c, _ = scan.fake_config("youssef:Clinic", "127.0.0.1", 8788, Settings())
+    assert c.genders == {}
+    with pytest.raises(ConfigError, match="gender must be one of"):
+        scan.fake_config("sara:Clinic:robot", "127.0.0.1", 8788, Settings())
+    with pytest.raises(ConfigError, match="needs a user"):
+        scan.fake_config(":Clinic:female", "127.0.0.1", 8788, Settings())
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is needed to run the server's own parser")
+def test_the_server_accepts_the_profile_we_send():
+    msgs = [build_message(1, Presence("sara", "Clinic", -58), False, "female"),
+            build_message(2, Presence("youssef", None, -58), True, "male")]
+    js = (
+        "import('./src/nlp/protocol.ts').then(m=>{const r=JSON.parse(process.argv[1]).map(x=>m.parseRequest(JSON.stringify(x)));"
+        "console.log(JSON.stringify(r.map(x=>x.ok?x.msg.gender:x.message)))})"
+    )
+    out = subprocess.run(["node", "-e", js, json.dumps(msgs)], cwd=ROOT, capture_output=True, text=True, check=True).stdout
+    assert json.loads(out) == ["female", "male"]
