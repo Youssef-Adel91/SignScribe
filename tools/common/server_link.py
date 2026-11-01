@@ -43,3 +43,73 @@ class ServerLink:
                 if attempt:
                     raise
         raise OSError("unreachable")
+
+
+class BackgroundLink:
+    """Lab 4 (threads): sends on its own thread so a slow or missing server never stalls the caller's loop.
+
+    The camera loop (producer) calls submit() and goes on at once; one worker thread (consumer) takes the messages from a
+    bounded queue and sends them over a ServerLink, in order. When the queue is full the NEWEST message is dropped and
+    counted (a letter recognised while the server is away is not worth a frozen camera). `on_answer(msg, answer)` and
+    `on_error(msg, exc)` run on the worker thread. close() lets the worker finish what is queued (up to `timeout`)."""
+
+    def __init__(self, link, maxsize: int = 16, on_answer=None, on_error=None):
+        import queue
+        import threading
+
+        self.link = link
+        self.on_answer, self.on_error = on_answer, on_error
+        self._q: "queue.Queue" = queue.Queue(maxsize=maxsize)
+        self._lock = threading.Lock()
+        self.sent = self.failed = self.dropped = 0
+        self._stop = object()
+        self._thread = threading.Thread(target=self._work, name="server-link-sender", daemon=True)
+        self._thread.start()
+
+    def submit(self, msg: dict) -> bool:
+        """Queue one message. False when the queue is full (the message is dropped and counted). Never blocks."""
+        import queue
+
+        try:
+            self._q.put_nowait(msg)
+            return True
+        except queue.Full:
+            with self._lock:
+                self.dropped += 1
+            return False
+
+    def _work(self):
+        while True:
+            msg = self._q.get()
+            try:
+                if msg is self._stop:
+                    return
+                try:
+                    ans = self.link.send(msg)
+                except OSError as e:
+                    with self._lock:
+                        self.failed += 1
+                    if self.on_error:
+                        self.on_error(msg, e)
+                    continue
+                with self._lock:
+                    self.sent += 1
+                if self.on_answer:
+                    self.on_answer(msg, ans)
+            finally:
+                self._q.task_done()
+
+    def counts(self) -> dict:
+        with self._lock:
+            return {"sent": self.sent, "failed": self.failed, "dropped": self.dropped, "queued": self._q.qsize()}
+
+    def close(self, timeout: float = 5.0):
+        """Send what is queued (up to `timeout` seconds), stop the worker, close the socket."""
+        import queue
+
+        try:
+            self._q.put(self._stop, timeout=timeout)
+        except queue.Full:
+            pass
+        self._thread.join(timeout)
+        self.link.close()
