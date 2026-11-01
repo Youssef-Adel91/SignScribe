@@ -54,3 +54,14 @@ Same rules and numbers as `followMotion` in `src/recognition/letterController.ts
 ## Verified, and not
 Verified here: the movement cutting on generated frames, the pose in the template points (generated body; the 12 landmarks, one whole-trajectory stroke each; save, load, fallbacks), templates (save, load, refusals), classification with the real `dollarpy` package on generated shapes, the message against the server's own parser, sending to a real TCP socket, a server that is missing or refusing, the whole chain in a browser (`npm run e2e:context`), the real MediaPipe hand tracker on a blank picture (no hand) and on three still photographs of hands (21 landmarks each), and the real MediaPipe pose tracker on a blank picture (no body) and on one still photograph of a person (the twelve Lab 5 landmarks are returned).
 **Not verified: a webcam.** The pose model on a moving person in front of a webcam, whether the pose improves recognition, the recording and live loops (`cv2.VideoCapture`, the preview windows, real finger paths) were not run, no accuracy on real movements is known, and the `--simulate` scores are meaningless for real people.
+
+## Threads (Lab 4)
+The live client runs three threads, so a slow camera or a missing server never freezes the recognition:
+- **camera reader** (`camera_thread.py`, `LatestFrame`): reads pictures as fast as the camera gives them and keeps only the newest
+  under a lock; the main loop always works on the newest picture, and pictures it was too slow for are counted ("skipped").
+- **main loop**: MediaPipe hand + pose, then dollarpy.
+- **sender** (`tools/common/server_link.py`, `BackgroundLink`): a recognised letter goes into a bounded queue and the main loop goes on
+  at once; one worker thread sends the queue over the TCP socket in order. A full queue drops the newest letter and counts it.
+On exit it prints the counts (skipped pictures; sent / failed / dropped letters). `--simulate` keeps sending on the main thread so
+the end-to-end check stays deterministic. Tests: `python -m pytest tools/dollarpy/test_threads.py` (no camera; a real TCP socket).
+

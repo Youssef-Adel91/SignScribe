@@ -28,6 +28,8 @@ from dollar_logic import (  # noqa: E402
     load_templates,
     pose_keys,
 )
+from camera_thread import LatestFrame  # noqa: E402
+from server_link import BackgroundLink  # noqa: E402
 from simulate import SIM_BANNER, SHAPES, frames, frames_with_pose, synthetic_templates  # noqa: E402
 
 DEFAULT_TEMPLATES = Path(__file__).parent / "templates.json"
@@ -39,10 +41,13 @@ class Sender:
     def __init__(self, link, demo: bool, log=print):
         self.link, self.demo, self.log, self.seq = link, demo, log, 0
 
-    def send(self, letter: str, score: float) -> bool:
+    def send(self, letter: str, score: float) -> bool | str:
+        """True = sent and accepted, False = not sent, "queued" = handed to the sender thread (BackgroundLink)."""
         if self.link is None:
             return False
         self.seq += 1
+        if hasattr(self.link, "submit"):  # Lab 4: the camera loop never waits for the network
+            return "queued" if self.link.submit(letter_message(self.seq, letter, score, self.demo)) else False
         try:
             ans = self.link.send(letter_message(self.seq, letter, score, self.demo))
         except OSError as e:
@@ -60,7 +65,8 @@ def handle(result, sender: Sender, log=print) -> None:
     elif result:
         letter, score = result
         sent = sender.send(letter, score)
-        log(f"recognised {letter}  (score {score:.2f}){'  -> sent to the server' if sent else ''}")
+        note = "  -> queued for the server (sender thread)" if sent == "queued" else "  -> sent to the server" if sent else ""
+        log(f"recognised {letter}  (score {score:.2f}){note}")
 
 
 def run_simulation(letters, pipe: Pipeline, sender: Sender, realtime: bool, log=print, keys=()) -> list:
@@ -124,6 +130,17 @@ def main(argv=None) -> int:
         if a.simulate:
             found = run_simulation(a.simulate, pipe, sender, not a.fast, keys=sim_keys)
             return 0 if found else 1
+        # live: three threads (Lab 4): the camera reader, this loop (MediaPipe + dollarpy), and the sender
+        if link is not None:
+            def answered(msg, ans):
+                if not ans.get("ok"):
+                    print(f"server refused the letter: {ans.get('error')}: {ans.get('message')}", flush=True)
+
+            def unreachable(msg, e):
+                print(f"server not reachable ({type(e).__name__}): the letter was recognised but not sent", flush=True)
+
+            link = BackgroundLink(link, on_answer=answered, on_error=unreachable)
+            sender.link = link
         import cv2
         from hand_tracker import DEFAULT_MODEL, DEFAULT_POSE_MODEL, HandTracker, PoseTracker
 
@@ -140,10 +157,11 @@ def main(argv=None) -> int:
         print(f"tracker: {tracker.describe()}")
         print(pose_tracker.describe() if pose_tracker else "pose: off")
         print("Draw a moving letter in the air with your index finger. q quits.")
+        camera = LatestFrame(cap)
         t0 = time.monotonic()
         try:
             while True:
-                ok, frame = cap.read()
+                ok, frame = camera.read()
                 if not ok:
                     print("the camera gave no picture")
                     return 2
@@ -161,6 +179,9 @@ def main(argv=None) -> int:
         except KeyboardInterrupt:
             pass
         finally:
+            camera.stop()
+            print(f"camera pictures skipped while busy: {camera.skipped}"
+                  + (f"; sender thread: {link.counts()}" if hasattr(link, 'counts') else ""))
             cap.release()
             tracker.close()
             if pose_tracker:
