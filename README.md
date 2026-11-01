@@ -40,6 +40,8 @@ Without it the app writes sentences with simple offline rules. With it, a langua
 
 The whole project in one document (architecture, features with their tests, models and what is NOT trained, known issues): `docs/PROJECT_STATUS.md`.
 
+Phase II submission (every grading row, where it is, how to show it; team and links): `docs/PHASE2_SUBMISSION.md`. Scenario, PACT and the needs survey: `docs/phase1/`. Survey critical analysis: `docs/SURVEY_CRITIQUE.md`. Training the letter models on Kaggle: `notebooks/kaggle/`.
+
     npm run verify     # runs every check below and prints one table (needs `npm run models` once)
 
     npm run check      # typecheck, lint, unit tests, production build

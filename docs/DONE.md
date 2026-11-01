@@ -8,9 +8,9 @@ Status: **verified here** (tests or a run in the build environment prove the log
 
 | Sheet row | Pts | Files | Tests / checks | Status |
 | --- | --- | --- | --- | --- |
-| Scenario | 1 | in the Phase I PDF (**not in this repo**; to keep it here put it in `docs/phase1/`) | none | **covered by the Phase I PDF**, not by anything in this repository, so it is not checked here |
-| PACT (People, Activities, Context, Technologies) | 1 | in the Phase I PDF (**not in this repo**; to keep it here put it in `docs/phase1/`) | none | **covered by the Phase I PDF**, not by anything in this repository, so it is not checked here |
-| Survey | 1 | `src/study/` (survey, protocol, export), `docs/STUDY.md`, `ml/analysis/study_report.py` | `tests/study.test.ts`, `npm run e2e:study` | **verified here** (closed, balanced 5-point items with a neutral middle, covering satisfaction, engagement, usability and the 7 Lab 2 heuristics; export and analysis). **Not met:** no participant has answered it, and the wording needs a human review |
+| Scenario | 1 | `docs/phase1/SCENARIO_AND_PACT.md` (copied from the Phase I report, plus a Phase II variant with Bluetooth and the profile colours) | none (a document) | **written**; the Phase I PDF is the original |
+| PACT (People, Activities, Context, Technologies) | 1 | `docs/phase1/SCENARIO_AND_PACT.md` (copied from the Phase I report, with Phase II additions) | none (a document) | **written**; the Phase I PDF is the original |
+| Survey | 1 | `src/study/` (survey, protocol, export), `docs/STUDY.md`, `ml/analysis/study_report.py`; critical analysis in `docs/SURVEY_CRITIQUE.md`, needs survey in `docs/phase1/SURVEY_PHASE1.md` | `tests/study.test.ts`, `npm run e2e:study` | **verified here** (closed, balanced 5-point items with a neutral middle, covering satisfaction, engagement, usability and the 7 Lab 2 heuristics; export and analysis). **Not met:** no participant has answered it, and the wording needs a human review |
 | Figma interface | 1 | `public/design/*.png` (13 frames), `src/screens/S01..S14`, `tools/compare/screens.mjs`; `docs/FLOW_AUDIT.md` (branch `docs/flow-audit`) lists the differences | `npm run compare`, `npm run layout`, `npm run axe`, `tests/machine.test.ts` | **verified here** with listed differences (see FLOW_AUDIT: e.g. an extra screen 14, oversized icons from two missing size tokens, hints that do nothing on screens 6, 8, 13) |
 | Track the skeleton with MediaPipe and classify the movement with DollarPy | 1 | `tools/dollarpy/` (`hand_tracker.py`, `dollar_logic.py`, `record_templates.py`, `classify_live.py`, `simulate.py`); the same $P in `ml/signscribe_ml/dollar.py` and `src/recognition/dollarP.ts` | `tools/dollarpy/test_dollarpy.py` (real `dollarpy` package on generated paths; real MediaPipe on three still photographs of hands and on a blank picture), `ml/tests` (our $P equals dollarpy) | **verified here** for the logic. **Needs real hardware:** recording and live classification from a webcam. **Not met:** accuracy on real moving letters; ArSL moving letters (none decided). It tracks the hand skeleton and, by default, the shoulders, elbows and wrists (`--no-pose` for the fingertip alone) |
 | Use Bluetooth to capture UserID and discover | 1 | `tools/bluetooth/` (`scan.py`, `ble_logic.py`, `devices.example.json`), server `presence` message (`src/nlp/protocol.ts`, `server/presence.ts`) | `tools/bluetooth/test_ble.py`, `tests/presence.test.ts`, `npm run e2e:context` | **verified here** with fake scans and a FAKE device. **Needs real hardware:** a real adapter, real devices (phones may rotate their address; use a band, beacon or tag) |
@@ -302,4 +302,14 @@ Added to the Phase II criteria by the team: "provide different content according
 | The live dollarpy client reads the camera on its own thread and keeps only the newest picture (lock + condition); skipped pictures are counted | verified here (fake camera) | `tools/dollarpy/test_threads.py` |
 | Recognised letters are sent by a worker thread from a bounded queue (producer/consumer), in order; the camera loop never waits for the network; a full queue drops and counts the newest; errors are reported on the worker | verified here (fake link and a real TCP socket) | `tools/dollarpy/test_threads.py` |
 | With a real webcam | needs my camera | |
+
+## Phase II documents (branch docs/phase2-submission)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Scenario and PACT in the repo | written (copied from the Phase I report, with Phase II additions) | `docs/phase1/SCENARIO_AND_PACT.md` |
+| Needs survey with draft, problem and final wording | written (from the Phase I report) | `docs/phase1/SURVEY_PHASE1.md` |
+| Critical analysis of the study survey against the Lab 3 rules, with recommended fixes | written; the fixes are a team decision, the code is unchanged | `docs/SURVEY_CRITIQUE.md` |
+| Every grading row with where it is, what to show and its status; team, links, lab coverage, demo on the day | written | `docs/PHASE2_SUBMISSION.md` |
+| Kaggle notebooks for the ArSL and ASL letter models | pipeline-tested with generated hands; not run on Kaggle | `notebooks/kaggle/` |
+| Trello link, the tenth point, which techniques are compared | not met (team / TA) | `docs/PHASE2_SUBMISSION.md` |
 
