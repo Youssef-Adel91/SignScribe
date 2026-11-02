@@ -91,6 +91,9 @@ export function commandEvent(screen: number, label: GestureLabel): Ev | null {
   }
 }
 
+/** a command gesture has to be gone this long before the same gesture can fire again */
+const RELEASE_MS = 450;
+
 const COMMAND_LABELS: GestureLabel[] = ['open', 'fist', 'up', 'down'];
 
 /**
@@ -110,6 +113,8 @@ export class GestureController {
 
   private cmdLabel: GestureLabel | null = null;
   private blockedLabel: GestureLabel | null = null;
+  /** since when the blocked gesture has not been seen (a real release, not a one-frame dropout) */
+  private releasedSince: number | null = null;
   private helpArmed = true;
   private wakeFired = false;
   private noHandSince: number | null = null;
@@ -274,7 +279,18 @@ export class GestureController {
       this.justChanged = false;
     }
     if (label !== this.cmdLabel) this.cmdLabel = label;
-    if (this.blockedLabel && label !== this.blockedLabel) this.blockedLabel = null;
+    if (this.blockedLabel) {
+      if (label === this.blockedLabel) this.releasedSince = null;
+      else {
+        this.releasedSince ??= t;
+        // the same gesture may fire again only after the hand has really been taken away: a camera that
+        // loses the fist for a few frames must not turn one fist into several deletes
+        if (t - this.releasedSince >= RELEASE_MS) {
+          this.blockedLabel = null;
+          this.releasedSince = null;
+        }
+      }
+    }
     const cmd = label ? commandEvent(inp.screen, label) : null;
     let cmdProgress = 0;
     if (label && cmd && cmdHand && label !== this.blockedLabel) {

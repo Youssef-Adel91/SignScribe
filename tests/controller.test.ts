@@ -168,6 +168,25 @@ describe('thumbs and the same-meaning-everywhere rule', () => {
   });
 });
 
+describe('a command fires once per gesture', () => {
+  const inp = () => input(6, { needsHand: true });
+  it('one fist that the camera loses for a moment is ONE delete, not several', () => {
+    const s = new Sim(new GestureController(), inp());
+    for (let i = 0; i < 6; i++) {
+      s.run(750, [hand('fist', ZONE)]);
+      s.run(250, []); // the camera loses the hand for a quarter of a second
+    }
+    expect(s.types()).toEqual(['DELETE']);
+  });
+  it('taking the hand away for a second and showing the fist again is a second delete', () => {
+    const s = new Sim(new GestureController(), inp());
+    s.run(900, [hand('fist', ZONE)]);
+    s.run(1000, []);
+    s.run(900, [hand('fist', ZONE)]);
+    expect(s.types()).toEqual(['DELETE', 'DELETE']);
+  });
+});
+
 describe('command zone on the spelling screens', () => {
   const inp = () => input(6, { needsHand: true });
   it('open palm in the zone for 0.5 s = SPACE', () => {

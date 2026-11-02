@@ -62,3 +62,6 @@ Light: mean luma between 70 and 215. Distance: palm length between 12% and 45% o
 - Two hands on top of each other, a hand very close to the camera, or strong side light will confuse MediaPipe itself.
 - Thumb direction uses image vertical, so a thumbs up with the hand tilted more than about 35 degrees is not recognised.
 - Left and right hand are told apart by position, not by the label MediaPipe gives (that label is unreliable when both hands are visible).
+
+## Misfire: one fist deleted several letters (2026-11-02, reported by Youssef on a real camera)
+Reproduced with a test (`tests/controller.test.ts`, "a command fires once per gesture"): a fist in the command zone that the camera loses for a quarter of a second fired DELETE again each time it came back (every 0.4 s). Fix: after a command fires, the same gesture can fire again only after the hand has been gone for `RELEASE_MS` = 450 ms (`src/vision/controller.ts`). A deliberate second delete (hand away about half a second, fist again) still works. The value is a heuristic: **needs my camera** to confirm that one fist now deletes one letter.

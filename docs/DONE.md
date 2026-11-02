@@ -327,3 +327,8 @@ Added to the Phase II criteria by the team: "provide different content according
 | --- | --- | --- |
 | `public/models/letters-arsl-mlp.json` is loaded by the app for Arabic | verified here (validated by `ml/validate_model.py`; not synthetic; `npm run check` 896 tests and `npm run verify` green with the file present) | `tests/models-guard.test.ts`, `docs/MODEL_HANDOFF.md` decision log |
 | Arabic spelling on a real camera with this model | **needs my camera** | `docs/PHASE2_CHECKLIST.md` |
+
+## One command, one action (branch fix/command-repeat)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| A fist the camera loses for a moment no longer deletes several letters | verified here with synthetic hands (the camera dropout is simulated); **needs my camera** | `tests/controller.test.ts`, `docs/PHASE2.md` |
