@@ -7,7 +7,7 @@
   min-height: calc(var(--u) * 68);
   padding: var(--s-8) var(--s-32);
   background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--bar-line, 1px solid var(--line));
 }
 .brand {
   display: flex;

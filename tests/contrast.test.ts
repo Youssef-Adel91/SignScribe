@@ -60,7 +60,11 @@ describe('contrast ratios match the numbers in PLAN.md section 5', () => {
       expect(ratio('#ffffff', t('teal')), `${theme} white on teal`).toBeGreaterThanOrEqual(4.5);
       // body text still reads on the tinted page
       for (const fg of ['ink', 'ink-2', 'muted', 'muted-2'])
-        expect(ratio(token(fg), t('bg')), `${theme} ${fg} on page`).toBeGreaterThanOrEqual(4.5);
+        // a theme may darken a text colour itself (muted-2); otherwise the base value is the one in use
+        expect(
+          ratio(block.includes(`--${fg}:`) ? t(fg) : token(fg), t('bg')),
+          `${theme} ${fg} on page`,
+        ).toBeGreaterThanOrEqual(4.5);
     },
   );
 

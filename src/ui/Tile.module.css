@@ -56,8 +56,8 @@
 }
 .check {
   position: absolute;
-  top: var(--s-10);
-  right: var(--s-12);
+  top: var(--check-top, var(--s-10));
+  right: var(--check-right, var(--s-12));
   display: grid;
   place-items: center;
   width: var(--s-36);
@@ -65,6 +65,6 @@
   min-width: 36px;
   min-height: 36px;
   border-radius: 50%;
-  background: var(--teal);
+  background: var(--accent-2);
   color: #fff;
 }

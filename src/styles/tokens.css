@@ -19,6 +19,8 @@
   --teal-bg: #ccfbf1;
   --teal-wash: #f0fdfa;
   --teal-soft: #5eead4;
+  /* second accent of the profile theme (the tick on a chosen tile, the "Suggested" tag, the line under the top bar) */
+  --accent-2: var(--teal);
 
   --green-bg: #dcfce7;
   --green-ink: #166534;
@@ -97,7 +99,10 @@
    Only the accent family and the page background change; every text colour keeps >= 4.5:1 (tests/contrast.test.ts).
    High contrast wins: these blocks never apply together with it. */
 :root[data-theme='blue']:not([data-contrast='high']) {
-  --bg: #ecfeff;
+  --bg: #e0eeff;
+  --muted-2: #566377; /* darker, so the tinted page keeps 4.5:1 */
+  --bar-line: 4px solid var(--accent-2);
+  --accent-2: #15803d; /* green: male = blue and green; white text on it 5.0:1 */
   --teal: #1d4ed8;
   --teal-ink: #1e3a8a;
   --teal-bg: #dbeafe;
@@ -105,12 +110,19 @@
   --teal-soft: #93c5fd;
 }
 :root[data-theme='pink']:not([data-contrast='high']) {
-  --bg: #fff7fb;
+  --bg: #ffe8f3;
+  --muted-2: #566377;
+  --bar-line: 4px solid var(--accent-2);
+  --accent-2: #9d174d;
   --teal: #be185d;
   --teal-ink: #9d174d;
   --teal-bg: #fce7f3;
   --teal-wash: #fdf2f8;
   --teal-soft: #f9a8d4;
+  --blue: #be185d;
+  --blue-bg: #fce7f3;
+  --blue-ink: #9d174d;
+  --blue-track: #f9a8d4;
 }
 :root[data-contrast='high'] {
   --bg: #ffffff;

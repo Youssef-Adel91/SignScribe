@@ -1,17 +1,42 @@
 .small {
-  width: calc(var(--u) * 230);
-  height: calc(var(--u) * 84);
-}
-@media (max-width: 1100px) {
-  .small {
-    width: calc(var(--u) * 210);
-  }
+  /* the four questions share the row width, so a long title (Extra large, High contrast) stays on one line */
+  flex: 1 1 calc(var(--u) * 190);
+  max-width: calc(var(--u) * 340);
+  /* the tick sits on the corner of the tile, so it never covers the title */
+  --check-top: calc(var(--s-12) * -1);
+  --check-right: calc(var(--s-12) * -1);
+  /* grows with the text instead of letting the words spill out of the tile; the side padding keeps the title clear of the tick */
+  min-height: calc(var(--u) * 84);
+  padding-inline: var(--s-12);
 }
 /* four questions on one screen without scrolling: tighter than the other screens */
 .tight {
-  gap: var(--s-6);
-  padding-block: var(--s-12);
+  gap: var(--s-4);
+  padding-block: var(--s-6);
+  justify-content: space-evenly;
+}
+/* at 150 % text the four questions are taller than the page, and the page does not scroll (it is operated by pointing):
+   the explaining sentence goes and the tiles lose some padding; the questions and their answers stay */
+:root[data-text-size='xlarge'] .lede {
+  display: none;
+}
+:root[data-text-size='xlarge'] .small {
+  padding-block: 0;
+  min-height: 0;
+}
+:root[data-text-size='xlarge'] .tight h2 {
+  margin-top: 0;
+}
+:root[data-text-size='xlarge'] .tight h1 {
+  font-size: var(--fs-26);
 }
 .tight h2 {
-  margin-top: var(--s-6);
+  margin-top: var(--s-4);
+}
+/* the rows use the full width, so the tiles can be wide enough for one-line titles at any text size */
+.tight ul {
+  align-self: stretch;
+}
+.tight h1 {
+  font-size: var(--fs-32);
 }
