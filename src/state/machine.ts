@@ -17,7 +17,7 @@ export type Contrast = 'standard' | 'high';
  */
 export type Gender = 'unset' | 'male' | 'female';
 export type Theme = 'standard' | 'blue' | 'pink';
-/** the page colours of a profile; high contrast always wins over these (see tokens.css) */
+/** the page colours of a profile; under high contrast the page stays black on white and only the accents follow the profile (see tokens.css) */
 export const themeOf = (g: Gender): Theme =>
   g === 'male' ? 'blue' : g === 'female' ? 'pink' : 'standard';
 /** auto = adaptive hold time; the others are fixed (slow 1.2 s, normal 0.8 s, fast 0.6 s) */

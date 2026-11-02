@@ -68,7 +68,15 @@ describe('contrast ratios match the numbers in PLAN.md section 5', () => {
     },
   );
 
-  it('high contrast always wins over a profile theme', () => {
+  it.each(['blue', 'pink'])('high contrast keeps a dark %s accent (>= 7:1 on white)', (theme) => {
+    const block = css.split(`:root[data-theme='${theme}'][data-contrast='high']`)[1].split('}')[0];
+    const t = (n: string) => block.match(new RegExp(`--${n}:\\s*(#[0-9a-f]{6})`))![1];
+    expect(ratio(t('teal'), '#ffffff')).toBeGreaterThanOrEqual(7);
+    expect(ratio(t('accent-2'), '#ffffff')).toBeGreaterThanOrEqual(7);
+    expect(ratio(t('teal-ink'), t('teal-bg'))).toBeGreaterThanOrEqual(7);
+  });
+
+  it('the profile theme only applies outside high contrast, high has its own accent blocks', () => {
     expect(css).toMatch(/:root\[data-theme='blue'\]:not\(\[data-contrast='high'\]\)/);
     expect(css).toMatch(/:root\[data-theme='pink'\]:not\(\[data-contrast='high'\]\)/);
   });

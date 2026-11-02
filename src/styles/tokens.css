@@ -97,7 +97,7 @@
 }
 /* Page colours from the person's profile (screen 03 or the Bluetooth device list; themeOf in src/state/machine.ts).
    Only the accent family and the page background change; every text colour keeps >= 4.5:1 (tests/contrast.test.ts).
-   High contrast wins: these blocks never apply together with it. */
+   High contrast keeps black on white, but the accents still follow the profile (dark variants below, after the high block). */
 :root[data-theme='blue']:not([data-contrast='high']) {
   --bg: #e0eeff;
   --muted-2: #566377; /* darker, so the tinted page keeps 4.5:1 */
@@ -143,6 +143,25 @@
   --cam-text: #ffffff;
   --cam-text-off: #cbd5e1;
   --focus: #1d4ed8;
+}
+
+/* High contrast + profile: text and page stay black on white; only the accent family follows the profile (all >= 7:1 on white). */
+:root[data-theme='blue'][data-contrast='high'] {
+  --bar-line: 4px solid var(--accent-2);
+  --accent-2: #14532d;
+  --teal: #1e3a8a;
+  --teal-ink: #172554;
+  --teal-bg: #bfdbfe;
+}
+:root[data-theme='pink'][data-contrast='high'] {
+  --bar-line: 4px solid var(--accent-2);
+  --accent-2: #831843;
+  --teal: #9d174d;
+  --teal-ink: #500724;
+  --teal-bg: #fbcfe8;
+  --blue: #9d174d;
+  --blue-bg: #fbcfe8;
+  --blue-ink: #500724;
 }
 
 @media (prefers-reduced-motion: reduce) {
