@@ -85,7 +85,14 @@ export const ITEMS: readonly Item[] = [
     id: 'fee1',
     dimension: 'usability',
     heuristic: 'feedback',
-    text: 'The system showed me straight away what it had understood.',
+    text: 'The system responded straight away.',
+  },
+  {
+    // split from the old fee1 ("showed me straight away what it had understood" asked about speed and content at once)
+    id: 'fee2',
+    dimension: 'usability',
+    heuristic: 'feedback',
+    text: 'I could see what the system had understood.',
   },
   {
     id: 'vis1',

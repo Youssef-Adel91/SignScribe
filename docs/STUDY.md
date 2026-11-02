@@ -46,7 +46,7 @@ Notes for the team:
 Time (ms), corrections (delete / backspace), rejections ("try another"), backs (thumbs down), hand lost (camera), attempts, success (both target words in the final sentence), ended by (done / gave up), final text. Errors = corrections + rejections + backs.
 
 ## Surveys (`src/study/survey.ts`)
-After each method, one form with **23 closed statements, the same wording for both methods** (no statement names a method; a test checks it), 5 balanced choices of equal range with a neutral middle ("Neither agree nor disagree"):
+After each method, one form with **24 closed statements, the same wording for both methods** (no statement names a method; a test checks it), 5 balanced choices of equal range with a neutral middle ("Neither agree nor disagree"):
 - **13 own statements**: satisfaction (3), engagement (3), usability (7, one per Lab 2 heuristic: navigation, familiarity, consistency, error prevention, feedback, visual clarity, flexibility and efficiency). **Two are reverse-worded** ("I felt frustrated while I wrote the messages with this method"; "My attention drifted away from the task while I used this method") and are flipped (6 minus the answer) before averaging. They catch people who tick the same column for everything.
 - **System Usability Scale, 10 statements** (Brooke, 1996), published wording unchanged, scored 0 to 100 (odd items answer minus 1, even items 5 minus answer, sum times 2.5). The form says that "the system" means the way of writing just used. SUS gives a number comparable with other studies; cite Brooke when you use it.
 After both methods: 3 questions (easier, more enjoyable, would choose), answers camera / no difference / keyboard and mouse; the two real choices swap sides for every second participant.
