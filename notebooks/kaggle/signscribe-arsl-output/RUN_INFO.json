@@ -1,0 +1,11 @@
+{
+ "notebook": "signscribe_arsl_letters",
+ "signscribe_commit": "c88ee4e",
+ "mediapipe": "0.10.35",
+ "hand_model_sha256_16": "fbc2a30080c3c557",
+ "dataset": "ArSL21L",
+ "dataset_version": "Mendeley 8hrn3bvdvk v1, as published",
+ "takes_sha256_16": "4d34fa3f793710f9",
+ "finished_utc": "2026-11-02T11:53:59Z",
+ "pipeline_test": false
+}

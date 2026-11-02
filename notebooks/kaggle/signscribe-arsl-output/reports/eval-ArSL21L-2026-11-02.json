@@ -1,0 +1,1274 @@
+{
+ "provenance": {
+  "command": "python ml/evaluate.py --data /tmp/signscribe/arsl21l.jsonl --alphabet arsl --dataset-name ArSL21L --dataset-version Mendeley 8hrn3bvdvk v1, as published --augment all --augment-ablation --out-dir /kaggle/working/signscribe-arsl-output/reports --results-md /tmp/signscribe/SignScribe/docs/MODEL_RESULTS.md",
+  "date": "2026-11-02T11:33:18+00:00",
+  "dataset_name": "ArSL21L",
+  "dataset_version": "Mendeley 8hrn3bvdvk v1, as published",
+  "dataset_sha256": "4d34fa3f793710f913ce10a006b74473764e16702ac7afefdb05d301c6c49e11",
+  "alphabet": "arsl",
+  "takes": 13662,
+  "persons": 50,
+  "sources": 1,
+  "signers": 50,
+  "synthetic": false,
+  "python": "3.13.15",
+  "numpy": "2.1.3",
+  "git_commit": "c88ee4e"
+ },
+ "runs": [
+  {
+   "name": "with augmentation",
+   "method": "leave-one-person-out",
+   "generalises": true,
+   "n_groups": 50,
+   "n_minor_groups": 7,
+   "restricted": null,
+   "labels": [
+    "ain",
+    "al",
+    "aleff",
+    "bb",
+    "dal",
+    "dha",
+    "dhad",
+    "fa",
+    "gaaf",
+    "ghain",
+    "ha",
+    "haa",
+    "jeem",
+    "kaaf",
+    "khaa",
+    "la",
+    "laam",
+    "meem",
+    "nun",
+    "ra",
+    "saad",
+    "seen",
+    "sheen",
+    "ta",
+    "taa",
+    "thaa",
+    "thal",
+    "toot",
+    "waw",
+    "ya",
+    "yaa",
+    "zay"
+   ],
+   "models": {
+    "knn": {
+     "description": "k-NN, k=5, distance-weighted vote on the 60 hand features (same as the browser)",
+     "metrics": {
+      "samples": 13662,
+      "pooled_accuracy": 0.9107744107744108,
+      "mean_group_accuracy": 0.9100369848368254,
+      "min_group_accuracy": 0.7242647058823529,
+      "max_group_accuracy": 0.975,
+      "groups_in_min_max": 43,
+      "groups_total": 50,
+      "macro_recall": 0.9100686823850748,
+      "per_label": {
+       "ain": {
+        "support": 416,
+        "precision": 0.8775981524249422,
+        "recall": 0.9134615384615384
+       },
+       "al": {
+        "support": 439,
+        "precision": 0.9599109131403119,
+        "recall": 0.9817767653758542
+       },
+       "aleff": {
+        "support": 430,
+        "precision": 0.9115646258503401,
+        "recall": 0.9348837209302325
+       },
+       "bb": {
+        "support": 425,
+        "precision": 0.9448441247002398,
+        "recall": 0.9270588235294117
+       },
+       "dal": {
+        "support": 388,
+        "precision": 0.8737113402061856,
+        "recall": 0.8737113402061856
+       },
+       "dha": {
+        "support": 429,
+        "precision": 0.9220489977728286,
+        "recall": 0.965034965034965
+       },
+       "dhad": {
+        "support": 426,
+        "precision": 0.9495192307692307,
+        "recall": 0.9272300469483568
+       },
+       "fa": {
+        "support": 431,
+        "precision": 0.8509174311926605,
+        "recall": 0.8607888631090487
+       },
+       "gaaf": {
+        "support": 404,
+        "precision": 0.85,
+        "recall": 0.8415841584158416
+       },
+       "ghain": {
+        "support": 436,
+        "precision": 0.8969298245614035,
+        "recall": 0.9380733944954128
+       },
+       "ha": {
+        "support": 396,
+        "precision": 0.851581508515815,
+        "recall": 0.8838383838383839
+       },
+       "haa": {
+        "support": 396,
+        "precision": 0.8066037735849056,
+        "recall": 0.8636363636363636
+       },
+       "jeem": {
+        "support": 418,
+        "precision": 0.9132530120481928,
+        "recall": 0.9066985645933014
+       },
+       "kaaf": {
+        "support": 443,
+        "precision": 0.9539951573849879,
+        "recall": 0.8893905191873589
+       },
+       "khaa": {
+        "support": 420,
+        "precision": 0.907035175879397,
+        "recall": 0.8595238095238096
+       },
+       "la": {
+        "support": 427,
+        "precision": 0.983451536643026,
+        "recall": 0.9742388758782201
+       },
+       "laam": {
+        "support": 430,
+        "precision": 0.9025522041763341,
+        "recall": 0.9046511627906977
+       },
+       "meem": {
+        "support": 435,
+        "precision": 0.9458823529411765,
+        "recall": 0.9241379310344827
+       },
+       "nun": {
+        "support": 414,
+        "precision": 0.8816425120772947,
+        "recall": 0.8816425120772947
+       },
+       "ra": {
+        "support": 423,
+        "precision": 0.8867924528301887,
+        "recall": 0.8888888888888888
+       },
+       "saad": {
+        "support": 442,
+        "precision": 0.9126637554585153,
+        "recall": 0.9457013574660633
+       },
+       "seen": {
+        "support": 450,
+        "precision": 0.8822355289421158,
+        "recall": 0.9822222222222222
+       },
+       "sheen": {
+        "support": 449,
+        "precision": 0.9976851851851852,
+        "recall": 0.9599109131403119
+       },
+       "ta": {
+        "support": 428,
+        "precision": 0.9042316258351893,
+        "recall": 0.9485981308411215
+       },
+       "taa": {
+        "support": 443,
+        "precision": 0.9330143540669856,
+        "recall": 0.8803611738148984
+       },
+       "thaa": {
+        "support": 438,
+        "precision": 0.9813519813519813,
+        "recall": 0.9611872146118722
+       },
+       "thal": {
+        "support": 448,
+        "precision": 0.8580786026200873,
+        "recall": 0.8772321428571429
+       },
+       "toot": {
+        "support": 408,
+        "precision": 0.9347258485639687,
+        "recall": 0.8774509803921569
+       },
+       "waw": {
+        "support": 410,
+        "precision": 0.9260143198090692,
+        "recall": 0.9463414634146341
+       },
+       "ya": {
+        "support": 439,
+        "precision": 0.9193548387096774,
+        "recall": 0.908883826879271
+       },
+       "yaa": {
+        "support": 449,
+        "precision": 0.9748858447488584,
+        "recall": 0.9510022271714922
+       },
+       "zay": {
+        "support": 432,
+        "precision": 0.8447368421052631,
+        "recall": 0.7430555555555556
+       }
+      },
+      "worst_pairs": {
+       "thal/zay": {
+        "total": 95,
+        "thal->zay": 38,
+        "zay->thal": 57
+       },
+       "haa/khaa": {
+        "total": 74,
+        "haa->khaa": 30,
+        "khaa->haa": 44
+       },
+       "kaaf/seen": {
+        "total": 53,
+        "kaaf->seen": 45,
+        "seen->kaaf": 8
+       },
+       "gaaf/ha": {
+        "total": 46,
+        "gaaf->ha": 27,
+        "ha->gaaf": 19
+       },
+       "fa/gaaf": {
+        "total": 43,
+        "fa->gaaf": 19,
+        "gaaf->fa": 24
+       },
+       "haa/jeem": {
+        "total": 42,
+        "haa->jeem": 18,
+        "jeem->haa": 24
+       },
+       "dha/taa": {
+        "total": 36,
+        "dha->taa": 6,
+        "taa->dha": 30
+       },
+       "dal/ra": {
+        "total": 35,
+        "dal->ra": 20,
+        "ra->dal": 15
+       },
+       "laam/ya": {
+        "total": 32,
+        "laam->ya": 13,
+        "ya->laam": 19
+       },
+       "ain/ghain": {
+        "total": 31,
+        "ain->ghain": 19,
+        "ghain->ain": 12
+       }
+      },
+      "selective": {
+       "0.5": {
+        "coverage": 0.976723759332455,
+        "accuracy_when_shown": 0.9247601918465228
+       },
+       "0.6": {
+        "coverage": 0.9382228077880251,
+        "accuracy_when_shown": 0.9430488375721642
+       },
+       "0.7": {
+        "coverage": 0.8814961206265554,
+        "accuracy_when_shown": 0.9587312131528689
+       },
+       "0.8": {
+        "coverage": 0.8503147416190895,
+        "accuracy_when_shown": 0.9671171558922269
+       },
+       "0.9": {
+        "coverage": 0.7534767969550579,
+        "accuracy_when_shown": 0.9795997668544784
+       }
+      }
+     }
+    },
+    "mlp": {
+     "description": "MLP 60-64-32-C, ReLU, Adam lr=0.003, weight decay=0.0001, 60 epochs, batch 128, seed 0",
+     "metrics": {
+      "samples": 13662,
+      "pooled_accuracy": 0.9503732981993852,
+      "mean_group_accuracy": 0.9499740375682881,
+      "min_group_accuracy": 0.75,
+      "max_group_accuracy": 1.0,
+      "groups_in_min_max": 43,
+      "groups_total": 50,
+      "macro_recall": 0.9500385248608771,
+      "per_label": {
+       "ain": {
+        "support": 416,
+        "precision": 0.9053117782909931,
+        "recall": 0.9423076923076923
+       },
+       "al": {
+        "support": 439,
+        "precision": 0.9729119638826185,
+        "recall": 0.9817767653758542
+       },
+       "aleff": {
+        "support": 430,
+        "precision": 0.9070796460176991,
+        "recall": 0.9534883720930233
+       },
+       "bb": {
+        "support": 425,
+        "precision": 0.9520383693045563,
+        "recall": 0.9341176470588235
+       },
+       "dal": {
+        "support": 388,
+        "precision": 0.9329896907216495,
+        "recall": 0.9329896907216495
+       },
+       "dha": {
+        "support": 429,
+        "precision": 0.9813084112149533,
+        "recall": 0.9790209790209791
+       },
+       "dhad": {
+        "support": 426,
+        "precision": 0.958139534883721,
+        "recall": 0.9671361502347418
+       },
+       "fa": {
+        "support": 431,
+        "precision": 0.9388235294117647,
+        "recall": 0.925754060324826
+       },
+       "gaaf": {
+        "support": 404,
+        "precision": 0.9280397022332506,
+        "recall": 0.9257425742574258
+       },
+       "ghain": {
+        "support": 436,
+        "precision": 0.9745958429561201,
+        "recall": 0.9678899082568807
+       },
+       "ha": {
+        "support": 396,
+        "precision": 0.9225,
+        "recall": 0.9318181818181818
+       },
+       "haa": {
+        "support": 396,
+        "precision": 0.9305210918114144,
+        "recall": 0.946969696969697
+       },
+       "jeem": {
+        "support": 418,
+        "precision": 0.9423076923076923,
+        "recall": 0.937799043062201
+       },
+       "kaaf": {
+        "support": 443,
+        "precision": 0.9366812227074236,
+        "recall": 0.9683972911963883
+       },
+       "khaa": {
+        "support": 420,
+        "precision": 0.9642857142857143,
+        "recall": 0.9642857142857143
+       },
+       "la": {
+        "support": 427,
+        "precision": 0.9881796690307328,
+        "recall": 0.9789227166276346
+       },
+       "laam": {
+        "support": 430,
+        "precision": 0.9287356321839081,
+        "recall": 0.9395348837209302
+       },
+       "meem": {
+        "support": 435,
+        "precision": 0.9563218390804598,
+        "recall": 0.9563218390804598
+       },
+       "nun": {
+        "support": 414,
+        "precision": 0.9080188679245284,
+        "recall": 0.9299516908212561
+       },
+       "ra": {
+        "support": 423,
+        "precision": 0.9759036144578314,
+        "recall": 0.9574468085106383
+       },
+       "saad": {
+        "support": 442,
+        "precision": 0.9727891156462585,
+        "recall": 0.9705882352941176
+       },
+       "seen": {
+        "support": 450,
+        "precision": 0.9683257918552036,
+        "recall": 0.9511111111111111
+       },
+       "sheen": {
+        "support": 449,
+        "precision": 0.9801762114537445,
+        "recall": 0.9910913140311804
+       },
+       "ta": {
+        "support": 428,
+        "precision": 0.944954128440367,
+        "recall": 0.9626168224299065
+       },
+       "taa": {
+        "support": 443,
+        "precision": 0.952054794520548,
+        "recall": 0.9413092550790068
+       },
+       "thaa": {
+        "support": 438,
+        "precision": 0.9837587006960556,
+        "recall": 0.9680365296803652
+       },
+       "thal": {
+        "support": 448,
+        "precision": 0.959731543624161,
+        "recall": 0.9575892857142857
+       },
+       "toot": {
+        "support": 408,
+        "precision": 0.9232673267326733,
+        "recall": 0.9142156862745098
+       },
+       "waw": {
+        "support": 410,
+        "precision": 0.9380952380952381,
+        "recall": 0.9609756097560975
+       },
+       "ya": {
+        "support": 439,
+        "precision": 0.9481132075471698,
+        "recall": 0.9157175398633257
+       },
+       "yaa": {
+        "support": 449,
+        "precision": 0.9885844748858448,
+        "recall": 0.9643652561247216
+       },
+       "zay": {
+        "support": 432,
+        "precision": 0.9384236453201971,
+        "recall": 0.8819444444444444
+       }
+      },
+      "worst_pairs": {
+       "laam/ya": {
+        "total": 33,
+        "laam->ya": 14,
+        "ya->laam": 19
+       },
+       "kaaf/seen": {
+        "total": 32,
+        "kaaf->seen": 11,
+        "seen->kaaf": 21
+       },
+       "dal/nun": {
+        "total": 26,
+        "dal->nun": 16,
+        "nun->dal": 10
+       },
+       "dhad/waw": {
+        "total": 22,
+        "dhad->waw": 10,
+        "waw->dhad": 12
+       },
+       "fa/gaaf": {
+        "total": 22,
+        "fa->gaaf": 11,
+        "gaaf->fa": 11
+       },
+       "thal/zay": {
+        "total": 20,
+        "thal->zay": 7,
+        "zay->thal": 13
+       },
+       "aleff/toot": {
+        "total": 19,
+        "aleff->toot": 6,
+        "toot->aleff": 13
+       },
+       "gaaf/ha": {
+        "total": 19,
+        "gaaf->ha": 11,
+        "ha->gaaf": 8
+       },
+       "haa/jeem": {
+        "total": 18,
+        "haa->jeem": 7,
+        "jeem->haa": 11
+       },
+       "haa/khaa": {
+        "total": 18,
+        "haa->khaa": 8,
+        "khaa->haa": 10
+       }
+      },
+      "selective": {
+       "0.5": {
+        "coverage": 0.9912165129556434,
+        "accuracy_when_shown": 0.956727219022301
+       },
+       "0.6": {
+        "coverage": 0.9763577807056067,
+        "accuracy_when_shown": 0.9638653572231801
+       },
+       "0.7": {
+        "coverage": 0.9612794612794613,
+        "accuracy_when_shown": 0.9701515266884946
+       },
+       "0.8": {
+        "coverage": 0.9430537256624213,
+        "accuracy_when_shown": 0.9754734554486184
+       },
+       "0.9": {
+        "coverage": 0.9112135851266286,
+        "accuracy_when_shown": 0.9822475700859506
+       }
+      }
+     }
+    }
+   },
+   "augment": "rotate+scale+mirror x2 copies per frame",
+   "k": 5,
+   "seed": 0,
+   "controls": {
+    "static": {
+     "knn": {
+      "min_confidence": 0.6,
+      "controls": {
+       "ctl_space": {
+        "action": "space",
+        "frames": 0,
+        "recall": null,
+        "recall_shown": null,
+        "as_other_control": null,
+        "as_letter": null,
+        "as_none": null
+       },
+       "ctl_done": {
+        "action": "done",
+        "frames": 0,
+        "recall": null,
+        "recall_shown": null,
+        "as_other_control": null,
+        "as_letter": null,
+        "as_none": null
+       }
+      },
+      "letter_frames": 13662,
+      "letters_shown_as_a_control": 0.0,
+      "false_control_on_letters": {
+       "ctl_space": 0.0,
+       "ctl_done": 0.0
+      },
+      "none_frames": 0,
+      "none_shown_as_a_control": null,
+      "false_control_on_none": {
+       "ctl_space": null,
+       "ctl_done": null
+      },
+      "none_shown_as_a_letter": null
+     },
+     "mlp": {
+      "min_confidence": 0.6,
+      "controls": {
+       "ctl_space": {
+        "action": "space",
+        "frames": 0,
+        "recall": null,
+        "recall_shown": null,
+        "as_other_control": null,
+        "as_letter": null,
+        "as_none": null
+       },
+       "ctl_done": {
+        "action": "done",
+        "frames": 0,
+        "recall": null,
+        "recall_shown": null,
+        "as_other_control": null,
+        "as_letter": null,
+        "as_none": null
+       }
+      },
+      "letter_frames": 13662,
+      "letters_shown_as_a_control": 0.0,
+      "false_control_on_letters": {
+       "ctl_space": 0.0,
+       "ctl_done": 0.0
+      },
+      "none_frames": 0,
+      "none_shown_as_a_control": null,
+      "false_control_on_none": {
+       "ctl_space": null,
+       "ctl_done": null
+      },
+      "none_shown_as_a_letter": null
+     }
+    },
+    "dynamic": {
+     "landmark": 8,
+     "min_score": 0.6,
+     "controls": {},
+     "not_evaluated": "need at least 2 dynamic takes to evaluate"
+    }
+   }
+  },
+  {
+   "name": "no augmentation",
+   "method": "leave-one-person-out",
+   "generalises": true,
+   "n_groups": 50,
+   "n_minor_groups": 7,
+   "restricted": null,
+   "labels": [
+    "ain",
+    "al",
+    "aleff",
+    "bb",
+    "dal",
+    "dha",
+    "dhad",
+    "fa",
+    "gaaf",
+    "ghain",
+    "ha",
+    "haa",
+    "jeem",
+    "kaaf",
+    "khaa",
+    "la",
+    "laam",
+    "meem",
+    "nun",
+    "ra",
+    "saad",
+    "seen",
+    "sheen",
+    "ta",
+    "taa",
+    "thaa",
+    "thal",
+    "toot",
+    "waw",
+    "ya",
+    "yaa",
+    "zay"
+   ],
+   "models": {
+    "knn": {
+     "description": "k-NN, k=5, distance-weighted vote on the 60 hand features (same as the browser)",
+     "metrics": {
+      "samples": 13662,
+      "pooled_accuracy": 0.8890352803396282,
+      "mean_group_accuracy": 0.8882288546088659,
+      "min_group_accuracy": 0.7058823529411765,
+      "max_group_accuracy": 0.9714285714285714,
+      "groups_in_min_max": 43,
+      "groups_total": 50,
+      "macro_recall": 0.8881888471664241,
+      "per_label": {
+       "ain": {
+        "support": 416,
+        "precision": 0.8470319634703196,
+        "recall": 0.8918269230769231
+       },
+       "al": {
+        "support": 439,
+        "precision": 0.9641255605381166,
+        "recall": 0.979498861047836
+       },
+       "aleff": {
+        "support": 430,
+        "precision": 0.8901345291479821,
+        "recall": 0.9232558139534883
+       },
+       "bb": {
+        "support": 425,
+        "precision": 0.9362745098039216,
+        "recall": 0.8988235294117647
+       },
+       "dal": {
+        "support": 388,
+        "precision": 0.8427835051546392,
+        "recall": 0.8427835051546392
+       },
+       "dha": {
+        "support": 429,
+        "precision": 0.9115646258503401,
+        "recall": 0.9370629370629371
+       },
+       "dhad": {
+        "support": 426,
+        "precision": 0.9437652811735942,
+        "recall": 0.9061032863849765
+       },
+       "fa": {
+        "support": 431,
+        "precision": 0.850356294536817,
+        "recall": 0.8306264501160093
+       },
+       "gaaf": {
+        "support": 404,
+        "precision": 0.8567708333333334,
+        "recall": 0.8143564356435643
+       },
+       "ghain": {
+        "support": 436,
+        "precision": 0.8630434782608696,
+        "recall": 0.9105504587155964
+       },
+       "ha": {
+        "support": 396,
+        "precision": 0.8448275862068966,
+        "recall": 0.8661616161616161
+       },
+       "haa": {
+        "support": 396,
+        "precision": 0.7604651162790698,
+        "recall": 0.8257575757575758
+       },
+       "jeem": {
+        "support": 418,
+        "precision": 0.8921568627450981,
+        "recall": 0.8708133971291866
+       },
+       "kaaf": {
+        "support": 443,
+        "precision": 0.9251207729468599,
+        "recall": 0.8645598194130926
+       },
+       "khaa": {
+        "support": 420,
+        "precision": 0.8723958333333334,
+        "recall": 0.7976190476190477
+       },
+       "la": {
+        "support": 427,
+        "precision": 0.9810874704491725,
+        "recall": 0.9718969555035128
+       },
+       "laam": {
+        "support": 430,
+        "precision": 0.9014084507042254,
+        "recall": 0.8930232558139535
+       },
+       "meem": {
+        "support": 435,
+        "precision": 0.931924882629108,
+        "recall": 0.9126436781609195
+       },
+       "nun": {
+        "support": 414,
+        "precision": 0.8534278959810875,
+        "recall": 0.8719806763285024
+       },
+       "ra": {
+        "support": 423,
+        "precision": 0.8378995433789954,
+        "recall": 0.8676122931442081
+       },
+       "saad": {
+        "support": 442,
+        "precision": 0.8562628336755647,
+        "recall": 0.9434389140271493
+       },
+       "seen": {
+        "support": 450,
+        "precision": 0.8403193612774451,
+        "recall": 0.9355555555555556
+       },
+       "sheen": {
+        "support": 449,
+        "precision": 0.9701834862385321,
+        "recall": 0.9420935412026726
+       },
+       "ta": {
+        "support": 428,
+        "precision": 0.8893905191873589,
+        "recall": 0.9205607476635514
+       },
+       "taa": {
+        "support": 443,
+        "precision": 0.8844339622641509,
+        "recall": 0.8465011286681715
+       },
+       "thaa": {
+        "support": 438,
+        "precision": 0.9835680751173709,
+        "recall": 0.95662100456621
+       },
+       "thal": {
+        "support": 448,
+        "precision": 0.8094262295081968,
+        "recall": 0.8816964285714286
+       },
+       "toot": {
+        "support": 408,
+        "precision": 0.9033942558746736,
+        "recall": 0.8480392156862745
+       },
+       "waw": {
+        "support": 410,
+        "precision": 0.9168646080760094,
+        "recall": 0.9414634146341463
+       },
+       "ya": {
+        "support": 439,
+        "precision": 0.8981900452488688,
+        "recall": 0.9043280182232346
+       },
+       "yaa": {
+        "support": 449,
+        "precision": 0.9615384615384616,
+        "recall": 0.9465478841870824
+       },
+       "zay": {
+        "support": 432,
+        "precision": 0.8371428571428572,
+        "recall": 0.6782407407407407
+       }
+      },
+      "worst_pairs": {
+       "thal/zay": {
+        "total": 112,
+        "thal->zay": 33,
+        "zay->thal": 79
+       },
+       "haa/khaa": {
+        "total": 101,
+        "haa->khaa": 39,
+        "khaa->haa": 62
+       },
+       "kaaf/seen": {
+        "total": 71,
+        "kaaf->seen": 53,
+        "seen->kaaf": 18
+       },
+       "haa/jeem": {
+        "total": 52,
+        "haa->jeem": 23,
+        "jeem->haa": 29
+       },
+       "dal/ra": {
+        "total": 50,
+        "dal->ra": 32,
+        "ra->dal": 18
+       },
+       "dha/taa": {
+        "total": 48,
+        "dha->taa": 18,
+        "taa->dha": 30
+       },
+       "gaaf/ha": {
+        "total": 44,
+        "gaaf->ha": 24,
+        "ha->gaaf": 20
+       },
+       "fa/saad": {
+        "total": 43,
+        "fa->saad": 26,
+        "saad->fa": 17
+       },
+       "ain/ghain": {
+        "total": 41,
+        "ain->ghain": 26,
+        "ghain->ain": 15
+       },
+       "ta/zay": {
+        "total": 35,
+        "ta->zay": 10,
+        "zay->ta": 25
+       }
+      },
+      "selective": {
+       "0.5": {
+        "coverage": 0.9563021519543259,
+        "accuracy_when_shown": 0.9090700344431688
+       },
+       "0.6": {
+        "coverage": 0.9027960767091202,
+        "accuracy_when_shown": 0.93570617804443
+       },
+       "0.7": {
+        "coverage": 0.8172302737520128,
+        "accuracy_when_shown": 0.9587998208687863
+       },
+       "0.8": {
+        "coverage": 0.7758746889181671,
+        "accuracy_when_shown": 0.9679245283018868
+       },
+       "0.9": {
+        "coverage": 0.6416337285902504,
+        "accuracy_when_shown": 0.9818617385352498
+       }
+      }
+     }
+    },
+    "mlp": {
+     "description": "MLP 60-64-32-C, ReLU, Adam lr=0.003, weight decay=0.0001, 60 epochs, batch 128, seed 0",
+     "metrics": {
+      "samples": 13662,
+      "pooled_accuracy": 0.9395403308446787,
+      "mean_group_accuracy": 0.9388887275650394,
+      "min_group_accuracy": 0.7683823529411765,
+      "max_group_accuracy": 0.9895833333333334,
+      "groups_in_min_max": 43,
+      "groups_total": 50,
+      "macro_recall": 0.9392197189713465,
+      "per_label": {
+       "ain": {
+        "support": 416,
+        "precision": 0.9493975903614458,
+        "recall": 0.9471153846153846
+       },
+       "al": {
+        "support": 439,
+        "precision": 0.9794050343249427,
+        "recall": 0.9749430523917996
+       },
+       "aleff": {
+        "support": 430,
+        "precision": 0.9400921658986175,
+        "recall": 0.9488372093023256
+       },
+       "bb": {
+        "support": 425,
+        "precision": 0.9408983451536643,
+        "recall": 0.9364705882352942
+       },
+       "dal": {
+        "support": 388,
+        "precision": 0.9201030927835051,
+        "recall": 0.9201030927835051
+       },
+       "dha": {
+        "support": 429,
+        "precision": 0.9720930232558139,
+        "recall": 0.9743589743589743
+       },
+       "dhad": {
+        "support": 426,
+        "precision": 0.9344262295081968,
+        "recall": 0.9366197183098591
+       },
+       "fa": {
+        "support": 431,
+        "precision": 0.928921568627451,
+        "recall": 0.8793503480278422
+       },
+       "gaaf": {
+        "support": 404,
+        "precision": 0.8752997601918465,
+        "recall": 0.9034653465346535
+       },
+       "ghain": {
+        "support": 436,
+        "precision": 0.9394618834080718,
+        "recall": 0.9610091743119266
+       },
+       "ha": {
+        "support": 396,
+        "precision": 0.8853658536585366,
+        "recall": 0.9166666666666666
+       },
+       "haa": {
+        "support": 396,
+        "precision": 0.8954869358669834,
+        "recall": 0.952020202020202
+       },
+       "jeem": {
+        "support": 418,
+        "precision": 0.9515738498789347,
+        "recall": 0.9401913875598086
+       },
+       "kaaf": {
+        "support": 443,
+        "precision": 0.9435665914221218,
+        "recall": 0.9435665914221218
+       },
+       "khaa": {
+        "support": 420,
+        "precision": 0.9542168674698795,
+        "recall": 0.9428571428571428
+       },
+       "la": {
+        "support": 427,
+        "precision": 0.9929078014184397,
+        "recall": 0.9836065573770492
+       },
+       "laam": {
+        "support": 430,
+        "precision": 0.9197247706422018,
+        "recall": 0.9325581395348838
+       },
+       "meem": {
+        "support": 435,
+        "precision": 0.9507042253521126,
+        "recall": 0.9310344827586207
+       },
+       "nun": {
+        "support": 414,
+        "precision": 0.9038461538461539,
+        "recall": 0.9082125603864735
+       },
+       "ra": {
+        "support": 423,
+        "precision": 0.9322429906542056,
+        "recall": 0.9432624113475178
+       },
+       "saad": {
+        "support": 442,
+        "precision": 0.9317180616740088,
+        "recall": 0.9570135746606335
+       },
+       "seen": {
+        "support": 450,
+        "precision": 0.9472527472527472,
+        "recall": 0.9577777777777777
+       },
+       "sheen": {
+        "support": 449,
+        "precision": 0.9887892376681614,
+        "recall": 0.9821826280623608
+       },
+       "ta": {
+        "support": 428,
+        "precision": 0.9593301435406698,
+        "recall": 0.9369158878504673
+       },
+       "taa": {
+        "support": 443,
+        "precision": 0.9140969162995595,
+        "recall": 0.9367945823927766
+       },
+       "thaa": {
+        "support": 438,
+        "precision": 0.986013986013986,
+        "recall": 0.9657534246575342
+       },
+       "thal": {
+        "support": 448,
+        "precision": 0.945823927765237,
+        "recall": 0.9352678571428571
+       },
+       "toot": {
+        "support": 408,
+        "precision": 0.9209876543209876,
+        "recall": 0.9142156862745098
+       },
+       "waw": {
+        "support": 410,
+        "precision": 0.9421686746987952,
+        "recall": 0.9536585365853658
+       },
+       "ya": {
+        "support": 439,
+        "precision": 0.9255813953488372,
+        "recall": 0.9066059225512528
+       },
+       "yaa": {
+        "support": 449,
+        "precision": 0.9795454545454545,
+        "recall": 0.9599109131403119
+       },
+       "zay": {
+        "support": 432,
+        "precision": 0.9040767386091128,
+        "recall": 0.8726851851851852
+       }
+      },
+      "worst_pairs": {
+       "kaaf/seen": {
+        "total": 32,
+        "kaaf->seen": 18,
+        "seen->kaaf": 14
+       },
+       "fa/gaaf": {
+        "total": 30,
+        "fa->gaaf": 20,
+        "gaaf->fa": 10
+       },
+       "gaaf/ha": {
+        "total": 30,
+        "gaaf->ha": 18,
+        "ha->gaaf": 12
+       },
+       "laam/ya": {
+        "total": 30,
+        "laam->ya": 11,
+        "ya->laam": 19
+       },
+       "dal/nun": {
+        "total": 29,
+        "dal->nun": 10,
+        "nun->dal": 19
+       },
+       "haa/khaa": {
+        "total": 28,
+        "haa->khaa": 10,
+        "khaa->haa": 18
+       },
+       "thal/zay": {
+        "total": 26,
+        "thal->zay": 11,
+        "zay->thal": 15
+       },
+       "dhad/waw": {
+        "total": 24,
+        "dhad->waw": 11,
+        "waw->dhad": 13
+       },
+       "ta/zay": {
+        "total": 21,
+        "ta->zay": 13,
+        "zay->ta": 8
+       },
+       "ra/taa": {
+        "total": 19,
+        "ra->taa": 8,
+        "taa->ra": 11
+       }
+      },
+      "selective": {
+       "0.5": {
+        "coverage": 0.9889474454691846,
+        "accuracy_when_shown": 0.9465620605432611
+       },
+       "0.6": {
+        "coverage": 0.9713804713804713,
+        "accuracy_when_shown": 0.9551653982367568
+       },
+       "0.7": {
+        "coverage": 0.9522763870589958,
+        "accuracy_when_shown": 0.9627209838585703
+       },
+       "0.8": {
+        "coverage": 0.9284877763138633,
+        "accuracy_when_shown": 0.9694915254237289
+       },
+       "0.9": {
+        "coverage": 0.887058995754648,
+        "accuracy_when_shown": 0.976813268421487
+       }
+      }
+     }
+    }
+   },
+   "augment": "none",
+   "k": 5,
+   "seed": 0,
+   "controls": {
+    "static": {
+     "knn": {
+      "min_confidence": 0.6,
+      "controls": {
+       "ctl_space": {
+        "action": "space",
+        "frames": 0,
+        "recall": null,
+        "recall_shown": null,
+        "as_other_control": null,
+        "as_letter": null,
+        "as_none": null
+       },
+       "ctl_done": {
+        "action": "done",
+        "frames": 0,
+        "recall": null,
+        "recall_shown": null,
+        "as_other_control": null,
+        "as_letter": null,
+        "as_none": null
+       }
+      },
+      "letter_frames": 13662,
+      "letters_shown_as_a_control": 0.0,
+      "false_control_on_letters": {
+       "ctl_space": 0.0,
+       "ctl_done": 0.0
+      },
+      "none_frames": 0,
+      "none_shown_as_a_control": null,
+      "false_control_on_none": {
+       "ctl_space": null,
+       "ctl_done": null
+      },
+      "none_shown_as_a_letter": null
+     },
+     "mlp": {
+      "min_confidence": 0.6,
+      "controls": {
+       "ctl_space": {
+        "action": "space",
+        "frames": 0,
+        "recall": null,
+        "recall_shown": null,
+        "as_other_control": null,
+        "as_letter": null,
+        "as_none": null
+       },
+       "ctl_done": {
+        "action": "done",
+        "frames": 0,
+        "recall": null,
+        "recall_shown": null,
+        "as_other_control": null,
+        "as_letter": null,
+        "as_none": null
+       }
+      },
+      "letter_frames": 13662,
+      "letters_shown_as_a_control": 0.0,
+      "false_control_on_letters": {
+       "ctl_space": 0.0,
+       "ctl_done": 0.0
+      },
+      "none_frames": 0,
+      "none_shown_as_a_control": null,
+      "false_control_on_none": {
+       "ctl_space": null,
+       "ctl_done": null
+      },
+      "none_shown_as_a_letter": null
+     }
+    },
+    "dynamic": {
+     "landmark": 8,
+     "min_score": 0.6,
+     "controls": {},
+     "not_evaluated": "need at least 2 dynamic takes to evaluate"
+    }
+   }
+  }
+ ]
+}
