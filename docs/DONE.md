@@ -317,3 +317,9 @@ Added to the Phase II criteria by the team: "provide different content according
 | ArSL letter models re-trained and re-evaluated on Kaggle (same scripts, commit `c88ee4e`): k-NN identical to the first run, MLP differs in the last digit | verified (image data, leave-one-person-out), **not a webcam result** | `docs/MODEL_RESULTS.md` (three sections), `notebooks/kaggle/signscribe-arsl-output/RUN_INFO.json` |
 | English / ASL letter model trained for the first time (experimental) | trained, **weak and not ready**; the three signers were inferred from file numbers; most closed-hand pictures had no hand found | `docs/MODEL_RESULTS.md`, `notebooks/kaggle/signscribe-asl-output/` |
 | Either model on a real webcam | **needs my camera** | `docs/PHASE2_CHECKLIST.md` |
+
+## Arabic MLP in the app (branch feat/ship-arsl-mlp)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| `public/models/letters-arsl-mlp.json` is loaded by the app for Arabic | verified here (validated by `ml/validate_model.py`; not synthetic; `npm run check` 896 tests and `npm run verify` green with the file present) | `tests/models-guard.test.ts`, `docs/MODEL_HANDOFF.md` decision log |
+| Arabic spelling on a real camera with this model | **needs my camera** | `docs/PHASE2_CHECKLIST.md` |
