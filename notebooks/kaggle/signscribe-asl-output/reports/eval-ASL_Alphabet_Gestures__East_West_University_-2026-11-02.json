@@ -1,0 +1,934 @@
+{
+ "provenance": {
+  "command": "python ml/evaluate.py --data /tmp/signscribe/asl.jsonl --alphabet asl --dataset-name ASL Alphabet Gestures (East West University) --dataset-version Mendeley 48dg9vhmyk v2, Type_01 only, signer = file-number block of 500 (inferred), subset of 500 per letter per signer (seed 0) --augment all --augment-ablation --out-dir /kaggle/working/signscribe-asl-output/reports --results-md /tmp/signscribe/SignScribe/docs/MODEL_RESULTS.md",
+  "date": "2026-11-02T15:47:39+00:00",
+  "dataset_name": "ASL Alphabet Gestures (East West University)",
+  "dataset_version": "Mendeley 48dg9vhmyk v2, Type_01 only, signer = file-number block of 500 (inferred), subset of 500 per letter per signer (seed 0)",
+  "dataset_sha256": "d75f37cf3ac3294633e37eebfc384d0096f62f39c71c0575967cb18c7d867e5e",
+  "alphabet": "asl",
+  "takes": 14639,
+  "persons": 3,
+  "sources": 1,
+  "signers": 3,
+  "synthetic": false,
+  "python": "3.13.15",
+  "numpy": "2.1.3",
+  "git_commit": "c88ee4e"
+ },
+ "runs": [
+  {
+   "name": "with augmentation",
+   "method": "leave-one-person-out",
+   "generalises": true,
+   "n_groups": 3,
+   "n_minor_groups": 0,
+   "restricted": null,
+   "labels": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y"
+   ],
+   "models": {
+    "knn": {
+     "description": "k-NN, k=5, distance-weighted vote on the 60 hand features (same as the browser)",
+     "metrics": {
+      "samples": 14639,
+      "pooled_accuracy": 0.7829769793018648,
+      "mean_group_accuracy": 0.7869396841022684,
+      "min_group_accuracy": 0.6786385859345618,
+      "max_group_accuracy": 0.8429281299236456,
+      "groups_in_min_max": 3,
+      "groups_total": 3,
+      "macro_recall": 0.7098547280498554,
+      "per_label": {
+       "A": {
+        "support": 402,
+        "precision": 0.5959595959595959,
+        "recall": 0.5870646766169154
+       },
+       "B": {
+        "support": 889,
+        "precision": 0.9084287200832466,
+        "recall": 0.9820022497187851
+       },
+       "C": {
+        "support": 571,
+        "precision": 0.7795698924731183,
+        "recall": 0.5078809106830122
+       },
+       "D": {
+        "support": 819,
+        "precision": 0.6122905027932961,
+        "recall": 0.6691086691086691
+       },
+       "E": {
+        "support": 689,
+        "precision": 0.7474226804123711,
+        "recall": 0.841799709724238
+       },
+       "F": {
+        "support": 1034,
+        "precision": 0.9416666666666667,
+        "recall": 0.9835589941972921
+       },
+       "G": {
+        "support": 771,
+        "precision": 0.956343792633015,
+        "recall": 0.9092088197146563
+       },
+       "H": {
+        "support": 834,
+        "precision": 0.9628610729023384,
+        "recall": 0.8393285371702638
+       },
+       "I": {
+        "support": 841,
+        "precision": 0.9224242424242424,
+        "recall": 0.9048751486325802
+       },
+       "K": {
+        "support": 850,
+        "precision": 0.8676470588235294,
+        "recall": 0.9023529411764706
+       },
+       "L": {
+        "support": 839,
+        "precision": 0.9187817258883249,
+        "recall": 0.8629320619785459
+       },
+       "M": {
+        "support": 302,
+        "precision": 0.7424892703862661,
+        "recall": 0.5728476821192053
+       },
+       "N": {
+        "support": 177,
+        "precision": 0.34415584415584416,
+        "recall": 0.2994350282485876
+       },
+       "O": {
+        "support": 535,
+        "precision": 0.6373456790123457,
+        "recall": 0.77196261682243
+       },
+       "P": {
+        "support": 447,
+        "precision": 0.22597402597402597,
+        "recall": 0.19463087248322147
+       },
+       "Q": {
+        "support": 84,
+        "precision": 0.323943661971831,
+        "recall": 0.27380952380952384
+       },
+       "R": {
+        "support": 590,
+        "precision": 0.5633270321361059,
+        "recall": 0.5050847457627119
+       },
+       "S": {
+        "support": 203,
+        "precision": 0.5169491525423728,
+        "recall": 0.6009852216748769
+       },
+       "T": {
+        "support": 372,
+        "precision": 0.5935960591133005,
+        "recall": 0.6478494623655914
+       },
+       "U": {
+        "support": 664,
+        "precision": 0.584717607973422,
+        "recall": 0.7951807228915663
+       },
+       "V": {
+        "support": 601,
+        "precision": 0.7824427480916031,
+        "recall": 0.6821963394342762
+       },
+       "W": {
+        "support": 763,
+        "precision": 0.9487516425755584,
+        "recall": 0.9462647444298821
+       },
+       "X": {
+        "support": 733,
+        "precision": 0.8403693931398417,
+        "recall": 0.869031377899045
+       },
+       "Y": {
+        "support": 629,
+        "precision": 0.9393939393939394,
+        "recall": 0.8871224165341812
+       }
+      },
+      "worst_pairs": {
+       "D/P": {
+        "total": 324,
+        "D->P": 167,
+        "P->D": 157
+       },
+       "R/U": {
+        "total": 320,
+        "R->U": 223,
+        "U->R": 97
+       },
+       "C/O": {
+        "total": 195,
+        "C->O": 140,
+        "O->C": 55
+       },
+       "U/V": {
+        "total": 134,
+        "U->V": 19,
+        "V->U": 115
+       },
+       "A/T": {
+        "total": 100,
+        "A->T": 54,
+        "T->A": 46
+       },
+       "C/E": {
+        "total": 65,
+        "C->E": 62,
+        "E->C": 3
+       },
+       "D/X": {
+        "total": 64,
+        "D->X": 16,
+        "X->D": 48
+       },
+       "R/V": {
+        "total": 63,
+        "R->V": 28,
+        "V->R": 35
+       },
+       "L/P": {
+        "total": 61,
+        "L->P": 23,
+        "P->L": 38
+       },
+       "M/N": {
+        "total": 54,
+        "M->N": 33,
+        "N->M": 21
+       }
+      },
+      "selective": {
+       "0.5": {
+        "coverage": 0.9522508368057927,
+        "accuracy_when_shown": 0.8118364418938308
+       },
+       "0.6": {
+        "coverage": 0.9017009358562743,
+        "accuracy_when_shown": 0.8362878787878788
+       },
+       "0.7": {
+        "coverage": 0.8387868023772116,
+        "accuracy_when_shown": 0.8670087140646633
+       },
+       "0.8": {
+        "coverage": 0.7993032310950201,
+        "accuracy_when_shown": 0.8825741389624818
+       },
+       "0.9": {
+        "coverage": 0.7251861465947127,
+        "accuracy_when_shown": 0.9136209495101734
+       }
+      }
+     }
+    },
+    "mlp": {
+     "description": "MLP 60-64-32-C, ReLU, Adam lr=0.003, weight decay=0.0001, 60 epochs, batch 128, seed 0",
+     "metrics": {
+      "samples": 14639,
+      "pooled_accuracy": 0.7995081631258966,
+      "mean_group_accuracy": 0.7856969359725646,
+      "min_group_accuracy": 0.6611508085746521,
+      "max_group_accuracy": 0.8875287843897709,
+      "groups_in_min_max": 3,
+      "groups_total": 3,
+      "macro_recall": 0.7251361174431518,
+      "per_label": {
+       "A": {
+        "support": 402,
+        "precision": 0.6118721461187214,
+        "recall": 0.6666666666666666
+       },
+       "B": {
+        "support": 889,
+        "precision": 0.9364224137931034,
+        "recall": 0.9775028121484814
+       },
+       "C": {
+        "support": 571,
+        "precision": 0.7870722433460076,
+        "recall": 0.7250437828371279
+       },
+       "D": {
+        "support": 819,
+        "precision": 0.774365821094793,
+        "recall": 0.7081807081807082
+       },
+       "E": {
+        "support": 689,
+        "precision": 0.7528662420382166,
+        "recall": 0.8577648766328012
+       },
+       "F": {
+        "support": 1034,
+        "precision": 0.9702209414024976,
+        "recall": 0.97678916827853
+       },
+       "G": {
+        "support": 771,
+        "precision": 0.9416167664670658,
+        "recall": 0.8158236057068742
+       },
+       "H": {
+        "support": 834,
+        "precision": 0.9470899470899471,
+        "recall": 0.8585131894484412
+       },
+       "I": {
+        "support": 841,
+        "precision": 0.9455696202531646,
+        "recall": 0.8882282996432818
+       },
+       "K": {
+        "support": 850,
+        "precision": 0.7125328659070991,
+        "recall": 0.9564705882352941
+       },
+       "L": {
+        "support": 839,
+        "precision": 0.845771144278607,
+        "recall": 0.8104886769964244
+       },
+       "M": {
+        "support": 302,
+        "precision": 0.7102473498233216,
+        "recall": 0.6655629139072847
+       },
+       "N": {
+        "support": 177,
+        "precision": 0.15486725663716813,
+        "recall": 0.1977401129943503
+       },
+       "O": {
+        "support": 535,
+        "precision": 0.789279112754159,
+        "recall": 0.7981308411214953
+       },
+       "P": {
+        "support": 447,
+        "precision": 0.38571428571428573,
+        "recall": 0.12080536912751678
+       },
+       "Q": {
+        "support": 84,
+        "precision": 0.21621621621621623,
+        "recall": 0.19047619047619047
+       },
+       "R": {
+        "support": 590,
+        "precision": 0.7078651685393258,
+        "recall": 0.6406779661016949
+       },
+       "S": {
+        "support": 203,
+        "precision": 0.4059701492537313,
+        "recall": 0.6699507389162561
+       },
+       "T": {
+        "support": 372,
+        "precision": 0.46881720430107526,
+        "recall": 0.5860215053763441
+       },
+       "U": {
+        "support": 664,
+        "precision": 0.7071759259259259,
+        "recall": 0.9201807228915663
+       },
+       "V": {
+        "support": 601,
+        "precision": 0.8450184501845018,
+        "recall": 0.762063227953411
+       },
+       "W": {
+        "support": 763,
+        "precision": 0.9329758713136729,
+        "recall": 0.9121887287024901
+       },
+       "X": {
+        "support": 733,
+        "precision": 0.890625,
+        "recall": 0.8553888130968622
+       },
+       "Y": {
+        "support": 629,
+        "precision": 0.9481216457960644,
+        "recall": 0.8426073131955485
+       }
+      },
+      "worst_pairs": {
+       "R/U": {
+        "total": 198,
+        "R->U": 160,
+        "U->R": 38
+       },
+       "D/P": {
+        "total": 140,
+        "D->P": 36,
+        "P->D": 104
+       },
+       "N/T": {
+        "total": 126,
+        "N->T": 37,
+        "T->N": 89
+       },
+       "K/P": {
+        "total": 111,
+        "K->P": 1,
+        "P->K": 110
+       },
+       "K/L": {
+        "total": 97,
+        "K->L": 1,
+        "L->K": 96
+       },
+       "U/V": {
+        "total": 75,
+        "U->V": 2,
+        "V->U": 73
+       },
+       "C/O": {
+        "total": 70,
+        "C->O": 52,
+        "O->C": 18
+       },
+       "M/N": {
+        "total": 68,
+        "M->N": 45,
+        "N->M": 23
+       },
+       "L/P": {
+        "total": 67,
+        "L->P": 11,
+        "P->L": 56
+       },
+       "D/R": {
+        "total": 64,
+        "D->R": 57,
+        "R->D": 7
+       }
+      },
+      "selective": {
+       "0.5": {
+        "coverage": 0.973222214632147,
+        "accuracy_when_shown": 0.8158208745700849
+       },
+       "0.6": {
+        "coverage": 0.9372907985518136,
+        "accuracy_when_shown": 0.834705925224109
+       },
+       "0.7": {
+        "coverage": 0.9020424892410683,
+        "accuracy_when_shown": 0.8502839833396441
+       },
+       "0.8": {
+        "coverage": 0.8626955393127946,
+        "accuracy_when_shown": 0.8683189484519757
+       },
+       "0.9": {
+        "coverage": 0.8066807842065715,
+        "accuracy_when_shown": 0.8941485307816073
+       }
+      }
+     }
+    }
+   },
+   "augment": "rotate+scale+mirror x2 copies per frame",
+   "k": 5,
+   "seed": 0
+  },
+  {
+   "name": "no augmentation",
+   "method": "leave-one-person-out",
+   "generalises": true,
+   "n_groups": 3,
+   "n_minor_groups": 0,
+   "restricted": null,
+   "labels": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y"
+   ],
+   "models": {
+    "knn": {
+     "description": "k-NN, k=5, distance-weighted vote on the 60 hand features (same as the browser)",
+     "metrics": {
+      "samples": 14639,
+      "pooled_accuracy": 0.7417856410957032,
+      "mean_group_accuracy": 0.7526521711856532,
+      "min_group_accuracy": 0.6291839037232042,
+      "max_group_accuracy": 0.8252336448598131,
+      "groups_in_min_max": 3,
+      "groups_total": 3,
+      "macro_recall": 0.6680262194961903,
+      "per_label": {
+       "A": {
+        "support": 402,
+        "precision": 0.5844875346260388,
+        "recall": 0.5248756218905473
+       },
+       "B": {
+        "support": 889,
+        "precision": 0.8575757575757575,
+        "recall": 0.9550056242969629
+       },
+       "C": {
+        "support": 571,
+        "precision": 0.6460396039603961,
+        "recall": 0.45709281961471104
+       },
+       "D": {
+        "support": 819,
+        "precision": 0.5732708089097304,
+        "recall": 0.5970695970695971
+       },
+       "E": {
+        "support": 689,
+        "precision": 0.7004830917874396,
+        "recall": 0.841799709724238
+       },
+       "F": {
+        "support": 1034,
+        "precision": 0.893048128342246,
+        "recall": 0.9690522243713733
+       },
+       "G": {
+        "support": 771,
+        "precision": 0.8984168865435356,
+        "recall": 0.8832684824902723
+       },
+       "H": {
+        "support": 834,
+        "precision": 0.9512195121951219,
+        "recall": 0.7949640287769785
+       },
+       "I": {
+        "support": 841,
+        "precision": 0.914043583535109,
+        "recall": 0.8977407847800237
+       },
+       "K": {
+        "support": 850,
+        "precision": 0.8447867298578199,
+        "recall": 0.8388235294117647
+       },
+       "L": {
+        "support": 839,
+        "precision": 0.8777239709443099,
+        "recall": 0.8641239570917759
+       },
+       "M": {
+        "support": 302,
+        "precision": 0.6473029045643154,
+        "recall": 0.5165562913907285
+       },
+       "N": {
+        "support": 177,
+        "precision": 0.2875816993464052,
+        "recall": 0.24858757062146894
+       },
+       "O": {
+        "support": 535,
+        "precision": 0.6101083032490975,
+        "recall": 0.6317757009345795
+       },
+       "P": {
+        "support": 447,
+        "precision": 0.1881720430107527,
+        "recall": 0.15659955257270694
+       },
+       "Q": {
+        "support": 84,
+        "precision": 0.2857142857142857,
+        "recall": 0.30952380952380953
+       },
+       "R": {
+        "support": 590,
+        "precision": 0.47794117647058826,
+        "recall": 0.4406779661016949
+       },
+       "S": {
+        "support": 203,
+        "precision": 0.4658119658119658,
+        "recall": 0.5369458128078818
+       },
+       "T": {
+        "support": 372,
+        "precision": 0.5299334811529933,
+        "recall": 0.6424731182795699
+       },
+       "U": {
+        "support": 664,
+        "precision": 0.5054112554112554,
+        "recall": 0.7033132530120482
+       },
+       "V": {
+        "support": 601,
+        "precision": 0.7280163599182005,
+        "recall": 0.5923460898502496
+       },
+       "W": {
+        "support": 763,
+        "precision": 0.9304229195088677,
+        "recall": 0.8938401048492791
+       },
+       "X": {
+        "support": 733,
+        "precision": 0.8535286284953395,
+        "recall": 0.8744884038199181
+       },
+       "Y": {
+        "support": 629,
+        "precision": 0.9139966273187183,
+        "recall": 0.8616852146263911
+       }
+      },
+      "worst_pairs": {
+       "R/U": {
+        "total": 389,
+        "R->U": 267,
+        "U->R": 122
+       },
+       "D/P": {
+        "total": 356,
+        "D->P": 202,
+        "P->D": 154
+       },
+       "C/O": {
+        "total": 182,
+        "C->O": 109,
+        "O->C": 73
+       },
+       "U/V": {
+        "total": 175,
+        "U->V": 28,
+        "V->U": 147
+       },
+       "E/O": {
+        "total": 104,
+        "E->O": 18,
+        "O->E": 86
+       },
+       "A/T": {
+        "total": 101,
+        "A->T": 53,
+        "T->A": 48
+       },
+       "C/F": {
+        "total": 93,
+        "C->F": 89,
+        "F->C": 4
+       },
+       "K/V": {
+        "total": 85,
+        "K->V": 57,
+        "V->K": 28
+       },
+       "A/S": {
+        "total": 82,
+        "A->S": 61,
+        "S->A": 21
+       },
+       "L/P": {
+        "total": 76,
+        "L->P": 24,
+        "P->L": 52
+       }
+      },
+      "selective": {
+       "0.5": {
+        "coverage": 0.9366760024591844,
+        "accuracy_when_shown": 0.7771295215869312
+       },
+       "0.6": {
+        "coverage": 0.8840084705239429,
+        "accuracy_when_shown": 0.8051927980836102
+       },
+       "0.7": {
+        "coverage": 0.8210943370448801,
+        "accuracy_when_shown": 0.8305324459234609
+       },
+       "0.8": {
+        "coverage": 0.779698066807842,
+        "accuracy_when_shown": 0.8518486069738918
+       },
+       "0.9": {
+        "coverage": 0.7068788851697521,
+        "accuracy_when_shown": 0.8792037108620023
+       }
+      }
+     }
+    },
+    "mlp": {
+     "description": "MLP 60-64-32-C, ReLU, Adam lr=0.003, weight decay=0.0001, 60 epochs, batch 128, seed 0",
+     "metrics": {
+      "samples": 14639,
+      "pooled_accuracy": 0.7324953890293053,
+      "mean_group_accuracy": 0.7346051545958652,
+      "min_group_accuracy": 0.5827378713802182,
+      "max_group_accuracy": 0.8201430129681251,
+      "groups_in_min_max": 3,
+      "groups_total": 3,
+      "macro_recall": 0.6723468472540887,
+      "per_label": {
+       "A": {
+        "support": 402,
+        "precision": 0.6873449131513648,
+        "recall": 0.6890547263681592
+       },
+       "B": {
+        "support": 889,
+        "precision": 0.8971553610503282,
+        "recall": 0.922384701912261
+       },
+       "C": {
+        "support": 571,
+        "precision": 0.8764367816091954,
+        "recall": 0.5341506129597198
+       },
+       "D": {
+        "support": 819,
+        "precision": 0.6179883945841392,
+        "recall": 0.7802197802197802
+       },
+       "E": {
+        "support": 689,
+        "precision": 0.791268758526603,
+        "recall": 0.841799709724238
+       },
+       "F": {
+        "support": 1034,
+        "precision": 0.9329660238751147,
+        "recall": 0.9825918762088974
+       },
+       "G": {
+        "support": 771,
+        "precision": 0.6046986721144024,
+        "recall": 0.767833981841764
+       },
+       "H": {
+        "support": 834,
+        "precision": 0.9147982062780269,
+        "recall": 0.2446043165467626
+       },
+       "I": {
+        "support": 841,
+        "precision": 0.8299319727891157,
+        "recall": 0.8703923900118906
+       },
+       "K": {
+        "support": 850,
+        "precision": 0.6703204047217538,
+        "recall": 0.9352941176470588
+       },
+       "L": {
+        "support": 839,
+        "precision": 0.8651832460732984,
+        "recall": 0.7878426698450537
+       },
+       "M": {
+        "support": 302,
+        "precision": 0.7975460122699386,
+        "recall": 0.4304635761589404
+       },
+       "N": {
+        "support": 177,
+        "precision": 0.21635883905013192,
+        "recall": 0.4632768361581921
+       },
+       "O": {
+        "support": 535,
+        "precision": 0.7577639751552795,
+        "recall": 0.6841121495327103
+       },
+       "P": {
+        "support": 447,
+        "precision": 0.3492063492063492,
+        "recall": 0.1476510067114094
+       },
+       "Q": {
+        "support": 84,
+        "precision": 0.23255813953488372,
+        "recall": 0.23809523809523808
+       },
+       "R": {
+        "support": 590,
+        "precision": 0.5152542372881356,
+        "recall": 0.5152542372881356
+       },
+       "S": {
+        "support": 203,
+        "precision": 0.46545454545454545,
+        "recall": 0.6305418719211823
+       },
+       "T": {
+        "support": 372,
+        "precision": 0.5311720698254364,
+        "recall": 0.5725806451612904
+       },
+       "U": {
+        "support": 664,
+        "precision": 0.6403995560488346,
+        "recall": 0.8689759036144579
+       },
+       "V": {
+        "support": 601,
+        "precision": 0.7567567567567568,
+        "recall": 0.6988352745424293
+       },
+       "W": {
+        "support": 763,
+        "precision": 0.9112021857923497,
+        "recall": 0.8741808650065531
+       },
+       "X": {
+        "support": 733,
+        "precision": 0.8145695364238411,
+        "recall": 0.8390177353342428
+       },
+       "Y": {
+        "support": 629,
+        "precision": 0.8939130434782608,
+        "recall": 0.8171701112877583
+       }
+      },
+      "worst_pairs": {
+       "G/H": {
+        "total": 360,
+        "G->H": 2,
+        "H->G": 358
+       },
+       "R/U": {
+        "total": 235,
+        "R->U": 173,
+        "U->R": 62
+       },
+       "D/P": {
+        "total": 136,
+        "D->P": 37,
+        "P->D": 99
+       },
+       "M/N": {
+        "total": 131,
+        "M->N": 119,
+        "N->M": 12
+       },
+       "K/P": {
+        "total": 121,
+        "K->P": 1,
+        "P->K": 120
+       },
+       "N/T": {
+        "total": 119,
+        "N->T": 18,
+        "T->N": 101
+       },
+       "U/V": {
+        "total": 103,
+        "U->V": 2,
+        "V->U": 101
+       },
+       "H/R": {
+        "total": 97,
+        "H->R": 95,
+        "R->H": 2
+       },
+       "K/L": {
+        "total": 87,
+        "K->L": 0,
+        "L->K": 87
+       },
+       "B/W": {
+        "total": 83,
+        "B->W": 23,
+        "W->B": 60
+       }
+      },
+      "selective": {
+       "0.5": {
+        "coverage": 0.9646833800122959,
+        "accuracy_when_shown": 0.750814332247557
+       },
+       "0.6": {
+        "coverage": 0.9165243527563358,
+        "accuracy_when_shown": 0.771856599836029
+       },
+       "0.7": {
+        "coverage": 0.8695266070086755,
+        "accuracy_when_shown": 0.7932280619058842
+       },
+       "0.8": {
+        "coverage": 0.8145365120568345,
+        "accuracy_when_shown": 0.8156658839315666
+       },
+       "0.9": {
+        "coverage": 0.7305826900744586,
+        "accuracy_when_shown": 0.8535764375876578
+       }
+      }
+     }
+    }
+   },
+   "augment": "none",
+   "k": 5,
+   "seed": 0
+  }
+ ]
+}

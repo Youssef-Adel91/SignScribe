@@ -1,0 +1,11 @@
+{
+ "notebook": "signscribe_asl_letters",
+ "signscribe_commit": "c88ee4e",
+ "mediapipe": "0.10.35",
+ "hand_model_sha256_16": "fbc2a30080c3c557",
+ "dataset": "ASL Alphabet Gestures (East West University)",
+ "dataset_version": "Mendeley 48dg9vhmyk v2, Type_01 only, signer = file-number block of 500 (inferred)",
+ "takes_sha256_16": "d75f37cf3ac32946",
+ "finished_utc": "2026-11-02T15:49:19Z",
+ "pipeline_test": false
+}
