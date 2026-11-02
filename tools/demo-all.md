@@ -1,6 +1,6 @@
 # Demo script: everything running together
 
-For the Phase II demo. One command starts the sentence server, the Bluetooth scanner, the DollarPy client and the web app; or start them one by one in four terminals. **Say clearly which mode you are in.** The FAKE mode proves the software chain, not the hardware.
+For the Phase II demo. One command starts the sentence server, the Bluetooth scanner, the DollarPy client and the web app; or start them one by one in four terminals. **Say clearly which mode you are in.** The FAKE mode proves the software chain, not the hardware. **The Phase II demo itself must be REAL (decision 2026-11-02): follow `docs/REAL_HARDWARE.md`; FAKE is only for rehearsing and for `npm run demo -- --check`.**
 
 ## One command
     npm ci && pip install -r tools/bluetooth/requirements.txt -r tools/dollarpy/requirements.txt     # once
