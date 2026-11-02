@@ -189,9 +189,11 @@ describe('a command fires once per gesture', () => {
 
 describe('command zone on the spelling screens', () => {
   const inp = () => input(6, { needsHand: true });
-  it('open palm in the zone for 0.5 s = SPACE', () => {
+  it('open palm in the zone for 0.8 s = SPACE, and not earlier', () => {
     const s = new Sim(new GestureController(), inp());
-    s.run(900, [hand('open', ZONE)]);
+    s.run(700, [hand('open', ZONE)]);
+    expect(s.types()).toEqual([]);
+    s.run(600, [hand('open', ZONE)]);
     expect(s.types()).toEqual(['SPACE']);
   });
   it('open palm in the signing area is NOT a command', () => {

@@ -444,10 +444,11 @@ describe('4. a control wins over a letter in the same frame (priority kept)', ()
     ];
     expect(dropLettersWithCommand(cmd, model)).toEqual([]);
   });
-  it('the old rule gestures are unchanged: their hold times are exactly what they were', async () => {
+  it('the old rule gestures are unchanged: their hold times are exactly what they are written here', async () => {
     const { HOLD } = await import('../src/vision/controller');
     // changing one of these needs the debug log to show why it misses (docs/KNOWN_ISSUES.md #22), then a test and a new line here
-    expect(HOLD).toEqual({ wake: 2000, help: 1000, open: 500, fist: 500, up: 600, down: 600 });
+    // open: 500 -> 800 on 2026-11-02, after Youssef's camera test: the space was often read by mistake (docs/PHASE2.md)
+    expect(HOLD).toEqual({ wake: 2000, help: 1000, open: 800, fist: 500, up: 600, down: 600 });
   });
 });
 
