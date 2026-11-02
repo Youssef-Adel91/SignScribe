@@ -107,6 +107,13 @@ describe('survey follows the Lab 3 rules', () => {
     expect(LIKERT[2].label).toMatch(/neither/i);
     expect(LIKERT.map((l) => l.value)).toEqual([1, 2, 3, 4, 5]);
   });
+  it('feedback is asked as two separate items: speed and understanding (one idea each)', () => {
+    const fee = ITEMS.filter((i) => i.heuristic === 'feedback');
+    expect(fee.map((i) => i.id)).toEqual(['fee1', 'fee2']);
+    expect(fee[0].text).toMatch(/responded straight away/);
+    expect(fee[1].text).toMatch(/see what the system had understood/);
+    for (const i of fee) expect(i.text).not.toMatch(/ and /);
+  });
   it('covers satisfaction, engagement and usability, and all 7 Lab 2 heuristics', () => {
     expect(new Set(ITEMS.map((i) => i.dimension))).toEqual(
       new Set(['satisfaction', 'engagement', 'usability']),

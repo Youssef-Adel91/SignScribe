@@ -86,7 +86,7 @@ def write(path, header, rows):
         w.writerows(rows)
 
 
-SURVEY_ITEMS = ["sat1", "sat2", "sat3", "eng1", "eng2", "eng3", "nav1", "fam1", "con1", "err1", "fee1", "vis1", "eff1"] + [f"sus{i}" for i in range(1, 11)]
+SURVEY_ITEMS = ["sat1", "sat2", "sat3", "eng1", "eng2", "eng3", "nav1", "fam1", "con1", "err1", "fee1", "fee2", "vis1", "eff1"] + [f"sus{i}" for i in range(1, 11)]
 SURVEY_HEAD = ["participant", "block", "mode"] + SURVEY_ITEMS
 
 
