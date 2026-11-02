@@ -22,7 +22,7 @@ Everything below is implemented in `src/vision/`. What was tested without a came
 | Raise an open hand             | `open`  | 2 s     | screen 01                                         | WAKE                                    |
 | Both open hands                | `open`x2| 1 s     | every screen                                      | HELP_TOGGLE (opens / closes screen 13)  |
 | Index finger out, rest curled  | `point` | 0.8 s on a target (adapts 0.6-1.4 s) | any screen that has choices          | the target's event (CHOOSE_*, CARD_ADDED, YES/NO on 11) |
-| Open palm                      | `open`  | 0.5 s   | 06, 07 in the command zone; 12 anywhere           | SPACE; NEW_SENTENCE on 12               |
+| Open palm                      | `open`  | 0.8 s   | 06, 07 in the command zone; 12 anywhere           | SPACE; NEW_SENTENCE on 12               |
 | Fist                           | `fist`  | 0.5 s   | 06, 07, 10 in the command zone; 09, 11 anywhere   | DELETE                                  |
 | Thumbs up                      | `up`    | 0.6 s   | 03-11 (06, 07, 10 only in the zone); 12 anywhere  | YES; FINISH on 12                       |
 | Thumbs down                    | `down`  | 0.6 s   | 02-11 (06, 07, 10 only in the zone); 12, 13       | NO; EDIT on 12; closes help on 13       |
@@ -68,3 +68,6 @@ Reproduced with a test (`tests/controller.test.ts`, "a command fires once per ge
 
 ## Misfire: the other hand wrote letters (2026-11-02, reported by Youssef on a real camera)
 Reproduced with a test (`tests/letter-gating.test.ts`, "2b"): with a right-handed signer, a still hand at mirrored x = 0.45 (out of the command zone, which is the outer 40 %) was classified as a letter. Letters are one-handed (the model takes the landmarks of one hand), so now only a hand on the signing half of the picture can write a letter (`signingHandOf` in `src/recognition/letterController.ts`); the other hand never does. Cost: if the signing hand crosses the middle line of the picture, letters pause until it comes back. **Needs my camera** to confirm.
+
+## Misfire: SPACE fired by mistake (2026-11-02, reported by Youssef on a real camera)
+A relaxed open hand is the most common resting pose, so the open palm (SPACE, and NEW_SENTENCE on 12) now has to be held 0.8 s instead of 0.5 s (`HOLD.open` in `src/vision/controller.ts`; tests in `tests/controller.test.ts` and the hold-time guard in `tests/arsl-control-classes.test.ts`). The fist, thumbs up and thumbs down are unchanged. This is a heuristic with a cost (a slower space): **needs my camera** to confirm that false spaces are fewer and the wait feels acceptable.

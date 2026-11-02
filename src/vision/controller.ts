@@ -11,7 +11,7 @@ import { inCommandZone, sideOf, type Side } from './zones';
 export const HOLD = {
   wake: 2000,
   help: 1000,
-  open: 500,
+  open: 800, // a relaxed open hand is the most common resting pose, so the open palm (SPACE) is held longer than the fist
   fist: 500,
   up: 600,
   down: 600,

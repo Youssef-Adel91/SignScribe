@@ -337,3 +337,8 @@ Added to the Phase II criteria by the team: "provide different content according
 | Item | Status | Evidence |
 | --- | --- | --- |
 | The hand that is not the signing hand never writes a letter, also outside the command zone | verified here with synthetic hands; **needs my camera** | `tests/letter-gating.test.ts` (2b), `docs/PHASE2.md` |
+
+## Open palm held 0.8 s (branch fix/space-hold)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| SPACE needs the open palm for 0.8 s (was 0.5 s) | verified here with synthetic hands (timing only); **needs my camera** to see fewer false spaces | `tests/controller.test.ts`, `docs/PHASE2.md` |
