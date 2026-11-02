@@ -59,7 +59,7 @@ the lab topics. Honest status words as everywhere in this repo: **verified here*
 | 6 | Face detection, recognition, expressions | **not used** (not on the Phase II sheet; a candidate for Phase III, e.g. recognising the user by face instead of by a Bluetooth device) |
 | 10 | YOLO object detection and tracking | picture-card pipeline built (ONNX + YOLO decode + SORT); **no card detector trained** (later phase) |
 
-## Demo on the day (about 5 minutes, FAKE mode unless you have the hardware)
+## Demo on the day (about 5 minutes; must be REAL hardware, see docs/REAL_HARDWARE.md; the FAKE commands below are for rehearsal only)
     npm run demo -- --fake-device sara:Clinic:female        # server + FAKE scanner + simulated DollarPy + web app
 1. Terminal: the server prints the WebSocket and TCP doors (sockets). The scanner prints `*** FAKE BLE DEVICE ***` and the server
    logs `presence: user sara, place Clinic`.

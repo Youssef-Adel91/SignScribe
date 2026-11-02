@@ -311,6 +311,10 @@ Added to the Phase II criteria by the team: "provide different content according
 | Trello link, the tenth point, which techniques are compared | not met (team / TA) | `docs/PHASE2_SUBMISSION.md` |
 
 
+## Real-hardware guide (2026-11-02)
+- `docs/REAL_HARDWARE.md`: step-by-step procedure and evidence list for the real Bluetooth, context and DollarPy demo (Youssef: the FAKE demo is not accepted for Phase II). Status: **written, needs my hardware**; nothing in it has been run on a real adapter, band or webcam.
+- `docs/AGENT_HANDOFF.md`: state of the repo and the open work for any coding agent.
+
 ## Kaggle runs of 2026-11-02 (branch docs/record-kaggle-runs)
 | Item | Status | Evidence |
 | --- | --- | --- |
