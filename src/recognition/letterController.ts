@@ -1,6 +1,6 @@
 import type { Candidate, Ev, Hand } from '../state/machine';
 import { palmSize } from '../vision/landmarks';
-import { inCommandZone } from '../vision/zones';
+import { inCommandZone, sideOf } from '../vision/zones';
 import type { HandFrame, HandObs } from '../vision/types';
 import type { MotionRecognizer, StaticRecognizer } from './types';
 import type { ControlName } from '../config/alphabet';
@@ -211,7 +211,11 @@ export class LetterController {
   }
 
   private signingHandOf(frame: HandFrame, signing: Hand): HandObs | null {
-    const outside = frame.hands.filter((h) => !inCommandZone(h, signing));
+    // letters are one-handed: only a hand on the signing side of the picture can write one, so the other hand
+    // never does, also when it drifts out of the command zone towards the middle
+    const outside = frame.hands.filter(
+      (h) => !inCommandZone(h, signing) && sideOf(h) === (signing === 'right' ? 'right' : 'left'),
+    );
     if (outside.length === 0) return null;
     // the highest-scoring one when two hands are outside the zone
     return outside.reduce((a, b) => (b.score > a.score ? b : a));

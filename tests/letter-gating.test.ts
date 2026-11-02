@@ -246,6 +246,27 @@ describe('1. what the debug overlay shows', () => {
   });
 });
 
+describe('2b. only the signing hand writes letters', () => {
+  /** mirrored 0.45: outside the command zone (outer 40 %) but on the non-signing half of a right-handed signer */
+  const OTHER = { cx: 0.55, cy: 0.5 };
+  it('the other hand never writes a letter, also when it drifts out of the command zone', () => {
+    const f = new Fake();
+    f.guess = g('B', 0.99);
+    const s = new Sim(new LetterController(f, null, T));
+    s.run(3000, still(OTHER));
+    expect(f.calls).toBe(0);
+    expect(s.letters()).toEqual([]);
+  });
+  it('with two hands only the one on the signing side is classified', () => {
+    const f = new Fake();
+    f.guess = g('B', 0.99);
+    const s = new Sim(new LetterController(f, null, T));
+    s.run(3000, [makeHand('fist', OTHER), makeHand('fist', SIGNING)]);
+    expect(f.calls).toBeGreaterThan(0);
+    expect(s.letters()).toEqual(['B']);
+  });
+});
+
 describe('2. motion gating, hold, release and cooldown', () => {
   it('measures speed in palm lengths per second over all landmarks', () => {
     const a = makeHand('fist', SIGNING).landmarks;
