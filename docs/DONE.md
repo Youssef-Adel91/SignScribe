@@ -332,3 +332,8 @@ Added to the Phase II criteria by the team: "provide different content according
 | Item | Status | Evidence |
 | --- | --- | --- |
 | A fist the camera loses for a moment no longer deletes several letters | verified here with synthetic hands (the camera dropout is simulated); **needs my camera** | `tests/controller.test.ts`, `docs/PHASE2.md` |
+
+## Only the signing hand writes letters (branch fix/signing-hand-only)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| The hand that is not the signing hand never writes a letter, also outside the command zone | verified here with synthetic hands; **needs my camera** | `tests/letter-gating.test.ts` (2b), `docs/PHASE2.md` |
