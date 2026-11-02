@@ -57,9 +57,7 @@ export default function S11ReviewSentence() {
   const { place, words, sentence, sentenceSource } = useCtx();
   const { rtl } = useAlphabet();
   const strings = useStrings();
-  useAnnounceOnChange(
-    sentence ? strings.reviewSentenceAnnounce(sentence) : null,
-  );
+  useAnnounceOnChange(sentence ? strings.reviewSentenceAnnounce(sentence) : null);
   return (
     <Screen
       steps={['done', 'done', 'active', 'todo']}
@@ -162,11 +160,13 @@ export default function S11ReviewSentence() {
             </CameraView>
           </div>
           <Card title="HOW TO ANSWER">
-            <InfoList>
-              <InfoRow icon="hand">Thumbs up: use this sentence.</InfoRow>
-              <InfoRow icon="refresh">Thumbs down: try another wording.</InfoRow>
-              <InfoRow icon="doc">Need to add more? Point and hold:</InfoRow>
-            </InfoList>
+            <div className={styles.info}>
+              <InfoList>
+                <InfoRow icon="hand">Thumbs up: use this sentence.</InfoRow>
+                <InfoRow icon="refresh">Thumbs down: try another wording.</InfoRow>
+                <InfoRow icon="doc">Need to add more? Point and hold:</InfoRow>
+              </InfoList>
+            </div>
             <AddMore />
           </Card>
         </div>

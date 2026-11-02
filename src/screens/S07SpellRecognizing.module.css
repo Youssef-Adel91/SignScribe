@@ -64,3 +64,10 @@
   line-height: 1.3;
   white-space: nowrap;
 }
+
+:root[data-text-size='xlarge'] .note {
+  display: none;
+}
+:root[data-text-size='xlarge'] .guess {
+  padding-block: var(--s-6);
+}

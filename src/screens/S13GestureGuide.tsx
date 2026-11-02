@@ -1,6 +1,7 @@
 import { Chip } from '../ui/Chip';
 import { HandGlyph, type Glyph } from '../ui/HandGlyph';
 import { Hint } from '../ui/HintBar';
+import { HOLD } from '../vision/controller';
 import { Screen } from '../ui/Screen';
 import { AboutCredits } from '../ui/AboutCredits';
 import { useAnnounceOnChange } from '../output/announcer';
@@ -11,14 +12,14 @@ const GESTURES: { title: string; glyph: Glyph; both?: boolean; text: string; tag
   {
     title: 'Space',
     glyph: 'open',
-    text: 'Open palm in the command zone. Hold 0.5 s.',
+    text: `Open palm in the command zone. Hold ${(HOLD.open / 1000).toFixed(1)} s.`,
     tag: 'Starts a new word',
   },
   {
     title: 'Delete',
     glyph: 'fist',
     text: 'Fist in the command zone. Removes the last letter.',
-    tag: 'Undo is offered',
+    tag: 'One letter at a time',
   },
   {
     title: 'Yes / Done',
