@@ -353,3 +353,6 @@ Added to the Phase II criteria by the team: "provide different content according
 ## Extra-large text layout fixed (2026-11-03)
 - Screens 7, 11 and 13 no longer overflow at Extra large (150 %): explanatory text is hidden at that size only (screen 13 lede and tags, screen 11 "how to answer" lines and source note, screen 7 hint notes); the actions stay. `npm run layout`: Normal 0, Large 0, Extra large 0 of 84 each (verified here, synthetic screens; needs my screen to confirm). The layout step now fails on any size.
 - Screen 13 copy: the Space hold time is read from `HOLD.open` (0.8 s, was a stale 0.5 s) and the false "Undo is offered" tag is now "One letter at a time". KNOWN_ISSUES #3 and #12 closed.
+
+## Profile colours also under High contrast (2026-11-03)
+- Youssef reported that choosing Male / Female did nothing. Cause: with "High contrast" on, the profile colours were switched off by design. Now High contrast stays black on white, but the accents follow the profile (dark blue + dark green for male, dark pink for female; each >= 7:1 on white, `tests/contrast.test.ts`). Checked in a browser here by reading the computed `--teal` and `--bg` for 2 contrast settings x 3 profiles. Needs my screen to confirm how it looks.
