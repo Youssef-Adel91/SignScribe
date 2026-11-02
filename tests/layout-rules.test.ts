@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 describe('layout rules', () => {
-  it('the layout step fails on Normal and Large overflow (Extra large is only counted)', () => {
+  it('the layout step fails on overflow at every text size', () => {
     const src = readFileSync('tools/e2e/layout.mjs', 'utf8');
-    expect(src).toMatch(/MUST_BE_CLEAN = new Set\(\['normal', 'large'\]\)/);
+    expect(src).toMatch(/MUST_BE_CLEAN = new Set\(\['normal', 'large', 'xlarge'\]\)/);
     expect(src).toMatch(/if \(MUST_BE_CLEAN\.has\(textSize\)\) bad\+\+/);
     expect(src).toMatch(/process\.exitCode = bad \? 1 : 0/);
   });

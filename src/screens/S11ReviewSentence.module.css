@@ -178,3 +178,25 @@
 .moreItem[data-hot='true'] {
   background: var(--teal-bg, #ccfbf1);
 }
+
+:root[data-text-size='xlarge'] .body {
+  padding-block: var(--s-8);
+  gap: var(--s-16);
+}
+:root[data-text-size='xlarge'] .main {
+  gap: var(--s-6);
+}
+:root[data-text-size='xlarge'] .suggest {
+  padding-block: var(--s-12);
+  gap: var(--s-8);
+}
+:root[data-text-size='xlarge'] .source,
+:root[data-text-size='xlarge'] .info {
+  display: none;
+}
+:root[data-text-size='xlarge'] .side {
+  gap: var(--s-8);
+}
+:root[data-text-size='xlarge'] .cam {
+  aspect-ratio: 16 / 9;
+}

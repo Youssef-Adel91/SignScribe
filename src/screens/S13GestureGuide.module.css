@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: center;
+  justify-content: safe center;
   gap: var(--s-8);
   padding: var(--s-12) var(--s-40);
   overflow-y: auto;
@@ -72,4 +72,21 @@
   .grid {
     grid-template-columns: 1fr;
   }
+}
+
+:root[data-text-size='xlarge'] .lede,
+:root[data-text-size='xlarge'] .tag {
+  display: none;
+}
+:root[data-text-size='xlarge'] .main {
+  gap: var(--s-4);
+  padding-block: var(--s-4);
+}
+:root[data-text-size='xlarge'] .h1 {
+  font-size: var(--fs-28);
+}
+:root[data-text-size='xlarge'] .card {
+  min-height: 0;
+  padding-block: var(--s-4);
+  gap: var(--s-14);
 }

@@ -349,3 +349,7 @@ Added to the Phase II criteria by the team: "provide different content according
 | Male = blue pages with a green second accent (tick on a chosen tile, "Suggested" tag, line under the top bar); female = pink; not set = standard. The change is immediate (no reload) | verified here in a browser (dev panel buttons, screenshots); text colours keep >= 4.5:1 | `tests/contrast.test.ts`, `tests/comfort-layout.test.ts`, `src/styles/tokens.css` |
 | Screen 14 "Make it comfortable": words stay inside their tiles at Normal, Large and Extra large, 1280x720 to 1920x1080 | verified here (layout measured in a browser: no tile spills, nothing under the top bar or the footer); `npm run layout` Extra large overflow went from 20 to 14 (screens 7, 11, 13 remain, KNOWN_ISSUES #3) | `tests/comfort-layout.test.ts`, `docs/KNOWN_ISSUES.md` |
 | How it looks to a person on a real screen and a real camera | **needs my camera** | `docs/PHASE2_CHECKLIST.md` |
+
+## Extra-large text layout fixed (2026-11-03)
+- Screens 7, 11 and 13 no longer overflow at Extra large (150 %): explanatory text is hidden at that size only (screen 13 lede and tags, screen 11 "how to answer" lines and source note, screen 7 hint notes); the actions stay. `npm run layout`: Normal 0, Large 0, Extra large 0 of 84 each (verified here, synthetic screens; needs my screen to confirm). The layout step now fails on any size.
+- Screen 13 copy: the Space hold time is read from `HOLD.open` (0.8 s, was a stale 0.5 s) and the false "Undo is offered" tag is now "One letter at a time". KNOWN_ISSUES #3 and #12 closed.

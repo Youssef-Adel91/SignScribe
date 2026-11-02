@@ -43,3 +43,11 @@ describe('profile themes colour the whole system', () => {
     expect(read('src/ui/TopBar.module.css')).toMatch(/var\(--bar-line/);
   });
 });
+
+describe('gesture guide copy (S13)', () => {
+  const src = readFileSync(join(process.cwd(), 'src/screens/S13GestureGuide.tsx'), 'utf8');
+  it('reads the Space hold time from HOLD.open and makes no undo promise', () => {
+    expect(src).toContain('HOLD.open');
+    expect(src).not.toMatch(/undo is offered/i);
+  });
+});
