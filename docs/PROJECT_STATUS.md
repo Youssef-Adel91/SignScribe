@@ -172,16 +172,16 @@ Safety and limits: per-connection and global rate limits, a connection cap, a me
 
 | Model | Status | Dataset | Command | Date | Dataset hash |
 | --- | --- | --- | --- | --- | --- |
-| ArSL letter model, **k-NN** (`letters-arsl-knn.json`) | **TRAINED** on Youssef's machine, **not in git** | ArSL21L as published (50 persons) | `python ml/export_arsl.py --data ml/data/arsl21l.jsonl` (= `ml/train_knn.py ... --alphabet arsl --augment all --seed 0`) | **NOT RECORDED here** (ask Youssef) | sha256 `6b2726e04c4e89747c828cd1fe51b4f738e8d72a3bfbc4abb861d8c2ab0b059c` (the dataset used for the evaluation below) |
-| ArSL letter model, **MLP** (`letters-arsl-mlp.json`) | **TRAINED** on Youssef's machine, **not in git** | ArSL21L as published | `python ml/export_arsl.py --data ml/data/arsl21l.jsonl` (= `ml/export_mlp.py ... --alphabet arsl --augment all --seed 0`) | **NOT RECORDED here** | same |
-| English / ASL letter model (`letters-mlp.json`, `letters-knn.json`) | **NOT TRAINED** | the English dataset (a Mendeley set) has **not been inspected yet** | none yet (`ml/import_images.py` then `ml/export_mlp.py` / `ml/train_knn.py`, `docs/MODEL_HANDOFF.md`) | n/a | n/a |
+| ArSL letter model, **k-NN** (`letters-arsl-knn.json`) | **TRAINED** on Youssef's machine, **not in git** | ArSL21L as published (50 persons) | `python ml/export_arsl.py --data ml/data/arsl21l.jsonl` (= `ml/train_knn.py ... --alphabet arsl --augment all --seed 0`) | first training on Youssef's machine: **date not recorded**; re-trained **2026-11-02** (Kaggle notebook, commit `c88ee4e`, mediapipe 0.10.35, `notebooks/kaggle/signscribe-arsl-output/RUN_INFO.json`) | sha256 `6b2726e04c4e89747c828cd1fe51b4f738e8d72a3bfbc4abb861d8c2ab0b059c` (the dataset used for the evaluation below) |
+| ArSL letter model, **MLP** (`letters-arsl-mlp.json`) | **TRAINED** twice (Youssef's machine, then the Kaggle notebook on 2026-11-02); the Kaggle weights file is in git only under `notebooks/kaggle/signscribe-arsl-output/models/`, **not in `public/models/`, so the app does not load it** | ArSL21L as published | `python ml/export_arsl.py --data ml/data/arsl21l.jsonl` (= `ml/export_mlp.py ... --alphabet arsl --augment all --seed 0`) | first training: **date not recorded**; second: **2026-11-02** (`RUN_INFO.json`) | same |
+| English / ASL letter model (`letters-mlp.json`, `letters-knn.json`) | **TRAINED once, EXPERIMENTAL, not ready**: Kaggle notebook 2026-11-02, commit `c88ee4e`; the MLP weights are in git only under `notebooks/kaggle/signscribe-asl-output/models/`, not in `public/models/`; the k-NN file was not uploaded and is never committed | ASL Alphabet Gestures (East West University), Mendeley 48dg9vhmyk v2, **Type_01 only**, a subset of 500 pictures per letter per signer; the three "signers" are **inferred** from file-number blocks of 500, not verified | `notebooks/kaggle/signscribe_asl_letters.ipynb` (runs `ml/import_images.py`, `ml/evaluate.py`, `ml/calibrate.py`, `ml/export_mlp.py`, `ml/train_knn.py`) | 2026-11-02 | sha256 `d75f37cf3ac3294633e37eebfc384d0096f62f39c71c0575967cb18c7d867e5e` (takes file) |
 | Control classes (`ctl_space`, `ctl_done`, `ctl_delete`, `ctl_cancel`) | **NOT TRAINED** | no recordings exist | none | n/a | n/a |
 | `none` (reject) class | **NOT TRAINED** | no `none` takes exist | none | n/a | n/a |
 | Moving letters J, Z (`motion-dollar.json`), ArSL dynamic controls (`motion-arsl-dollar.json`) | **NOT TRAINED** | no templates recorded | `python ml/train_dollar.py` (or `tools/dollarpy/record_templates.py`) | n/a | n/a |
 | Any model trained on **our own webcam takes** | **NOT TRAINED** | no takes recorded with real people | none | n/a | n/a |
 | Picture card detector (YOLO to ONNX) | **NOT TRAINED** (only a test-only constant model exists) | no card photographs | `docs/CARDS.md` | n/a | n/a |
 
-The k-NN file stores thousands of real landmark samples (a copy of the data), so it is never committed (`.gitignore`, pre-commit hook, `npm run check:staged`, and a tracked-file test). The MLP file holds only weights and may be committed once the team decides; it is **not** in git today.
+The k-NN file stores thousands of real landmark samples (a copy of the data), so it is never committed (`.gitignore`, pre-commit hook, `npm run check:staged`, and a tracked-file test). The MLP file holds only weights and may be committed once the team decides; the Kaggle runs' MLP weights files were uploaded to `notebooks/kaggle/*/models/` (weights only), and neither is in `public/models/` yet.
 
 **Measured results** (source: `docs/MODEL_RESULTS.md`, section "ArSL21L as published (2026-10-31)", written by `ml/evaluate.py` at git commit `7cbb5df`; ArSL21L as published, dataset sha256 `6b2726e04c4e89747c828cd1fe51b4f738e8d72a3bfbc4abb861d8c2ab0b059c`, 50 persons, 13,662 held-out predictions, 540 images without a detected hand excluded at import; **image data, leave-one-person-out, not webcam**; 7 of the 50 persons are under 18 and only counted). The command in that file is `python ml/evaluate.py --data ml/data/arsl21l.jsonl --alphabet arsl --dataset-name ArSL21L --dataset-version "as published" --augment all --augment-ablation --results-md docs/MODEL_RESULTS.md`. Per-letter tables, the worst letter pairs and the controls section are in that file.
 
@@ -191,6 +191,22 @@ The k-NN file stores thousands of real landmark samples (a copy of the data), so
 | pooled accuracy, without augmentation | 88.9% | 93.8% |
 
 The "without augmentation" row is the `--augment-ablation` run of the same command (same folds, same seed, augmentation none).
+
+**Second run of the ArSL model, on Kaggle** (section "ArSL21L Mendeley 8hrn3bvdvk v1, as published (2026-11-02)" of `docs/MODEL_RESULTS.md`, commit `c88ee4e`, mediapipe 0.10.35, same command and seed, same 50 persons / 13,662 held-out predictions): the run was repeated in a different environment and the k-NN result is identical; the MLP differs in the last digit. Both runs stay in the results file.
+
+| | k-NN | MLP |
+| --- | --- | --- |
+| pooled accuracy, with augmentation (Kaggle run) | 91.1% | 95.0% |
+| pooled accuracy, without augmentation (Kaggle run) | 88.9% | 94.0% |
+
+**English / ASL, first and experimental** (section "ASL Alphabet Gestures (East West University) ... (2026-11-02)" of `docs/MODEL_RESULTS.md`; image data, leave-one-group-out over **three inferred signers**, not webcam; 14,639 held-out predictions; 24 static letters, J and Z are missing because they move):
+
+| | k-NN | MLP |
+| --- | --- | --- |
+| pooled accuracy, with augmentation (ASL) | 78.3% | 80.0% |
+| pooled accuracy, without augmentation (ASL) | 74.2% | 73.2% |
+
+Read these English numbers with care: (1) the three "signers" are file-number blocks of 500 that the notebook inferred from the dataset, so "a new person" is not proven; (2) MediaPipe found no hand in 21,361 of the 36,000 pictures that were tried, mostly in the closed-hand letters (A, M, N, Q, S, T), so the training data lacks exactly the hard letters and the numbers flatter the model; (3) several letters are weak in the per-letter table of the results file (N, P and Q are the worst); (4) nothing here says how it behaves on a webcam. It is not a model to rely on for typing; for the demo use the Wizard of Oz page (`/?woz=1`) for English.
 
 **What the app would show** (also from `docs/MODEL_RESULTS.md`, with augmentation; "shown" = share of predictions at or above the confidence threshold, "precision" = share of the shown predictions that are right; held-out predictions only):
 
@@ -207,7 +223,7 @@ The "without augmentation" row is the `--augment-ablation` run of the same comma
 
 **Invalid result, do not use:** an earlier leave-one-source-out run of ASLAD against `ArSL_dataset.csv` (reported as 13.4% for k-NN and 9.3% for the MLP) is **INVALID**: the two files cover different class sets, so the held-out source contained classes the training source never saw. `ml/evaluate.py` now refuses such a run unless `--shared-classes` is given. It says nothing about the models.
 
-**NOT MEASURED:** accuracy on a real webcam with real hands; fps and inference time on real hardware; the effect of letter gating on real users; the confidence thresholds for the MLP inside the app (the defaults in `src/recognition/tuning.ts` were not derived from the table above); accuracy of controls and of `none`; anything about English/ASL.
+**NOT MEASURED:** accuracy on a real webcam with real hands; fps and inference time on real hardware; the effect of letter gating on real users; the confidence thresholds for the MLP inside the app (the defaults in `src/recognition/tuning.ts` were not derived from the table above); accuracy of controls and of `none`; the English/ASL model on a real webcam (the experimental image-data result above is not a webcam result).
 
 A model made from generated data is refused by the app and by tests (`tests/models-guard.test.ts`); a model whose letters do not match the chosen alphabet is refused with a plain message.
 
@@ -217,10 +233,10 @@ Full text and the "what we changed" statements: `docs/CREDITS.md` (the About scr
 
 | Dataset | Use | Licence | State |
 | --- | --- | --- | --- |
-| **ArSL21L** (Arabic Sign Language letters, 32 classes, pictures of 50 persons) | trains and tests the ArSL letter models | CC BY 4.0 | in use on Youssef's machine; **citation still to be pasted** (`TODO(Youssef)` in `docs/CREDITS.md`) |
+| **ArSL21L** (Arabic Sign Language letters, 32 classes, pictures of 50 persons) | trains and tests the ArSL letter models | CC BY 4.0 | in use (Youssef's machine and the Kaggle notebook; the Mendeley record is `8hrn3bvdvk` v1, the earlier record `f63xhm286w` also exists: **say which one you downloaded**); **citation still to be pasted** (`TODO(Youssef)` in `docs/CREDITS.md`) |
 | **ASLAD-96K** (Arabic sign language landmark CSV) | testing only (leave-one-source-out), not in any shipped model | CC BY 4.0 as reported by Youssef; **to be confirmed on the dataset page** | imported by `ml/import_landmarks_csv.py`; the one cross-source run was invalid (see section 6) |
-| **`ArSL_dataset.csv`** (7,010 rows, 31 classes, `;` delimiter, x and y only) | testing only | **licence not recorded in this repository** | class names are aliases of the ArSL21L ids where the letter is certain from the name |
-| **English dataset (Mendeley set)** | intended for the ASL/English letter model | not recorded | **not yet inspected**; nothing was imported |
+| **`ArSL_dataset.csv`** (7,010 rows, 31 classes, `;` delimiter, x and y only) | testing only | CC BY 4.0 according to its Zenodo page (record 18363162, read 2026-10-31); **confirm and paste the citation** | class names are aliases of the ArSL21L ids where the letter is certain from the name |
+| **ASL Alphabet Gestures (East West University)**, Mendeley 48dg9vhmyk v2 (210,000 pictures, 28 classes, 3 signers) | trains and tests the experimental English/ASL letter model (Type_01 only; see section 6) | CC BY 4.0 according to the Mendeley page; **confirm and paste the citation** | imported by the Kaggle notebook on 2026-11-02; the weights are not in `public/models/` |
 
 Under-18 persons in ArSL21L are only counted (a `minor` flag, no age stored), and `evaluate.py` never prints or stores a result for any person.
 
@@ -394,12 +410,12 @@ Remaining work, by priority. Every item comes from a fact already written in thi
 | --- | --- | --- | --- | --- |
 | 2.1 | Decide which hand shape or stroke each ArSL control is, and whether each is static or dynamic | KNOWN_ISSUES #23, `docs/CONTROLS.md` | | the split is recorded in `config/alphabets/arsl.json` (`todo` resolved) and in `docs/CONTROLS.md` |
 | 2.2 | Record the controls and `none` with several people in collection mode, evaluate with `ml/evaluate.py --alphabet arsl`, export | `docs/CONTROLS.md`, `docs/MODEL_HANDOFF.md` | | at least two people recorded the controls (the tool refuses fewer), the report has a Controls section with false triggers, and a model with the `ctl_*` classes loads in the app; the old rule gestures still work |
-| 2.3 | Inspect the English dataset (Mendeley set), import it, evaluate it leave-one-person-out, export the English letter model | `docs/MODEL_HANDOFF.md`, `docs/CREDITS.md` | | a section for it is written into `docs/MODEL_RESULTS.md` by `evaluate.py`, and `letters-mlp.json` / `letters-knn.json` exist (the k-NN stays out of git) |
+| 2.3 | **First experimental run done on 2026-11-02 (Kaggle).** Still open: check who the signers really are (they were inferred), why MediaPipe misses most closed-hand pictures, then redo with better data or the team's own English takes. Original goal: inspect the English dataset, import it, evaluate it leave-one-person-out, export the English letter model | `docs/MODEL_HANDOFF.md`, `docs/CREDITS.md` | | a section for it is written into `docs/MODEL_RESULTS.md` by `evaluate.py`, and `letters-mlp.json` / `letters-knn.json` exist (the k-NN stays out of git) |
 | 2.4 | Put the ArSL MLP file where the app loads it and decide whether the team commits it (the k-NN never) | KNOWN_ISSUES #18, `ml/README.md` | | the app loads the Arabic model from `public/models/` on a clean checkout of the agreed files, and the decision is written in `docs/MODEL_HANDOFF.md` |
 | 2.5 | Record the team's own webcam takes and use them as a test only (never mixed into training); calibrate the MLP confidence for the app | `ml/README.md` (own-webcam test, `ml/calibrate.py`), KNOWN_ISSUES #18 | | `evaluate.py --train ... --test <own takes>` and `calibrate.py` reports exist for the real webcam, and the MLP thresholds in `tuning.ts` are chosen by hand from them with a test |
 | 2.6 | Moving letters J and Z (ASL) and the ArSL dynamic controls: record templates, evaluate | `docs/MODEL_HANDOFF.md`, `docs/CONTROLS.md`, `tools/dollarpy/README.md` | | templates recorded with several people, a `$P` / `$1` evaluation run, `motion-*-dollar.json` loads |
 | 2.7 | Picture card detector: print the cards, photograph and label them in many conditions, train, export to ONNX, tune `CARD` | `docs/CARDS.md`, KNOWN_ISSUES #8 | | `cards.onnx` and `cards.json` exist from real photographs, its validation output is kept, the grey notice on screen 10 disappears on a real card |
-| 2.8 | Record the date and command of each model's training in section 6 of this document | section 6 (date "NOT RECORDED") | | the training date of each shipped model is written next to its command |
+| 2.8 | **Done for the 2026-11-02 Kaggle runs** (date, commit, mediapipe version, takes hash in section 6 and in `RUN_INFO.json`); the date of the first local ArSL training stays unknown. Original goal: record the date and command of each model's training in section 6 of this document | section 6 (date "NOT RECORDED") | | the training date of each shipped model is written next to its command |
 
 **Priority 2: Arabic**
 

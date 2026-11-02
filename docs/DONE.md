@@ -310,3 +310,10 @@ Added to the Phase II criteria by the team: "provide different content according
 | Kaggle notebooks for the ArSL and ASL letter models | pipeline-tested with generated hands; not run on Kaggle | `notebooks/kaggle/` |
 | Trello link, the tenth point, which techniques are compared | not met (team / TA) | `docs/PHASE2_SUBMISSION.md` |
 
+
+## Kaggle runs of 2026-11-02 (branch docs/record-kaggle-runs)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| ArSL letter models re-trained and re-evaluated on Kaggle (same scripts, commit `c88ee4e`): k-NN identical to the first run, MLP differs in the last digit | verified (image data, leave-one-person-out), **not a webcam result** | `docs/MODEL_RESULTS.md` (three sections), `notebooks/kaggle/signscribe-arsl-output/RUN_INFO.json` |
+| English / ASL letter model trained for the first time (experimental) | trained, **weak and not ready**; the three signers were inferred from file numbers; most closed-hand pictures had no hand found | `docs/MODEL_RESULTS.md`, `notebooks/kaggle/signscribe-asl-output/` |
+| Either model on a real webcam | **needs my camera** | `docs/PHASE2_CHECKLIST.md` |
