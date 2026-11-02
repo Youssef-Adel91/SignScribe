@@ -342,3 +342,10 @@ Added to the Phase II criteria by the team: "provide different content according
 | Item | Status | Evidence |
 | --- | --- | --- |
 | SPACE needs the open palm for 0.8 s (was 0.5 s) | verified here with synthetic hands (timing only); **needs my camera** to see fewer false spaces | `tests/controller.test.ts`, `docs/PHASE2.md` |
+
+## Profile colours across the system, and the comfort screen at big text (branch fix/profile-colours-and-comfort-layout)
+| Item | Status | Evidence |
+| --- | --- | --- |
+| Male = blue pages with a green second accent (tick on a chosen tile, "Suggested" tag, line under the top bar); female = pink; not set = standard. The change is immediate (no reload) | verified here in a browser (dev panel buttons, screenshots); text colours keep >= 4.5:1 | `tests/contrast.test.ts`, `tests/comfort-layout.test.ts`, `src/styles/tokens.css` |
+| Screen 14 "Make it comfortable": words stay inside their tiles at Normal, Large and Extra large, 1280x720 to 1920x1080 | verified here (layout measured in a browser: no tile spills, nothing under the top bar or the footer); `npm run layout` Extra large overflow went from 20 to 14 (screens 7, 11, 13 remain, KNOWN_ISSUES #3) | `tests/comfort-layout.test.ts`, `docs/KNOWN_ISSUES.md` |
+| How it looks to a person on a real screen and a real camera | **needs my camera** | `docs/PHASE2_CHECKLIST.md` |

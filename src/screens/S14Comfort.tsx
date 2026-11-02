@@ -80,7 +80,7 @@ export default function S14Comfort() {
     >
       <div className={`${common.center} ${styles.tight}`}>
         <h1 className={common.h1}>Make it comfortable</h1>
-        <p className={common.lede}>
+        <p className={`${common.lede} ${styles.lede}`}>
           Everything changes straight away. Automatic hold time starts at 0.8 s and adjusts to you
           {live ? ` (now ${(holdMs / 1000).toFixed(1)} s)` : ''}.
         </p>
