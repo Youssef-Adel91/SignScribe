@@ -104,3 +104,7 @@ Keep the report where the team can read it (the `.report.md` next to the model i
 | "This file is not a SignScribe k-NN letter model" in the app | wrong file in `public/models/` |
 | Features error: `uses features "…"` | model and app disagree on the feature version; retrain with the repo's `ml/` |
 | Everything is recognised as one letter | too few signers or sessions, or one class dominates: check the per-letter support in the report |
+
+## Decision log
+- **2026-11-02: the Arabic MLP is committed.** `public/models/letters-arsl-mlp.json` (weights only, 32 letters, trained on ArSL21L by `notebooks/kaggle/signscribe_arsl_letters.ipynb` at commit `c88ee4e`, leave-one-person-out pooled accuracy in `docs/MODEL_RESULTS.md`, image data, **not a webcam result**). The k-NN is never committed. The English MLP is **not** shipped: its result is weak and its signers were inferred (`docs/PROJECT_STATUS.md` section 6).
+- The confidence thresholds in `src/recognition/tuning.ts` were set before this model existed and are **not** derived from its calibration table. Choose them by hand, with a test, after trying the model on a real camera.
