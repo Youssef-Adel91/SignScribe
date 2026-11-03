@@ -500,3 +500,16 @@ def test_open_camera_tries_the_next_backend_when_the_first_gives_no_picture():
     assert name == "default" and cap.read()[0]
     cap, why = open_camera(Cv2, 0, backends=[("DirectShow", 700)], tries=2)
     assert cap is None and "no picture" in why
+
+
+def test_export_web_model_scales_to_pixels_and_keeps_labels(tmp_path):
+    import export_web_model
+
+    t = tmp_path / "t.json"
+    t.write_text(json.dumps({"format": "signscribe-dollarpy-templates", "version": 2, "alphabet": "asl", "landmark": 8, "pose_parts": [], "synthetic": False,
+                             "templates": [{"label": "J", "points": [[0.1 * i, 0.5] for i in range(10)]}]}))
+    out = tmp_path / "m.json"
+    assert export_web_model.main(["--templates", str(t), "--out", str(out), "--width", "1000", "--height", "500"]) == 0
+    m = json.loads(out.read_text())
+    assert m["type"] == "dollarP" and m["templates"][0]["label"] == "J" and m["meta"]["evaluation"] is None
+    assert max(p[0] for p in m["templates"][0]["points"]) == pytest.approx(900, abs=1) and m["templates"][0]["points"][0][1] == 250
