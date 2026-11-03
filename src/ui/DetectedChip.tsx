@@ -1,4 +1,6 @@
-import { useAnnounceOnChange } from '../output/announcer';
+import { useEffect } from 'react';
+import { useAnnounce } from '../output/announcer';
+import { shouldAnnounceDetected } from './detectedAnnounce';
 import { useCtx, useScreenNumber } from '../state/MachineProvider';
 import { useDwellTarget } from '../vision/targets';
 import { Chip } from './Chip';
@@ -20,7 +22,11 @@ export function DetectedChip() {
   const text = detected
     ? `Bluetooth found ${detected.userId ?? 'someone'}${detected.place ? ` at ${detected.place}` : ''}${detected.demo ? ' (demo device)' : ''}`
     : null;
-  useAnnounceOnChange(text);
+  const announce = useAnnounce();
+  useEffect(() => {
+    // once per detection: this chip is rebuilt with every screen, so the memory lives outside it (detectedAnnounce.ts)
+    if (shouldAnnounceDetected(text) && text) announce(text);
+  }, [text, announce]);
   if (detected) {
     return (
       <>

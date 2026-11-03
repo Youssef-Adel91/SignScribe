@@ -356,3 +356,6 @@ Added to the Phase II criteria by the team: "provide different content according
 
 ## Profile colours also under High contrast (2026-11-03)
 - Youssef reported that choosing Male / Female did nothing. Cause: with "High contrast" on, the profile colours were switched off by design. Now High contrast stays black on white, but the accents follow the profile (dark blue + dark green for male, dark pink for female; each >= 7:1 on white, `tests/contrast.test.ts`). Checked in a browser here by reading the computed `--teal` and `--bg` for 2 contrast settings x 3 profiles. Needs my screen to confirm how it looks.
+
+## "Bluetooth found" is spoken once (2026-11-03)
+- Youssef's real-phone test: the page said "Bluetooth found youssef" again with every letter. Cause: the chip is inside every screen's top bar and the spelling flow changes screen with each letter, so announce-on-mount spoke it every time. Now `src/ui/detectedAnnounce.ts` keeps the last announced text outside the component: said once per detection, again only for a different person/place or after the person was lost and came back. `tests/detected-announce.test.ts` (4 tests) and `npm run e2e:context` pass here; needs my phone and screen to confirm the voice is quiet.
