@@ -13,7 +13,7 @@ interface Props {
   children?: ReactNode;
   className?: string;
   /** big title, used for the main choice tiles */
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   /** the machine event sent when this tile is chosen by point-and-hold */
   dwell?: Ev;
 }

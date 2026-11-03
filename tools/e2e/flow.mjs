@@ -169,7 +169,7 @@ try {
     check('voice "Silent" is saved', (await saved()).voice === false);
     await pointAtTile(14, 'Normal'); // text size back to normal, so later screens fit
     await pointAtTile(14, 'Standard');
-    await pointAtTile(14, 'Automatic');
+    await pointAtTile(14, 'Auto');
     await pointAtTile(14, 'Read aloud');
     await play([{ pose: 'thumbsUp' }], 900);
     check('thumbs up: 14 -> 04', await waitScreen(4));

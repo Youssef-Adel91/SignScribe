@@ -9,3 +9,15 @@
   min-width: 0;
   display: flex;
 }
+
+/* Small windows (tablet, phone, a laptop with the window cut down): the layouts are made for 1280x720 and up and stack
+   below 1100 px, so the content scrolls inside the main area instead of being cut off. The top bar and the hint bar stay
+   put. A child is never squeezed below its content height, so the first lines are not lost above the edge. */
+@media (max-width: 1100px), (max-height: 680px) {
+  .main {
+    overflow-y: auto;
+  }
+  .main > * {
+    min-height: min-content;
+  }
+}

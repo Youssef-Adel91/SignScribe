@@ -40,9 +40,9 @@ export default function S03Preferences() {
         </>
       }
     >
-      <div className={common.center}>
+      <div className={`${common.center} ${styles.page}`}>
         <h1 className={common.h1}>Three quick choices</h1>
-        <p className={common.lede}>
+        <p className={`${common.lede} ${styles.lede}`}>
           Point at a choice and hold still. The ring shows when it is chosen.
         </p>
 

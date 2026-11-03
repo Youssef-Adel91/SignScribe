@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { READ_ALOUD_ENGLISH_ONLY } from '../ui/readAloudNote';
 import { Chip } from '../ui/Chip';
 import { Hint } from '../ui/HintBar';
@@ -24,16 +24,30 @@ const CONTRAST: { key: Contrast; title: string; sub: string }[] = [
   { key: 'high', title: 'High contrast', sub: 'Black on white' },
 ];
 const DWELL: { key: DwellSetting; title: string; sub: string }[] = [
-  { key: 'auto', title: 'Automatic', sub: 'Learns your pace' },
+  { key: 'auto', title: 'Auto', sub: 'Adapts to you' },
   { key: 'slow', title: 'Slower', sub: 'Hold 1.2 s' },
   { key: 'normal', title: 'Normal', sub: 'Hold 0.8 s' },
   { key: 'fast', title: 'Faster', sub: 'Hold 0.6 s' },
 ];
 const VOICE: { key: string; title: string; sub: string; voice: boolean; feedback: boolean }[] = [
-  { key: 'all', title: 'Read aloud', sub: 'Speech and sounds', voice: true, feedback: true },
-  { key: 'sounds', title: 'Sounds only', sub: 'A tick per letter', voice: false, feedback: true },
+  { key: 'all', title: 'Read aloud', sub: 'Voice and ticks', voice: true, feedback: true },
+  { key: 'sounds', title: 'Sounds only', sub: 'Ticks, no voice', voice: false, feedback: true },
   { key: 'off', title: 'Silent', sub: 'Text only', voice: false, feedback: false },
 ];
+
+/** One setting: a titled card with its choices side by side (the cards sit in a 2 x 2 grid so the page never scrolls). */
+function Group({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+  return (
+    <section className={styles.group} aria-labelledby={id}>
+      <h2 className={styles.groupTitle} id={id}>
+        {title}
+      </h2>
+      <ul className={styles.options} aria-labelledby={id}>
+        {children}
+      </ul>
+    </section>
+  );
+}
 
 /**
  * Screen 14 (no Figma frame): the comfort settings added in Phase 3. It sits right after 03 and uses
@@ -78,86 +92,82 @@ export default function S14Comfort() {
         </>
       }
     >
-      <div className={`${common.center} ${styles.tight}`}>
-        <h1 className={common.h1}>Make it comfortable</h1>
-        <p className={`${common.lede} ${styles.lede}`}>
-          Everything changes straight away. Automatic hold time starts at 0.8 s and adjusts to you
-          {live ? ` (now ${(holdMs / 1000).toFixed(1)} s)` : ''}.
-        </p>
+      <div className={`${common.center} ${styles.page}`}>
+        <header className={styles.head}>
+          <h1 className={styles.title}>Make it comfortable</h1>
+          <p className={styles.lede}>
+            Changes apply straight away. Automatic hold time starts at 0.8 s and adjusts to you
+            {live ? ` (now ${(holdMs / 1000).toFixed(1)} s)` : ''}.
+          </p>
+        </header>
 
-        <h2 className={common.h2} id="q-text">
-          How big should the text be?
-        </h2>
-        <ul className={common.row} aria-labelledby="q-text">
-          {TEXT.map((o) => (
-            <Tile
-              key={o.key}
-              selected={textSize === o.key}
-              title={o.title}
-              sub={o.sub}
-              className={styles.small}
-              dwell={{ type: 'CHOOSE_TEXT_SIZE', textSize: o.key }}
-            />
-          ))}
-        </ul>
-
-        <h2 className={common.h2} id="q-contrast">
-          Which colours are easier to read?
-        </h2>
-        <ul className={common.row} aria-labelledby="q-contrast">
-          {CONTRAST.map((o) => (
-            <Tile
-              key={o.key}
-              selected={contrast === o.key}
-              title={o.title}
-              sub={o.sub}
-              className={styles.small}
-              dwell={{ type: 'CHOOSE_CONTRAST', contrast: o.key }}
-            />
-          ))}
-        </ul>
-
-        <h2 className={common.h2} id="q-dwell">
-          How long should you hold to choose?
-        </h2>
-        <ul className={common.row} aria-labelledby="q-dwell">
-          {DWELL.map((o) => (
-            <Tile
-              key={o.key}
-              selected={dwell === o.key}
-              title={o.title}
-              sub={o.sub}
-              className={styles.small}
-              dwell={{ type: 'CHOOSE_DWELL', dwell: o.key }}
-            />
-          ))}
-        </ul>
-
-        <h2 className={common.h2} id="q-voice">
-          Speech and sounds
-        </h2>
-        <ul className={common.row} aria-labelledby="q-voice">
-          {VOICE.map((o) => {
-            const isAll = o.key === 'all';
-            const disabled = isAll && noArabicVoice;
-            return (
+        <div className={styles.grid}>
+          <Group id="q-text" title="Text size">
+            {TEXT.map((o) => (
               <Tile
                 key={o.key}
-                selected={o.voice === voice && o.feedback === feedback}
+                size="xs"
+                selected={textSize === o.key}
                 title={o.title}
-                sub={disabled ? 'No Arabic voice' : o.sub}
-                className={styles.small}
-                dwell={{
-                  type: 'CHOOSE_OUTPUT',
-                  voice: disabled ? false : o.voice,
-                  feedback: disabled ? true : o.feedback,
-                }}
+                sub={o.sub}
+                className={styles.opt}
+                dwell={{ type: 'CHOOSE_TEXT_SIZE', textSize: o.key }}
               />
-            );
-          })}
-        </ul>
+            ))}
+          </Group>
+
+          <Group id="q-contrast" title="Colours">
+            {CONTRAST.map((o) => (
+              <Tile
+                key={o.key}
+                size="xs"
+                selected={contrast === o.key}
+                title={o.title}
+                sub={o.sub}
+                className={styles.opt}
+                dwell={{ type: 'CHOOSE_CONTRAST', contrast: o.key }}
+              />
+            ))}
+          </Group>
+
+          <Group id="q-dwell" title="Hold time to choose">
+            {DWELL.map((o) => (
+              <Tile
+                key={o.key}
+                size="xs"
+                selected={dwell === o.key}
+                title={o.title}
+                sub={o.sub}
+                className={styles.opt}
+                dwell={{ type: 'CHOOSE_DWELL', dwell: o.key }}
+              />
+            ))}
+          </Group>
+
+          <Group id="q-voice" title="Speech and sounds">
+            {VOICE.map((o) => {
+              const isAll = o.key === 'all';
+              const disabled = isAll && noArabicVoice;
+              return (
+                <Tile
+                  key={o.key}
+                  size="xs"
+                  selected={o.voice === voice && o.feedback === feedback}
+                  title={o.title}
+                  sub={disabled ? 'No Arabic voice' : o.sub}
+                  className={styles.opt}
+                  dwell={{
+                    type: 'CHOOSE_OUTPUT',
+                    voice: disabled ? false : o.voice,
+                    feedback: disabled ? true : o.feedback,
+                  }}
+                />
+              );
+            })}
+          </Group>
+        </div>
         {alphabet === 'arabic' && noArabicVoice && (
-          <p className={common.lede} data-testid="read-aloud-note">
+          <p className={styles.note} data-testid="read-aloud-note">
             {strings.noArabicVoiceNotice} {READ_ALOUD_ENGLISH_ONLY}
           </p>
         )}

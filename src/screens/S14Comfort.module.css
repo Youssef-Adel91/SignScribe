@@ -1,42 +1,108 @@
-.small {
-  /* the four questions share the row width, so a long title (Extra large, High contrast) stays on one line */
-  flex: 1 1 calc(var(--u) * 190);
-  max-width: calc(var(--u) * 340);
-  /* the tick sits on the corner of the tile, so it never covers the title */
-  --check-top: calc(var(--s-12) * -1);
-  --check-right: calc(var(--s-12) * -1);
-  /* grows with the text instead of letting the words spill out of the tile; the side padding keeps the title clear of the tick */
-  min-height: calc(var(--u) * 84);
-  padding-inline: var(--s-12);
+/* Screen 14: four settings as cards in a 2 x 2 grid. The page cannot scroll (it is operated by pointing), so the
+   width is used instead of height: each card holds its choices side by side and wraps them when the text is large. */
+.page {
+  justify-content: center;
+  gap: var(--s-16);
+  padding: var(--s-16) var(--s-32);
 }
-/* four questions on one screen without scrolling: tighter than the other screens */
-.tight {
+.head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: var(--s-4);
-  padding-block: var(--s-6);
-  justify-content: space-evenly;
+  text-align: center;
 }
-/* at 150 % text the four questions are taller than the page, and the page does not scroll (it is operated by pointing):
-   the explaining sentence goes and the tiles lose some padding; the questions and their answers stay */
+.title {
+  font-size: var(--fs-32);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.lede {
+  font-size: var(--fs-17);
+  color: var(--muted);
+  line-height: 1.35;
+  max-width: 52em;
+}
+.grid {
+  align-self: stretch;
+  width: 100%;
+  max-width: calc(var(--u) * 1400);
+  margin-inline: auto;
+  display: grid;
+  /* 12 columns: the card with more choices gets more room, so the words stay on one line */
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--s-16);
+}
+.group:nth-child(odd) {
+  grid-column: span 7;
+}
+.group:nth-child(even) {
+  grid-column: span 5;
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-10);
+  padding: var(--s-14) var(--s-16) var(--s-16);
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-card);
+  text-align: left;
+  min-width: 0;
+}
+.groupTitle {
+  font-size: var(--fs-18);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.options {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-10);
+}
+.opt {
+  /* choices share the card width; a long title (Extra large, High contrast) wraps to its own row instead of spilling */
+  flex: 1 1 calc(var(--u) * 120);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  min-height: calc(var(--u) * 72);
+  padding: var(--s-8) var(--s-18);
+  border-radius: var(--s-14);
+  /* the tick sits on the corner so it never covers a title */
+  --check-top: calc(var(--s-16) * -1);
+  --check-right: calc(var(--s-14) * -1);
+}
+.note {
+  font-size: var(--fs-16);
+  color: var(--muted);
+  max-width: 52em;
+  text-align: center;
+}
+/* at 150 % text the cards are tall: the explaining sentence goes and the spacing tightens; every setting stays */
 :root[data-text-size='xlarge'] .lede {
   display: none;
 }
-:root[data-text-size='xlarge'] .small {
-  padding-block: 0;
+:root[data-text-size='xlarge'] .page {
+  gap: var(--s-8);
+  padding-block: var(--s-8);
+}
+:root[data-text-size='xlarge'] .group {
+  padding: var(--s-8) var(--s-12) var(--s-12);
+  gap: var(--s-6);
+}
+:root[data-text-size='xlarge'] .opt {
   min-height: 0;
+  padding-block: var(--s-4);
 }
-:root[data-text-size='xlarge'] .tight h2 {
-  margin-top: 0;
-}
-:root[data-text-size='xlarge'] .tight h1 {
-  font-size: var(--fs-26);
-}
-.tight h2 {
-  margin-top: var(--s-4);
-}
-/* the rows use the full width, so the tiles can be wide enough for one-line titles at any text size */
-.tight ul {
-  align-self: stretch;
-}
-.tight h1 {
-  font-size: var(--fs-32);
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .group:nth-child(odd),
+  .group:nth-child(even) {
+    grid-column: auto;
+  }
 }

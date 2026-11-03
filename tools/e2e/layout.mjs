@@ -73,6 +73,31 @@ for (const textSize of ['normal', 'large', 'xlarge'])
         }
         await ctx.close();
       }
+// small windows (tablet, phone, landscape phone): the content scrolls inside <main>, but nothing may push the page sideways
+let wide = 0;
+for (const [w, h] of [
+  [1024, 768],
+  [800, 600],
+  [768, 1024],
+  [390, 844],
+  [844, 390],
+  [360, 640],
+])
+  for (let n = 1; n <= 14; n++) {
+    const ctx = await b.newContext({ viewport: { width: w, height: h } });
+    const p = await ctx.newPage();
+    await p.goto(`http://localhost:4177/?dev=1&vision=off#${n}`);
+    await p.waitForSelector(`[data-screen="${n}"]`);
+    await p.waitForTimeout(100);
+    const over = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    if (over > 0) {
+      wide++;
+      console.log('SIDEWAYS', w + 'x' + h, 'screen', n, over + 'px');
+    }
+    await ctx.close();
+  }
+console.log('small windows with sideways overflow:', wide);
+if (wide) bad++;
 console.log('screens checked per text size:', 2 * 3 * 14, 'overflowing:', JSON.stringify(bySize));
 process.exitCode = bad ? 1 : 0;
 await b.close();

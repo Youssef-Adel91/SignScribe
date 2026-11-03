@@ -1,7 +1,7 @@
 /* Design tokens. Values mirror the Figma file at 1440x900 (u = 1px there) and scale with the window.
-   --u is a length (about 1px at 1440x900), clamped so a 1280x720 laptop and a 1920x1080 kiosk both work. */
+   --u is a length (about 1px at 1440x900), clamped so a phone, a 1280x720 laptop and a 1920x1080 kiosk all work. */
 :root {
-  --u: clamp(0.8px, min(calc(100vw / 1440), calc(100vh / 900)), 1.4px);
+  --u: clamp(0.5px, min(calc(100vw / 1440), calc(100vh / 900)), 1.4px);
   --ts: 1; /* text scale: 1.25 when the user chose large text */
 
   --bg: #f8fafc;
