@@ -394,3 +394,5 @@ classify_live and record_templates now open the camera through `open_camera` (Wi
 
 ## Web motion model (J, Z)
 `tools/dollarpy/export_web_model.py` turns the DollarPy templates into `public/models/motion-dollar.json` (scaled to a 1280x720 picture). The committed file holds one J and one Z from two videos of another signer: it proves the format and the loading, it is NOT an evaluation and needs my camera. Replace it with templates recorded by the team.
+
+`classify_live.py --debug` also prints the picture size and brightness, and `--save-frame x.png` writes one camera picture after 2 s: look at it to see whether the camera gives black, the wrong camera, or a good picture. Needs my camera.

@@ -75,3 +75,5 @@ the end-to-end check stays deterministic. Tests: `python -m pytest tools/dollarp
 
 ## Nothing is recognised: `--debug`
 `python tools/dollarpy/classify_live.py --no-pose --debug` prints twice a second whether a hand was seen, the fingertip speed peak, and the speed a movement needs to start. No hand seen = tracking problem; peak under the threshold = move faster or the threshold is too high for your camera.
+
+If `hand seen in 0/…` stays 0: add `--save-frame cam.png`, open the picture. Black = wrong camera, a cover on it or a privacy switch (try `--camera 1`); a good picture with your hand in it = the hand model, then tell us.
