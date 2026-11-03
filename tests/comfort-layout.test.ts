@@ -21,6 +21,14 @@ describe('"Make it comfortable" (screen 14) keeps its words inside the tiles', (
   });
 });
 
+describe('three quick choices (screen 03) keeps its words inside the tiles', () => {
+  const css = read('src/screens/S03Preferences.module.css');
+  it('a tile grows with its text: minimum heights only, and the explaining sentence goes at 150 %', () => {
+    expect(css).not.toMatch(/(^|[^-])height:\s*calc\(var\(--u\) \* (150|88)\)/m);
+    expect(css).toMatch(/data-text-size='xlarge'\]\) \.lede\s*{\s*display: none/);
+  });
+});
+
 describe('profile themes colour the whole system', () => {
   const tokens = read('src/styles/tokens.css');
   it.each(['blue', 'pink'])('%s sets a second accent and the line under the top bar', (theme) => {
