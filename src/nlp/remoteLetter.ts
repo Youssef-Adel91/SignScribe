@@ -18,9 +18,17 @@ type Listener = (l: RemoteLetter | null) => void;
 const listeners = new Set<Listener>();
 let current: RemoteLetter | null = null;
 
-/** called with every pushed letter; letters that are not in the active alphabet are dropped */
-export function receiveLetter(p: LetterPush, now = Date.now()): void {
-  if (!ALPHABET_LABELS.includes(p.letter)) return;
+/**
+ * Called with every pushed letter; letters that are not in the active alphabet are dropped. `labels` is the alphabet the person
+ * has chosen NOW (the setting on screen 03): without it the alphabet the page was built with is used, which is English unless
+ * the address says otherwise, so a simulated "J" used to get through while the person was spelling Arabic.
+ */
+export function receiveLetter(
+  p: LetterPush,
+  now = Date.now(),
+  labels: readonly string[] = ALPHABET_LABELS,
+): void {
+  if (!labels.includes(p.letter)) return;
   setLetter({ letter: p.letter, score: p.score, source: p.source, demo: p.demo, at: now });
 }
 

@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
-import { useSend } from '../state/MachineProvider';
+import { useEffect, useRef } from 'react';
+import { alphabetOfSetting } from '../config/alphabet';
+import { useCtx, useSend } from '../state/MachineProvider';
 import { loadProfile } from '../state/profiles';
 import { ContextFeed } from './contextFeed';
 import { receiveLetter } from './remoteLetter';
@@ -12,6 +13,11 @@ import { receiveLetter } from './remoteLetter';
  */
 export function ContextBridge({ url }: { url: string }) {
   const send = useSend();
+  // the letters of the alphabet chosen now; a ref, so choosing another alphabet does not reconnect the feed
+  const { alphabet } = useCtx();
+  const labels = useRef<readonly string[]>([]);
+  const a = alphabetOfSetting(alphabet);
+  labels.current = [...a.static, ...a.dynamic];
   useEffect(() => {
     const feed = new ContextFeed(
       url,
@@ -30,7 +36,7 @@ export function ContextBridge({ url }: { url: string }) {
       undefined,
       undefined,
       undefined,
-      receiveLetter,
+      (p) => receiveLetter(p, Date.now(), labels.current),
     );
     return () => feed.close();
   }, [url, send]);

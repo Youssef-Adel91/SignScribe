@@ -371,3 +371,6 @@ Added to the Phase II criteria by the team: "provide different content according
 - Lost: closing the advertiser, or walking away with the phone, made the presence disappear. Coming back brought it back and the app said it again.
 - Not measured: the seconds from switching on to found and from switching off to lost (Youssef did not time them). Not tried yet: a place device (`SS-CLINIC`), a second person, and the DollarPy part.
 - Two things found on the way and fixed: a leftover FAKE scanner overwrote the real presence (server keeps only the last message; stop every `--fake` process), and the announcement was repeated on every screen change.
+
+## Remote (DollarPy) letters follow the chosen alphabet (2026-11-03)
+- Youssef saw "J" and "Z" offered while spelling Arabic. Cause: the letters pushed by the DollarPy client were checked against the alphabet the page was built with (English unless the address says `?alphabet=`), not the alphabet chosen on screen 03, so a simulated J passed. Now `ContextBridge` hands `receiveLetter` the labels of the alphabet chosen now; for Arabic there are no moving letters, so none passes. `tests/remote-letter.test.ts` covers it (verified here). A leftover `npm run demo` (simulated DollarPy) was probably still running on his computer; it must be stopped for a real run.

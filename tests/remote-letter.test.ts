@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { getAlphabet } from '../src/config/alphabet';
 import {
   receiveLetter,
   setLetter,
@@ -24,5 +25,28 @@ describe('letters offered from another program', () => {
     expect(seen.at(-1)?.letter).toBe('Z');
     setLetter(null);
     expect(seen.at(-1)).toBeNull();
+  });
+  it('follows the alphabet chosen now: a simulated J never reaches someone spelling Arabic', () => {
+    const arsl = getAlphabet('arsl');
+    const asl = getAlphabet('asl');
+    const arabic = [...arsl.static, ...arsl.dynamic];
+    const english = [...asl.static, ...asl.dynamic];
+    receiveLetter(
+      { type: 'letter', letter: 'J', score: 0.9, source: 'dollarpy', demo: true },
+      1,
+      arabic,
+    );
+    receiveLetter(
+      { type: 'letter', letter: 'Z', score: 0.9, source: 'dollarpy', demo: true },
+      2,
+      arabic,
+    );
+    expect(seen.filter(Boolean)).toHaveLength(0);
+    receiveLetter(
+      { type: 'letter', letter: 'J', score: 0.9, source: 'dollarpy', demo: true },
+      3,
+      english,
+    );
+    expect(seen.at(-1)?.letter).toBe('J');
   });
 });
