@@ -28,7 +28,7 @@ from dollar_logic import (  # noqa: E402
     load_templates,
     pose_keys,
 )
-from camera_thread import LatestFrame  # noqa: E402
+from camera_thread import LatestFrame, open_camera  # noqa: E402
 from server_link import BackgroundLink  # noqa: E402
 from simulate import SIM_BANNER, SHAPES, frames, frames_with_pose, synthetic_templates  # noqa: E402
 
@@ -151,10 +151,11 @@ def main(argv=None) -> int:
         pose_tracker = PoseTracker(have_keys, a.pose_model or DEFAULT_POSE_MODEL, min_visibility=a.pose_min_visibility) if have_keys else None
         if a.pose and not have_keys:
             print("these templates have no pose (recorded with --no-pose): comparing the fingertip alone")
-        cap = cv2.VideoCapture(a.camera)
-        if not cap.isOpened():
-            print(f"error: camera {a.camera} cannot be opened", file=sys.stderr)
+        cap, how = open_camera(cv2, a.camera)
+        if cap is None:
+            print(f"error: {how}", file=sys.stderr)
             return 2
+        print(f"camera {a.camera}: {how} backend")
         print(f"tracker: {tracker.describe()}")
         print(pose_tracker.describe() if pose_tracker else "pose: off")
         print("Draw a moving letter in the air with your index finger. q quits.")

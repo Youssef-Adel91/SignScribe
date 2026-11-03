@@ -471,3 +471,32 @@ def test_segmenter_exposes_the_last_speed_for_debug():
     lm2[8] = (0.6, 0.5)
     seg.feed(33.0, lm2, 640, 480)
     assert seg.last_speed > 0
+
+
+def test_open_camera_tries_the_next_backend_when_the_first_gives_no_picture():
+    from camera_thread import open_camera
+
+    class Cap:
+        def __init__(self, good):
+            self.good = good
+
+        def isOpened(self):
+            return True
+
+        def read(self):
+            return (True, "frame") if self.good else (False, None)
+
+        def release(self):
+            pass
+
+    class Cv2:
+        CAP_DSHOW = 700
+
+        @staticmethod
+        def VideoCapture(index, api=None):
+            return Cap(good=api is None)
+
+    cap, name = open_camera(Cv2, 0, backends=[("DirectShow", 700), ("default", None)], tries=2)
+    assert name == "default" and cap.read()[0]
+    cap, why = open_camera(Cv2, 0, backends=[("DirectShow", 700)], tries=2)
+    assert cap is None and "no picture" in why

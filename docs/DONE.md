@@ -389,3 +389,5 @@ Added to the Phase II criteria by the team: "provide different content according
 
 ## classify_live --debug
 Added `--debug` (hand seen, speed peak, start threshold) to find why a live run recognises nothing. Needs my camera.
+
+classify_live and record_templates now open the camera through `open_camera` (Windows: DirectShow first, then the default backend, and a real first picture is required). Fixes "the camera gave no picture" on a laptop webcam that opened but never delivered. Needs my camera.
