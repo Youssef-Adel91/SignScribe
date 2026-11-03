@@ -1,0 +1,263 @@
+{
+ "provenance": {
+  "command": "python ml/calibrate.py --data /tmp/signscribe/asl.jsonl --alphabet asl --dataset-name ASL letters, EWU plus ASL-HG merged --dataset-version Mendeley 48dg9vhmyk v2, Type_01 only, signer = file-number block of 500 (inferred); Mendeley j4y5w2c8w9 v1, raw images, signer = P1..P10 from the file name, subset of 500 per letter per signer (seed 0) --out-dir /kaggle/working/signscribe-asl-output/reports",
+  "date": "2026-11-03T12:48:24+00:00",
+  "dataset_name": "ASL letters, EWU plus ASL-HG merged",
+  "dataset_version": "Mendeley 48dg9vhmyk v2, Type_01 only, signer = file-number block of 500 (inferred); Mendeley j4y5w2c8w9 v1, raw images, signer = P1..P10 from the file name, subset of 500 per letter per signer (seed 0)",
+  "dataset_sha256": "2aeac81a780b7277ae2246b787d22e291c1ed4bdfa46d07f95074c40523b7cc5",
+  "alphabet": "asl",
+  "takes": 38619,
+  "persons": 13,
+  "sources": 2,
+  "signers": 13,
+  "synthetic": false,
+  "python": "3.13.16",
+  "numpy": "2.1.3",
+  "git_commit": "c88ee4e"
+ },
+ "method": "leave-one-person-out",
+ "thresholds": [
+  0.0,
+  0.3,
+  0.4,
+  0.5,
+  0.6,
+  0.7,
+  0.8,
+  0.9,
+  0.95,
+  0.99
+ ],
+ "models": {
+  "knn": {
+   "frames": 38619,
+   "rows": [
+    {
+     "threshold": 0.0,
+     "shown": 38619,
+     "coverage": 1.0,
+     "precision": 0.8740516326160698,
+     "precision_ci95": [
+      0.8707052033242091,
+      0.8773236522222456
+     ],
+     "wrong_shown_per_100": 12.594836738393019
+    },
+    {
+     "threshold": 0.3,
+     "shown": 38608,
+     "coverage": 0.9997151661099459,
+     "precision": 0.874248860339826,
+     "precision_ci95": [
+      0.8709041482320722,
+      0.8775191023180907
+     ],
+     "wrong_shown_per_100": 12.571532147388591
+    },
+    {
+     "threshold": 0.4,
+     "shown": 38482,
+     "coverage": 0.996452523369326,
+     "precision": 0.8766955979418949,
+     "precision_ci95": [
+      0.8733729032676478,
+      0.8799430902170835
+     ],
+     "wrong_shown_per_100": 12.286698257334473
+    },
+    {
+     "threshold": 0.5,
+     "shown": 38098,
+     "coverage": 0.9865092312074367,
+     "precision": 0.8824872696729487,
+     "precision_ci95": [
+      0.8792149242075656,
+      0.8856824869453902
+     ],
+     "wrong_shown_per_100": 11.59273932520262
+    },
+    {
+     "threshold": 0.6,
+     "shown": 37092,
+     "coverage": 0.9604598772624874,
+     "precision": 0.8975520327833495,
+     "precision_ci95": [
+      0.8944247371934568,
+      0.9005969883683647
+     ],
+     "wrong_shown_per_100": 9.839716201869546
+    },
+    {
+     "threshold": 0.7,
+     "shown": 35878,
+     "coverage": 0.9290245733965147,
+     "precision": 0.9097775795752272,
+     "precision_ci95": [
+      0.9067689370227638,
+      0.9126984784958423
+     ],
+     "wrong_shown_per_100": 8.381884564592559
+    },
+    {
+     "threshold": 0.8,
+     "shown": 34944,
+     "coverage": 0.9048395867319196,
+     "precision": 0.9208447802197802,
+     "precision_ci95": [
+      0.9179675388522363,
+      0.9236294998615938
+     ],
+     "wrong_shown_per_100": 7.162277635360833
+    },
+    {
+     "threshold": 0.9,
+     "shown": 33417,
+     "coverage": 0.8652994639944069,
+     "precision": 0.9328485501391507,
+     "precision_ci95": [
+      0.9301149640595273,
+      0.9354826275941789
+     ],
+     "wrong_shown_per_100": 5.810611357104016
+    },
+    {
+     "threshold": 0.95,
+     "shown": 33417,
+     "coverage": 0.8652994639944069,
+     "precision": 0.9328485501391507,
+     "precision_ci95": [
+      0.9301149640595273,
+      0.9354826275941789
+     ],
+     "wrong_shown_per_100": 5.810611357104016
+    },
+    {
+     "threshold": 0.99,
+     "shown": 33417,
+     "coverage": 0.8652994639944069,
+     "precision": 0.9328485501391507,
+     "precision_ci95": [
+      0.9301149640595273,
+      0.9354826275941789
+     ],
+     "wrong_shown_per_100": 5.810611357104016
+    }
+   ]
+  },
+  "mlp": {
+   "frames": 38619,
+   "rows": [
+    {
+     "threshold": 0.0,
+     "shown": 38619,
+     "coverage": 1.0,
+     "precision": 0.9075325616924312,
+     "precision_ci95": [
+      0.9046026629166432,
+      0.9103813904576173
+     ],
+     "wrong_shown_per_100": 9.24674383075688
+    },
+    {
+     "threshold": 0.3,
+     "shown": 38582,
+     "coverage": 0.9990419223698179,
+     "precision": 0.9082214504172931,
+     "precision_ci95": [
+      0.9052997514775866,
+      0.9110618644369929
+     ],
+     "wrong_shown_per_100": 9.169061860742122
+    },
+    {
+     "threshold": 0.4,
+     "shown": 38441,
+     "coverage": 0.9953908697791243,
+     "precision": 0.9107723524362009,
+     "precision_ci95": [
+      0.9078813594186281,
+      0.9135812526161682
+     ],
+     "wrong_shown_per_100": 8.881638571687512
+    },
+    {
+     "threshold": 0.5,
+     "shown": 38148,
+     "coverage": 0.9878039307076828,
+     "precision": 0.9153035545769109,
+     "precision_ci95": [
+      0.9124675068335506,
+      0.9180559665077728
+     ],
+     "wrong_shown_per_100": 8.366348170589607
+    },
+    {
+     "threshold": 0.6,
+     "shown": 37401,
+     "coverage": 0.9684611201740077,
+     "precision": 0.9247346327638298,
+     "precision_ci95": [
+      0.9220170436986719,
+      0.9273649785473468
+     ],
+     "wrong_shown_per_100": 7.28915818638494
+    },
+    {
+     "threshold": 0.7,
+     "shown": 36559,
+     "coverage": 0.9466583805898651,
+     "precision": 0.9355015180940398,
+     "precision_ci95": [
+      0.9329374760991793,
+      0.9379740451760161
+     ],
+     "wrong_shown_per_100": 6.105802843160102
+    },
+    {
+     "threshold": 0.8,
+     "shown": 35485,
+     "coverage": 0.9188482353245812,
+     "precision": 0.9476398478230238,
+     "precision_ci95": [
+      0.9452733183138873,
+      0.9499094649979241
+     ],
+     "wrong_shown_per_100": 4.81110334291411
+    },
+    {
+     "threshold": 0.9,
+     "shown": 33837,
+     "coverage": 0.8761749397964732,
+     "precision": 0.9629104235009014,
+     "precision_ci95": [
+      0.9608436757594321,
+      0.9648720723973752
+     ],
+     "wrong_shown_per_100": 3.249695745617442
+    },
+    {
+     "threshold": 0.95,
+     "shown": 32399,
+     "coverage": 0.8389393821693985,
+     "precision": 0.9733633754128214,
+     "precision_ci95": [
+      0.9715531156581744,
+      0.9750613936075808
+     ],
+     "wrong_shown_per_100": 2.2346513374245838
+    },
+    {
+     "threshold": 0.99,
+     "shown": 29282,
+     "coverage": 0.7582278153240632,
+     "precision": 0.988013113858343,
+     "precision_ci95": [
+      0.9867010430063036,
+      0.9891971534791953
+     ],
+     "wrong_shown_per_100": 0.908879049172687
+    }
+   ]
+  }
+ }
+}

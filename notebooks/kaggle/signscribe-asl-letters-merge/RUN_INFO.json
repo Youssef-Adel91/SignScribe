@@ -1,0 +1,13 @@
+{
+ "notebook": "signscribe_asl_letters",
+ "signscribe_commit": "c88ee4e",
+ "mediapipe": "0.10.35",
+ "hand_model_sha256_16": "fbc2a30080c3c557",
+ "dataset": "ASL letters, EWU plus ASL-HG merged",
+ "dataset_version": "Mendeley 48dg9vhmyk v2, Type_01 only, signer = file-number block of 500 (inferred); Mendeley j4y5w2c8w9 v1, raw images, signer = P1..P10 from the file name",
+ "takes_sha256_16": "2aeac81a780b7277",
+ "takes_ewu_sha256_16": "67396968421bf0bb",
+ "takes_hg_sha256_16": "d0dd553cc63d4472",
+ "finished_utc": "2026-11-03T12:56:36Z",
+ "pipeline_test": false
+}

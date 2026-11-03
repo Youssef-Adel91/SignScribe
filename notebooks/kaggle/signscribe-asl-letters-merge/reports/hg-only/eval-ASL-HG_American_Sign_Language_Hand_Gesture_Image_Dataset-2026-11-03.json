@@ -1,0 +1,477 @@
+{
+ "provenance": {
+  "command": "python ml/evaluate.py --data /tmp/signscribe/asl-hg.jsonl --alphabet asl --dataset-name ASL-HG American Sign Language Hand Gesture Image Dataset --dataset-version Mendeley j4y5w2c8w9 v1, raw images, signer = P1..P10 from the file name, subset of 500 per letter per signer (seed 0) --augment all --out-dir /kaggle/working/signscribe-asl-output/reports/hg-only --results-md /tmp/signscribe/SignScribe/docs/MODEL_RESULTS.md",
+  "date": "2026-11-03T12:45:08+00:00",
+  "dataset_name": "ASL-HG American Sign Language Hand Gesture Image Dataset",
+  "dataset_version": "Mendeley j4y5w2c8w9 v1, raw images, signer = P1..P10 from the file name, subset of 500 per letter per signer (seed 0)",
+  "dataset_sha256": "d0dd553cc63d4472c9744166066549cc4db09ebdca3eb99b86e40cb6fc356bfa",
+  "alphabet": "asl",
+  "takes": 23980,
+  "persons": 10,
+  "sources": 1,
+  "signers": 10,
+  "synthetic": false,
+  "python": "3.13.16",
+  "numpy": "2.1.3",
+  "git_commit": "c88ee4e"
+ },
+ "runs": [
+  {
+   "name": "with augmentation",
+   "method": "leave-one-person-out",
+   "generalises": true,
+   "n_groups": 10,
+   "n_minor_groups": 0,
+   "restricted": null,
+   "labels": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y"
+   ],
+   "models": {
+    "knn": {
+     "description": "k-NN, k=5, distance-weighted vote on the 60 hand features (same as the browser)",
+     "metrics": {
+      "samples": 23980,
+      "pooled_accuracy": 0.9059216013344453,
+      "mean_group_accuracy": 0.9059003762406258,
+      "min_group_accuracy": 0.825,
+      "max_group_accuracy": 0.9725,
+      "groups_in_min_max": 10,
+      "groups_total": 10,
+      "macro_recall": 0.9059868292253211,
+      "per_label": {
+       "A": {
+        "support": 1000,
+        "precision": 0.998001998001998,
+        "recall": 0.999
+       },
+       "B": {
+        "support": 1000,
+        "precision": 0.999000999000999,
+        "recall": 1.0
+       },
+       "C": {
+        "support": 1000,
+        "precision": 0.9212410501193318,
+        "recall": 0.772
+       },
+       "D": {
+        "support": 1000,
+        "precision": 0.9970089730807578,
+        "recall": 1.0
+       },
+       "E": {
+        "support": 1000,
+        "precision": 0.8325624421831638,
+        "recall": 0.9
+       },
+       "F": {
+        "support": 1000,
+        "precision": 1.0,
+        "recall": 1.0
+       },
+       "G": {
+        "support": 1000,
+        "precision": 1.0,
+        "recall": 0.976
+       },
+       "H": {
+        "support": 982,
+        "precision": 0.9760239760239761,
+        "recall": 0.994908350305499
+       },
+       "I": {
+        "support": 1000,
+        "precision": 0.9302325581395349,
+        "recall": 1.0
+       },
+       "K": {
+        "support": 1000,
+        "precision": 0.9940357852882704,
+        "recall": 1.0
+       },
+       "L": {
+        "support": 1000,
+        "precision": 0.9699321047526673,
+        "recall": 1.0
+       },
+       "M": {
+        "support": 1000,
+        "precision": 0.5593406593406594,
+        "recall": 0.509
+       },
+       "N": {
+        "support": 1000,
+        "precision": 0.6443418013856813,
+        "recall": 0.558
+       },
+       "O": {
+        "support": 1000,
+        "precision": 0.8250883392226148,
+        "recall": 0.934
+       },
+       "P": {
+        "support": 1000,
+        "precision": 0.9727095516569201,
+        "recall": 0.998
+       },
+       "Q": {
+        "support": 1000,
+        "precision": 0.997948717948718,
+        "recall": 0.973
+       },
+       "R": {
+        "support": 998,
+        "precision": 0.9588744588744589,
+        "recall": 0.8877755511022044
+       },
+       "S": {
+        "support": 1000,
+        "precision": 0.6578512396694215,
+        "recall": 0.796
+       },
+       "T": {
+        "support": 1000,
+        "precision": 0.7090909090909091,
+        "recall": 0.663
+       },
+       "U": {
+        "support": 1000,
+        "precision": 0.8665377176015474,
+        "recall": 0.896
+       },
+       "V": {
+        "support": 1000,
+        "precision": 0.9351403678606002,
+        "recall": 0.966
+       },
+       "W": {
+        "support": 1000,
+        "precision": 1.0,
+        "recall": 1.0
+       },
+       "X": {
+        "support": 1000,
+        "precision": 1.0,
+        "recall": 0.996
+       },
+       "Y": {
+        "support": 1000,
+        "precision": 0.9989200863930886,
+        "recall": 0.925
+       }
+      },
+      "worst_pairs": {
+       "M/N": {
+        "total": 579,
+        "M->N": 307,
+        "N->M": 272
+       },
+       "S/T": {
+        "total": 510,
+        "S->T": 202,
+        "T->S": 308
+       },
+       "E/M": {
+        "total": 281,
+        "E->M": 100,
+        "M->E": 181
+       },
+       "C/O": {
+        "total": 264,
+        "C->O": 198,
+        "O->C": 66
+       },
+       "R/U": {
+        "total": 145,
+        "R->U": 111,
+        "U->R": 34
+       },
+       "N/S": {
+        "total": 105,
+        "N->S": 105,
+        "S->N": 0
+       },
+       "U/V": {
+        "total": 94,
+        "U->V": 67,
+        "V->U": 27
+       },
+       "I/Y": {
+        "total": 75,
+        "I->Y": 0,
+        "Y->I": 75
+       },
+       "N/T": {
+        "total": 65,
+        "N->T": 65,
+        "T->N": 0
+       },
+       "M/T": {
+        "total": 32,
+        "M->T": 3,
+        "T->M": 29
+       }
+      },
+      "selective": {
+       "0.5": {
+        "coverage": 0.9988323603002502,
+        "accuracy_when_shown": 0.906062124248497
+       },
+       "0.6": {
+        "coverage": 0.9878231859883236,
+        "accuracy_when_shown": 0.9121496116176967
+       },
+       "0.7": {
+        "coverage": 0.9705170975813178,
+        "accuracy_when_shown": 0.9172001890602844
+       },
+       "0.8": {
+        "coverage": 0.9605087572977481,
+        "accuracy_when_shown": 0.9210263534928147
+       },
+       "0.9": {
+        "coverage": 0.9326105087572978,
+        "accuracy_when_shown": 0.9263995707386872
+       }
+      }
+     }
+    },
+    "mlp": {
+     "description": "MLP 60-64-32-C, ReLU, Adam lr=0.003, weight decay=0.0001, 60 epochs, batch 128, seed 0",
+     "metrics": {
+      "samples": 23980,
+      "pooled_accuracy": 0.9278565471226021,
+      "mean_group_accuracy": 0.9278181811179061,
+      "min_group_accuracy": 0.8194328607172644,
+      "max_group_accuracy": 1.0,
+      "groups_in_min_max": 10,
+      "groups_total": 10,
+      "macro_recall": 0.9278968871211534,
+      "per_label": {
+       "A": {
+        "support": 1000,
+        "precision": 0.984251968503937,
+        "recall": 1.0
+       },
+       "B": {
+        "support": 1000,
+        "precision": 0.9970089730807578,
+        "recall": 1.0
+       },
+       "C": {
+        "support": 1000,
+        "precision": 1.0,
+        "recall": 0.912
+       },
+       "D": {
+        "support": 1000,
+        "precision": 0.9090909090909091,
+        "recall": 1.0
+       },
+       "E": {
+        "support": 1000,
+        "precision": 0.9922822491730982,
+        "recall": 0.9
+       },
+       "F": {
+        "support": 1000,
+        "precision": 1.0,
+        "recall": 0.997
+       },
+       "G": {
+        "support": 1000,
+        "precision": 0.9989071038251366,
+        "recall": 0.914
+       },
+       "H": {
+        "support": 982,
+        "precision": 0.9181561618062088,
+        "recall": 0.9938900203665988
+       },
+       "I": {
+        "support": 1000,
+        "precision": 1.0,
+        "recall": 1.0
+       },
+       "K": {
+        "support": 1000,
+        "precision": 0.960668633235005,
+        "recall": 0.977
+       },
+       "L": {
+        "support": 1000,
+        "precision": 1.0,
+        "recall": 0.9
+       },
+       "M": {
+        "support": 1000,
+        "precision": 0.817279046673287,
+        "recall": 0.823
+       },
+       "N": {
+        "support": 1000,
+        "precision": 0.8054162487462387,
+        "recall": 0.803
+       },
+       "O": {
+        "support": 1000,
+        "precision": 0.9191176470588235,
+        "recall": 1.0
+       },
+       "P": {
+        "support": 1000,
+        "precision": 0.936231884057971,
+        "recall": 0.969
+       },
+       "Q": {
+        "support": 1000,
+        "precision": 0.9652509652509652,
+        "recall": 1.0
+       },
+       "R": {
+        "support": 998,
+        "precision": 0.8562434417628542,
+        "recall": 0.8176352705410822
+       },
+       "S": {
+        "support": 1000,
+        "precision": 0.7748344370860927,
+        "recall": 0.819
+       },
+       "T": {
+        "support": 1000,
+        "precision": 0.7390873015873016,
+        "recall": 0.745
+       },
+       "U": {
+        "support": 1000,
+        "precision": 0.8668763102725366,
+        "recall": 0.827
+       },
+       "V": {
+        "support": 1000,
+        "precision": 0.8864059590316573,
+        "recall": 0.952
+       },
+       "W": {
+        "support": 1000,
+        "precision": 1.0,
+        "recall": 1.0
+       },
+       "X": {
+        "support": 1000,
+        "precision": 0.9787234042553191,
+        "recall": 0.92
+       },
+       "Y": {
+        "support": 1000,
+        "precision": 0.999000999000999,
+        "recall": 1.0
+       }
+      },
+      "worst_pairs": {
+       "S/T": {
+        "total": 380,
+        "S->T": 165,
+        "T->S": 215
+       },
+       "M/N": {
+        "total": 250,
+        "M->N": 168,
+        "N->M": 82
+       },
+       "R/U": {
+        "total": 216,
+        "R->U": 83,
+        "U->R": 133
+       },
+       "N/T": {
+        "total": 112,
+        "N->T": 92,
+        "T->N": 20
+       },
+       "E/M": {
+        "total": 107,
+        "E->M": 100,
+        "M->E": 7
+       },
+       "R/V": {
+        "total": 103,
+        "R->V": 99,
+        "V->R": 4
+       },
+       "D/L": {
+        "total": 100,
+        "D->L": 0,
+        "L->D": 100
+       },
+       "C/O": {
+        "total": 88,
+        "C->O": 88,
+        "O->C": 0
+       },
+       "G/H": {
+        "total": 87,
+        "G->H": 86,
+        "H->G": 1
+       },
+       "P/X": {
+        "total": 66,
+        "P->X": 0,
+        "X->P": 66
+       }
+      },
+      "selective": {
+       "0.5": {
+        "coverage": 0.9955379482902419,
+        "accuracy_when_shown": 0.9297532777614879
+       },
+       "0.6": {
+        "coverage": 0.9773561301084237,
+        "accuracy_when_shown": 0.9368093185987968
+       },
+       "0.7": {
+        "coverage": 0.9565888240200167,
+        "accuracy_when_shown": 0.9436767077902263
+       },
+       "0.8": {
+        "coverage": 0.9287322768974146,
+        "accuracy_when_shown": 0.9511023303848054
+       },
+       "0.9": {
+        "coverage": 0.885279399499583,
+        "accuracy_when_shown": 0.9603372744830185
+       }
+      }
+     }
+    }
+   },
+   "augment": "rotate+scale+mirror x2 copies per frame",
+   "k": 5,
+   "seed": 0
+  }
+ ]
+}
