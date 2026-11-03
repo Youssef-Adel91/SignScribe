@@ -100,3 +100,25 @@
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+
+/* phone width: the step numbers stay, their words go to screen readers only, and the bar uses less padding */
+@media (max-width: 700px) {
+  .bar {
+    padding: var(--s-8) var(--s-12);
+  }
+  .step + .step::before {
+    display: none;
+  }
+  .todo .label,
+  .done .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .steps {
+    gap: var(--s-8);
+  }
+}

@@ -6,7 +6,7 @@ const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 
 describe('"Make it comfortable" (screen 14) keeps its words inside the tiles', () => {
   const css = read('src/screens/S14Comfort.module.css');
-  const small = css.split('.small {')[1].split('}')[0];
+  const small = css.split('.opt {')[1].split('}')[0];
   it('a tile grows with its text: a minimum height, never a fixed one', () => {
     expect(small).toMatch(/min-height:/);
     expect(small).not.toMatch(/(^|[^-])height:/);
