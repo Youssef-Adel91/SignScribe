@@ -18,7 +18,8 @@ You need a computer with a Bluetooth adapter that is switched on. Linux may need
 | `devices[].place` | where this device is (a beacon on the wall, a tag on a desk): Clinic, Shop, Work or Home |
 | `devices[].label` | what appears in logs instead of the device (default `device #N`); must not look like an address |
 | `scan.min_rssi` | devices weaker than this are ignored (a rough "nearby", default -85 dBm) |
-| `scan.confirm_scans` / `lost_after_scans` | a new person/place needs this many scans in a row to be believed; it is forgotten after this many empty scans (signal strength jumps around) |
+| `scan.seconds` / `pause_seconds` | one check = a scan of `seconds` then a pause (defaults 3 s + 2 s: a check every 5 s) |
+| `scan.confirm_scans` / `lost_after_scans` | a new person/place needs this many scans in a row to be believed; it is forgotten after this many empty scans (signal strength jumps around). With the defaults (2 and 2, 5 s per check) a person is found after about 10 s and forgotten after about 10 s |
 | `scan.heartbeat_seconds` | the same presence is repeated this often so the server does not forget it (the server forgets after 15 s) |
 
 An entry may have a `userId`, a `place` or both. In one scan the strongest known user device gives `userId` and the strongest known place device gives `place`. `rssi` in the message is the signal strength of the user device, or of the place device when there is no user.

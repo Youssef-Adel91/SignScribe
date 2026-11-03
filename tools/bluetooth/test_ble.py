@@ -445,3 +445,11 @@ def test_the_server_accepts_the_profile_we_send():
     )
     out = subprocess.run(["node", "-e", js, json.dumps(msgs)], cwd=ROOT, capture_output=True, text=True, check=True).stdout
     assert json.loads(out) == ["female", "male"]
+
+
+def test_default_timing_finds_and_forgets_a_person_in_about_ten_seconds():
+    s = Settings()
+    cycle = s.seconds + s.pause_seconds
+    assert cycle <= 5
+    assert cycle * s.confirm_scans <= 10  # found
+    assert cycle * s.lost_after_scans <= 10  # forgotten

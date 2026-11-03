@@ -58,11 +58,11 @@ class Entry:
 
 @dataclass(frozen=True)
 class Settings:
-    seconds: float = 4.0
-    pause_seconds: float = 1.0
+    seconds: float = 3.0
+    pause_seconds: float = 2.0
     min_rssi: int = -85
     confirm_scans: int = 2
-    lost_after_scans: int = 3
+    lost_after_scans: int = 2
     heartbeat_seconds: float = 5.0
 
 
