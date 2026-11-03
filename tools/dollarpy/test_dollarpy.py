@@ -429,3 +429,35 @@ def test_the_pose_tracker_says_what_to_do_without_its_model(tmp_path):
     pytest.importorskip("mediapipe")
     with pytest.raises(SystemExit, match="npm run models"):
         hand_tracker.PoseTracker(KEYS, tmp_path / "missing.task")
+
+
+def test_templates_from_video_cut_one_movement_from_frames_and_finish_a_movement_the_video_cuts_off():
+    import templates_from_video as tv
+
+    frames = [(lm, w, h) for _, lm, w, h in simulate.frames("J", fps=30)]
+    found = tv.movements_from_frames(frames, 30)
+    assert len(found) == 1
+    # a video that ends while the finger is still moving: the last picture is held, so the movement still ends
+    cut = frames[: int(len(frames) * 0.55)]
+    assert len(tv.movements_from_frames(cut, 30)) <= 1
+    assert tv.movements_from_frames([(None, 640, 480)] * 40, 30) == []
+
+
+def test_a_resting_second_hand_that_flickers_into_view_does_not_make_the_path_jump():
+    import templates_from_video as tv
+
+    frames = [(lm, w, h) for _, lm, w, h in simulate.frames("Z", fps=30)]
+    noisy = list(frames)
+    rest = simulate.hand_at(0.9, 0.95)  # a different hand far away, seen for single frames
+    rest[0] = [0.9, 0.95, 0.0]  # its wrist
+    for i in range(10, len(noisy), 7):
+        noisy[i] = (rest, noisy[i][1], noisy[i][2])
+    cleaned, replaced = tv.drop_jumps(noisy)
+    assert replaced > 0
+    assert all(c[0][8][0] < 0.8 for c in cleaned)  # no frame sits on the other hand
+    # a hand that really moves somewhere else and stays there is accepted after a few frames
+    a, b = simulate.hand_at(0.2, 0.2), simulate.hand_at(0.9, 0.9)
+    a[0], b[0] = [0.2, 0.2, 0.0], [0.9, 0.9, 0.0]
+    moved = [(a, 640, 480)] * 3 + [(b, 640, 480)] * 20
+    out, _ = tv.drop_jumps(moved)
+    assert out[-1][0][8][0] == 0.9
