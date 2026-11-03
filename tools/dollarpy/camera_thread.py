@@ -6,8 +6,30 @@ and keeps only the newest under a lock; the main loop (consumer) takes the newes
 on a stale picture. Pictures it was too slow for are counted as skipped."""
 from __future__ import annotations
 
+import sys
 import threading
 import time
+
+
+def open_camera(cv2, index: int = 0, backends=None, tries: int = 30):
+    """Opens the webcam and proves that it gives a picture. On Windows the default backend (MSMF) often opens a camera that never delivers
+    (or needs many seconds), so DirectShow is tried first and the default backend second. Returns (cap, backend_name) or (None, reason)."""
+    if backends is None:
+        backends = [("DirectShow", getattr(cv2, "CAP_DSHOW", None)), ("default", None)] if sys.platform == "win32" else [("default", None)]
+    tried = []
+    for name, api in backends:
+        if name == "DirectShow" and api is None:
+            continue
+        cap = cv2.VideoCapture(index) if api is None else cv2.VideoCapture(index, api)
+        if cap.isOpened():
+            for _ in range(tries):  # a camera can need a moment to start
+                ok, _frame = cap.read()
+                if ok:
+                    return cap, name
+                time.sleep(0.1)
+        cap.release()
+        tried.append(name)
+    return None, "no picture from camera %d (tried %s). Close every other program or browser tab that uses the camera (also the SignScribe page), or try --camera 1" % (index, ", ".join(tried))
 
 
 class LatestFrame:

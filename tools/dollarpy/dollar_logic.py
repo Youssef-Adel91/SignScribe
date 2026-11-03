@@ -91,6 +91,7 @@ class Segmenter:
     slow_since: float | None = None
     start_t: float = 0.0
     cooldown_until: float = -1e18
+    last_speed: float = 0.0  # palm sizes per second at the last frame (for --debug)
 
     def reset(self) -> None:
         self.trail, self.moving, self.slow_since = [], False, None
@@ -107,6 +108,7 @@ class Segmenter:
         x, y = landmarks[INDEX_TIP][0] * width, landmarks[INDEX_TIP][1] * height
         prev = self.trail[-1] if self.trail else None
         speed = math.hypot(x - prev[1], y - prev[2]) / ps / ((t - prev[0]) / 1000) if prev and t > prev[0] else 0.0
+        self.last_speed = speed
         self.trail.append((t, x, y, pose))
         while self.trail and t - self.trail[0][0] > c["max_ms"] + 500:
             self.trail.pop(0)

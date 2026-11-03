@@ -90,9 +90,11 @@ def main(argv=None) -> int:
     tracker = HandTracker(a.model or DEFAULT_MODEL)
     parts = tuple(a.pose_parts) if a.pose else ()
     pose_tracker = PoseTracker(pose_keys(parts), a.pose_model or DEFAULT_POSE_MODEL, min_visibility=a.pose_min_visibility) if parts else None
-    cap = cv2.VideoCapture(a.camera)
-    if not cap.isOpened():
-        print(f"error: camera {a.camera} cannot be opened", file=sys.stderr)
+    from camera_thread import open_camera
+
+    cap, how = open_camera(cv2, a.camera)
+    if cap is None:
+        print(f"error: {how}", file=sys.stderr)
         return 2
     print(f"tracker: {tracker.describe()}")
     print(pose_tracker.describe() if pose_tracker else "pose: off (fingertip only)")

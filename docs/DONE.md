@@ -386,3 +386,8 @@ Added to the Phase II criteria by the team: "provide different content according
 ## DollarPy templates from video files (2026-11-03)
 - New `tools/dollarpy/templates_from_video.py`: turns one video per letter into DollarPy templates with the same MediaPipe tracking and the same movement cutting as the live tool (`--video J=file --video Z=file`, fingertip only). Single-frame flips to the other, resting hand are replaced by the last good frame. Tests in `tools/dollarpy/test_dollarpy.py` (generated frames: one movement is cut, a flickering second hand does not move the path, a hand that really moves away is accepted) pass here.
 - Used on the two clips Youssef supplied (`J_Letter.mp4`, `Z_letter.mp4`, 3 s each, another person): one movement found per clip, 18 and 16 jumpy frames replaced; the result is a `templates.json` with one template for J and one for Z. **Not an evaluation:** one take per letter of one person, so the recogniser matching its own template says nothing, and nobody has signed J or Z at a webcam against these templates yet. The paths include lifting the hand into the picture. Needs my camera: run `classify_live.py --no-pose` and draw J and Z.
+
+## classify_live --debug
+Added `--debug` (hand seen, speed peak, start threshold) to find why a live run recognises nothing. Needs my camera.
+
+classify_live and record_templates now open the camera through `open_camera` (Windows: DirectShow first, then the default backend, and a real first picture is required). Fixes "the camera gave no picture" on a laptop webcam that opened but never delivered. Needs my camera.
