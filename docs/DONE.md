@@ -391,3 +391,6 @@ Added to the Phase II criteria by the team: "provide different content according
 Added `--debug` (hand seen, speed peak, start threshold) to find why a live run recognises nothing. Needs my camera.
 
 classify_live and record_templates now open the camera through `open_camera` (Windows: DirectShow first, then the default backend, and a real first picture is required). Fixes "the camera gave no picture" on a laptop webcam that opened but never delivered. Needs my camera.
+
+## Web motion model (J, Z)
+`tools/dollarpy/export_web_model.py` turns the DollarPy templates into `public/models/motion-dollar.json` (scaled to a 1280x720 picture). The committed file holds one J and one Z from two videos of another signer: it proves the format and the loading, it is NOT an evaluation and needs my camera. Replace it with templates recorded by the team.
