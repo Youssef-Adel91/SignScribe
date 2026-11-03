@@ -362,3 +362,12 @@ Added to the Phase II criteria by the team: "provide different content according
 
 ## Faster Bluetooth checks (2026-11-03)
 - Youssef's real-phone test: closing the advertiser still showed "found" after a refresh, and opening it again took very long. Defaults in `tools/bluetooth/ble_logic.py` and `devices.example.json` are now a check every 5 s (scan 3 s + pause 2 s), `confirm_scans` 2, `lost_after_scans` 2: found after about 10 s, forgotten after about 10 s (by the numbers; **needs my phone to measure the real seconds**). A copy of `devices.json` made earlier keeps its own `scan` block and must be edited by hand. "Bluetooth found" is spoken once per detection (previous section), again for a different person or after the person was lost and came back. `pytest tools/bluetooth` passes here (35 tests).
+
+## Bluetooth, real hardware: person device (2026-11-03)
+**Verified on real hardware (one person device).** Evidence, no addresses:
+- Computer: Windows laptop with its own Bluetooth adapter; scanner `tools/bluetooth/scan.py` with Bleak, **no FAKE**.
+- Device: an Android phone (OPPO K11 5G) advertising through the nRF Connect Advertiser (legacy advertising, Adv. Extension off). The name `SS-YOUSSEF` is the phone's own Bluetooth name (the Local Name record takes the system name, not the app's display name). Matched with `name_prefix` in `devices.json`.
+- Found: the scanner printed `user yes` and the web app showed `Bluetooth: youssef` without "(demo device)".
+- Lost: closing the advertiser, or walking away with the phone, made the presence disappear. Coming back brought it back and the app said it again.
+- Not measured: the seconds from switching on to found and from switching off to lost (Youssef did not time them). Not tried yet: a place device (`SS-CLINIC`), a second person, and the DollarPy part.
+- Two things found on the way and fixed: a leftover FAKE scanner overwrote the real presence (server keeps only the last message; stop every `--fake` process), and the announcement was repeated on every screen change.
