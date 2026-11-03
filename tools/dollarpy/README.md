@@ -21,6 +21,13 @@ Classifying: with templates that were recorded with pose the program also tracks
 
 In the web app (`?server=ws://localhost:8787`, localhost only): on the spelling screens a card "dollarpy: J, Point and hold here to add it" appears for 8 s. The letter is written into the message only when the person points at the card and holds, like any other choice. Letters that are not in the active alphabet are ignored.
 
+## Templates from video files (no webcam recording)
+    python tools/dollarpy/templates_from_video.py --video J=J_Letter.mp4 --video Z=Z_letter.mp4
+    python tools/dollarpy/classify_live.py --no-pose
+
+One video = one person signing one letter. MediaPipe follows the hand frame by frame, the same `Segmenter` as the live tool cuts out the movement of the index fingertip (time comes from the video's frame rate), and the path is saved to `templates.json` (fingertip only, so classify with `--no-pose`). A video that does not give exactly one movement is reported and not saved. MediaPipe sometimes flips for a single frame to a second hand that rests in the picture (folded hands): those frames are replaced by the last good frame (`drop_jumps`) and counted in the output.
+Limits: the template is the movement of the person in the video, not of the person at your webcam; one take says little about other people; and the movement includes lifting the hand into the picture, as in live use. Record your own takes with `record_templates.py` (or add more videos) when you can. The file is a person's movement data: git-ignored; keep the videos out of git too.
+
 ## The pose, and what goes into the template points
 This follows the Lab 5 notebook: the points come from MediaPipe **Pose** landmarks 11 and 12 (shoulders), 13 and 14 (elbows), 15 and 16 (wrists), 17 and 18 (pinky), 19 and 20 (index) and 23 and 24 (hips), **x and y only**. **Each landmark is one stroke** (`Point(x, y, stroke_id)`) and its **whole trajectory over the movement** is that stroke (one point per camera frame, nothing thinned out); then `Template(label, points)` and `Recognizer(templates).recognize(points)` as in the lab. The one addition: the **index fingertip of the hand** (MediaPipe Hand Landmarker) is one extra stroke, id 1, the pose landmarks are ids 2 to 13.
 
