@@ -2,11 +2,11 @@
   "_readme": "Copy to devices.json (git-ignored) and put your own devices in it. Device addresses live ONLY in this local file: the scanner never logs them and never sends them to the server. Optional \"gender\" (male or female) on a device with a userId is that person's profile: the app shows blue and green pages for male and pink pages for female until the person changes it on screen 03.",
   "server": { "host": "127.0.0.1", "port": 8788 },
   "scan": {
-    "seconds": 4,
-    "pause_seconds": 1,
+    "seconds": 3,
+    "pause_seconds": 2,
     "min_rssi": -85,
     "confirm_scans": 2,
-    "lost_after_scans": 3,
+    "lost_after_scans": 2,
     "heartbeat_seconds": 5
   },
   "devices": [
