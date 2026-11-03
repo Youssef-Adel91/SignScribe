@@ -72,3 +72,6 @@ The live client runs three threads, so a slow camera or a missing server never f
 On exit it prints the counts (skipped pictures; sent / failed / dropped letters). `--simulate` keeps sending on the main thread so
 the end-to-end check stays deterministic. Tests: `python -m pytest tools/dollarpy/test_threads.py` (no camera; a real TCP socket).
 
+
+## Nothing is recognised: `--debug`
+`python tools/dollarpy/classify_live.py --no-pose --debug` prints twice a second whether a hand was seen, the fingertip speed peak, and the speed a movement needs to start. No hand seen = tracking problem; peak under the threshold = move faster or the threshold is too high for your camera.

@@ -101,6 +101,7 @@ def main(argv=None) -> int:
     ap.add_argument("--pose-min-visibility", type=float, default=0.0, help="drop the pose of a frame when a landmark is less visible than this (default 0: use every landmark as MediaPipe gives it, like Lab 5)")
     ap.add_argument("--pose-model", help="pose_landmarker_lite.task (default: public/models)")
     ap.add_argument("--no-window", action="store_true")
+    ap.add_argument("--debug", action="store_true", help="twice a second print: hand seen or not, the fingertip speed peak, and the start threshold (why nothing is recognised)")
     ap.add_argument("--simulate", nargs="+", metavar="LETTER", help=f"DEMO: feed generated paths instead of a webcam ({', '.join(SHAPES)})")
     ap.add_argument("--synthetic-templates", action="store_true", help="DEMO: use generated templates instead of a recorded file")
     ap.add_argument("--fast", action="store_true", help="with --simulate: do not wait in real time")
@@ -159,6 +160,7 @@ def main(argv=None) -> int:
         print("Draw a moving letter in the air with your index finger. q quits.")
         camera = LatestFrame(cap)
         t0 = time.monotonic()
+        dbg = {"t": 0.0, "peak": 0.0, "seen": 0, "n": 0}
         try:
             while True:
                 ok, frame = camera.read()
@@ -172,6 +174,14 @@ def main(argv=None) -> int:
                 _, res = pipe.feed((time.monotonic() - t0) * 1000, lm, w, h, pose)
                 if res:
                     handle(res, sender)
+                if a.debug:
+                    now = time.monotonic()
+                    dbg["n"] += 1
+                    dbg["seen"] += lm is not None
+                    dbg["peak"] = max(dbg["peak"], pipe.segmenter.last_speed if lm is not None else 0.0)
+                    if now - dbg["t"] >= 0.5:
+                        print(f"debug: hand seen in {dbg['seen']}/{dbg['n']} pictures, fingertip speed peak {dbg['peak']:.2f} (a movement starts at {pipe.segmenter.cfg['start_speed']}), state {_}", flush=True)
+                        dbg.update(t=now, peak=0.0, seen=0, n=0)
                 if not a.no_window:
                     cv2.imshow("classify live", cv2.flip(frame, 1))
                     if cv2.waitKey(1) & 0xFF == ord("q"):

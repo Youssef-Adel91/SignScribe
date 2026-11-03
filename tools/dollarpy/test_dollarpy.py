@@ -461,3 +461,13 @@ def test_a_resting_second_hand_that_flickers_into_view_does_not_make_the_path_ju
     moved = [(a, 640, 480)] * 3 + [(b, 640, 480)] * 20
     out, _ = tv.drop_jumps(moved)
     assert out[-1][0][8][0] == 0.9
+
+
+def test_segmenter_exposes_the_last_speed_for_debug():
+    seg = Segmenter()
+    lm = [(0.5, 0.5)] * 21
+    seg.feed(0.0, lm, 640, 480)
+    lm2 = [(0.5, 0.5)] * 21
+    lm2[8] = (0.6, 0.5)
+    seg.feed(33.0, lm2, 640, 480)
+    assert seg.last_speed > 0
